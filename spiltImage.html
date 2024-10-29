@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>图片切割器</title>
+    <style>
+        /* 重置默认样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin: 20px;
+            color: #4A90E2;
+            text-align: center;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左侧容器 */
+        .left-panel {
+            flex: 0 0 50%;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #upload {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #4A90E2;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+            font-size: 16px;
+            color: #4A90E2;
+        }
+
+        #upload:hover {
+            background-color: #f0f8ff;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .controls label {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .controls input[type="number"] {
+            padding: 8px 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80px;
+            transition: border-color 0.3s;
+        }
+
+        .controls input[type="number"]:focus {
+            border-color: #4A90E2;
+            outline: none;
+        }
+
+        .controls button, .controls a {
+            padding: 10px 20px;
+            background-color: #4A90E2;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .controls button:hover, .controls a:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        #canvas {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 右侧容器 */
+        .right-panel {
+            flex: 0 0 50%;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fafafa;
+            border-left: 1px solid #ddd;
+        }
+
+        .right-panel h2 {
+            margin-bottom: 20px;
+            color: #4A90E2;
+            text-align: center;
+        }
+
+        #preview {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .preview-item {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .preview-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .preview-item span {
+            display: block;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 美化滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f4f6f8;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #a8a8a8;
+        }
+
+        /* 适配移动设备 */
+        @media (max-width: 800px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .left-panel, .right-panel {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls label, .controls button, .controls a {
+                width: 100%;
+                max-width: 300px;
+            }
+            .controls input[type="number"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>图片切割器</h1>
+    <div class="main-container">
+        <!-- 左侧面板 -->
+        <div class="left-panel">
+            <div class="upload-section">
+                <input type="file" id="upload" accept="image/*" title="点击上传图片">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="controls">
+                <label for="rows">
+                    行数:
+                    <input type="number" id="rows" min="1" value="2">
+                </label>
+                <label for="cols">
+                    列数:
+                    <input type="number" id="cols" min="1" value="2">
+                </label>
+                <button id="split">切割图片</button>
+            </div>
+            <div class="controls" id="downloadSection" style="display:none;">
+                <a id="download" href="#" download="split_images.zip">打包下载</a>
+            </div>
+        </div>
+        <!-- 右侧面板 -->
+        <div class="right-panel">
+            <h2>预览切割后的图片</h2>
+            <div id="preview"></div>
+        </div>
+    </div>
+
+    <!-- 引入JSZip库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+    <script>
+        const upload = document.getElementById('upload');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const splitBtn = document.getElementById('split');
+        const rowsInput = document.getElementById('rows');
+        const colsInput = document.getElementById('cols');
+        const preview = document.getElementById('preview');
+        const downloadBtn = document.getElementById('download');
+        const downloadSection = document.getElementById('downloadSection');
+        let image = new Image();
+        let zip = new JSZip();
+        let baseFileName = "split_image"; // 默认文件名前缀
+
+        // 处理文件名，去除扩展名并进行简单的安全化
+        function getBaseFileName(filename) {
+            const lastDot = filename.lastIndexOf('.');
+            let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
+            // 简单替换空格和特殊字符
+            name = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+            return name;
+        }
+
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            // 获取并处理文件名
+            baseFileName = getBaseFileName(file.name);
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                image = new Image();
+                image.onload = function() {
+                    // 调整Canvas大小以适应图片
+                    const maxWidth = 700;
+                    const scale = Math.min(maxWidth / image.width, 1);
+                    canvas.width = image.width * scale;
+                    canvas.height = image.height * scale;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    preview.innerHTML = '';
+                    downloadSection.style.display = 'none';
+                    zip = new JSZip(); // 重置ZIP
+                }
+                image.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        splitBtn.addEventListener('click', () => {
+            const rows = parseInt(rowsInput.value);
+            const cols = parseInt(colsInput.value);
+            if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) {
+                alert('请输入有效的行数和列数。');
+                return;
+            }
+            if (!image.src) {
+                alert('请先上传一张图片。');
+                return;
+            }
+
+            // 清除之前的预览和ZIP内容
+            preview.innerHTML = '';
+            downloadSection.style.display = 'none';
+            zip = new JSZip();
+
+            const pieceWidth = Math.floor(image.width / cols);
+            const pieceHeight = Math.floor(image.height / rows);
+            let count = 1;
+
+            for(let y=0; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = pieceWidth;
+                    tempCanvas.height = pieceHeight;
+                    tempCtx.drawImage(
+                        image,
+                        x * pieceWidth,
+                        y * pieceHeight,
+                        pieceWidth,
+                        pieceHeight,
+                        0,
+                        0,
+                        pieceWidth,
+                        pieceHeight
+                    );
+                    const dataURL = tempCanvas.toDataURL('image/png');
+
+                    // 添加到预览
+                    const img = document.createElement('img');
+                    img.src = dataURL;
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.appendChild(img);
+                    const span = document.createElement('span');
+                    span.textContent = `${baseFileName}_${count}.png`;
+                    div.appendChild(span);
+                    preview.appendChild(div);
+
+                    // 添加到ZIP
+                    zip.file(`${baseFileName}_${count}.png`, dataURL.split(',')[1], {base64: true});
+                    count++;
+                }
+            }
+
+            // 生成ZIP并提供下载链接
+            zip.generateAsync({type:"blob"})
+                .then(function(content) {
+                    const url = URL.createObjectURL(content);
+                    downloadBtn.href = url;
+                    downloadBtn.download = `${baseFileName}.zip`;
+                    downloadSection.style.display = 'flex';
+                })
+                .catch(function(err){
+                    console.error("生成ZIP文件时出错:", err);
+                    alert('生成ZIP文件时出错，请检查控制台日志。');
+                });
+        });
+    </script>
+</body>
+</html>
