@@ -147,6 +147,11 @@ export default {
         alert('反馈已提交，谢谢！');
       });
       this.closeFeedback();
+      this.feedback = {
+        username: '',
+        email: '',
+        content: ''
+      };
     },
     goToGitHub() {
       window.open('https://github.com/datehoer/hot-rank-web', '_blank');
