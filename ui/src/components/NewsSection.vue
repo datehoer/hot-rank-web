@@ -6,7 +6,7 @@
         <span class="title-text">{{ title }}</span>
         <span class="subtitle">{{ subtitle }}</span>
       </div>
-      <el-button class="refresh-btn" type="text" icon="el-icon-refresh">刷新</el-button>
+      <el-button class="refresh-btn" type="text" icon="el-icon-refresh" @click="handleRefreshClick" title="刷新"></el-button>
     </div>
     <div class="news-list">
       <div
@@ -43,6 +43,19 @@ export default {
     newsItems: {
       type: Array,
       required: true
+    }
+  },
+  methods: {
+    handleRefreshClick() {
+      const button = this.$el.querySelector('.refresh-btn');
+      button.classList.add('spin');
+      setTimeout(() => {
+        button.classList.remove('spin');
+      }, 600);
+      this.refreshNews();
+    },
+    refreshNews() {
+      console.log("something");
     }
   }
 }
@@ -200,5 +213,17 @@ a:after {
 a:hover:after {
     width: 100%;
     left: 0;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.refresh-btn.spin {
+  animation: spin 0.6s linear;
 }
 </style>

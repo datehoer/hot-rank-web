@@ -160,6 +160,7 @@ export default {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   padding: 10px;
+  margin-bottom: 10px;
 }
 
 .calendar-header {

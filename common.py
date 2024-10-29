@@ -132,7 +132,7 @@ def parse_zhihu_hot_list(data):
     data = data["data"]
     result = []
     for item in data:
-        hot_value = int(item["detail_text"].split(" ")[0])*10000
+        hot_value = float(item["detail_text"].split(" ")[0])*10000
         if item['target']['type'] == "question":
             hot_url = "https://www.zhihu.com/question/" + str(item['target']['id'])
         else:

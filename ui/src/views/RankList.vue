@@ -1,5 +1,11 @@
 <template>
-  <div class="app-container">
+  <div
+    class="app-container"
+    v-loading="loading"
+    element-loading-text="拼命加载中"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.8)"
+  >
     <!-- 顶部搜索栏 -->
     <div class="header">
       <div class="header-content">
@@ -12,7 +18,7 @@
           <!-- 搜索栏 -->
           <div class="search-bar">
             <el-input
-              placeholder="搜索"
+              placeholder="用来装饰的搜索栏"
               prefix-icon="el-icon-search"
               v-model="searchText"
               class="search-input"
@@ -61,7 +67,7 @@ export default {
   name: 'App',
   components: {
     NewsSection,
-    UserPanel
+    UserPanel,
   },
   data() {
     return {
@@ -69,6 +75,7 @@ export default {
       // 设置每行显示的列数（1-4）
       columnsCount: 3,
       newsSections: [],
+      loading: false
     }
   },
   computed: {
@@ -93,6 +100,7 @@ export default {
   },
   methods: {
     fetchRankList() {
+      this.loading = true
       getRankList().then(response => {
         this.newsSections = response.data.map(item => {
           const subtitle = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss").fromNow()
@@ -103,6 +111,7 @@ export default {
             type
           }
         })
+        this.loading = false
       })
     }
   }

@@ -9,7 +9,9 @@ import traceback
 from config import *
 import time
 from fastapi.middleware.cors import CORSMiddleware
+from sendEmail import send_email
 from common import parse_zhihu_hot_list, parse_weibo_hot_search, parse_bilibili_hot, parse_douyin_hot, parse_juejin_hot, parse_shaoshupai_hot, parse_tieba_topic, parse_toutiao_hot, parse_wx_read_rank
+from pydantic import BaseModel
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -22,12 +24,12 @@ app.add_middleware(
 mongo_client = AsyncIOMotorClient(MONGODB_URI)
 mongo_db = mongo_client[MONGODB_DB_NAME]
 table_dict = [
-    {"name": "B站热搜", "tablename": "bilibili_hot"},
+    {"name": "B站热榜", "tablename": "bilibili_hot"},
     {"name": "抖音热搜", "tablename": "douyin_hot"},
-    {"name": "掘金热搜", "tablename": "juejin_hot"},
-    {"name": "少数派热搜", "tablename": "shaoshupai_hot"},
+    {"name": "掘金热榜", "tablename": "juejin_hot"},
+    {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
     {"name": "贴吧热议", "tablename": "tieba_topic"},
-    {"name": "头条热搜", "tablename": "toutiao_hot"},
+    {"name": "头条热榜", "tablename": "toutiao_hot"},
     {"name": "微博热搜", "tablename": "weibo_hot_search"},
     {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
     {"name": "知乎热榜", "tablename": "zhihu_hot_list"}
@@ -43,7 +45,10 @@ redis_client = redis.Redis(
     retry=retry,
     socket_timeout=10
 )
-
+class Feedback(BaseModel):
+    subject: str
+    content: str
+    username: str
 @app.get("/rankCopyWriting")
 async def get_copywriting():
     data = await redis_client.srandmember("copywriting")
@@ -52,6 +57,18 @@ async def get_copywriting():
 async def get_copywriting():
     data = await redis_client.get("yellowCalendar")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+@app.get("/avatar")
+async def get_avatar():
+    data = await redis_client.srandmember("avatar")
+    return {"code": 200, "msg": "success", "data": data}
+@app.get("/username")
+async def get_username():
+    data = await redis_client.srandmember("username")
+    return {"code": 200, "msg": "success", "data": data}
+@app.post("/feedback")
+async def post_feedback(feedback: Feedback):
+    send_email(feedback.subject, feedback.content, ["datehoer@gmail.com"])
+    return {"code": 200, "msg": "success"}
 @app.get("/rank/{item_id}")
 async def get_data(item_id: str):
     if item_id != "hot":
@@ -112,6 +129,12 @@ async def get_data(item_id: str):
             except Exception as e:
                 print(f"Error parsing {collection_name}: {e}")
                 print(traceback.format_exc())
+        try:
+            blog_data = await redis_client.get("myblog")
+            if blog_data:
+                data.append(json.loads(blog_data))
+        except Exception as e:
+            print(f"Redis get error: {e}")
         try:
             # 将数据缓存到 Redis，有效期 60 分钟
             await redis_client.setex(cache_key, 3600, json.dumps(data))

@@ -20,3 +20,25 @@ export function getYellowCalendar() {
     method: 'get'
   })
 }
+export function getAvatar() {
+  return request({
+    url: '/avatar',
+    method: 'get'
+  })
+}
+
+export function getUsername() {
+  return request({
+    url: '/username',
+    method: 'get'
+  })
+}
+
+export function postFeedback(data) {
+  return request({
+    url: '/feedback',
+    method: 'post',
+    data
+  })
+}
+
