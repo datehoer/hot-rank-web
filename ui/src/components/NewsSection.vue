@@ -72,6 +72,19 @@ export default {
     refreshNews() {
       console.log("something");
     }
+  },
+  methods: {
+    handleRefreshClick() {
+      const button = this.$el.querySelector('.refresh-btn');
+      button.classList.add('spin');
+      setTimeout(() => {
+        button.classList.remove('spin');
+      }, 600);
+      this.refreshNews();
+    },
+    refreshNews() {
+      console.log("something");
+    }
   }
 }
 </script>
