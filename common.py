@@ -1,4 +1,5 @@
 import math
+from urllib.parse import urljoin
 def parse_douyin_hot(data):
     data = data["data"]['word_list']
     result = []
@@ -144,4 +145,193 @@ def parse_zhihu_hot_list(data):
             "hot_label": hot_label
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_common(data):
+    result = []
+    data = data['data']
+    for item in data:
+        result.append({
+            "hot_value": item['hotSource'],
+            "hot_url": item['url'],
+            "hot_label": item['title']
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_anquanke(data):
+    result = []
+    data = data['list']
+    for item in data:
+        result.append({
+            "hot_value": 0,
+            "hot_url": urljoin("https://www.anquanke.com", item['url']),
+            "hot_label": item['title']
+        })
+    return result
+
+def parse_acfun(data):
+    data = data['rankList']
+    result = []
+    for item in data:
+        result.append({
+            "hot_value": 0,
+            "hot_url": item['shareUrl'],
+            "hot_label": item['title']
+        })
+    return result
+
+def parse_csdn(data):
+    data = data['data']
+    result = []
+    for item in data:
+        result.append({
+            "hot_value": item['hotRankScore'],
+            "hot_url": item['articleDetailUrl'],
+            "hot_label": item['articleTitle']
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_douban(data):
+    data = data['data']
+    koubei = parse_common(data[0])
+    beimei = parse_common(data[1])
+    return koubei, beimei
+
+def parse_openeye(data):
+    result = []
+    items = data['data'].get("result", [])
+    for item in items.get("card_list", []):
+        metro_list = item['card_data']['body'].get('metro_list', [])
+        for metro in metro_list:
+            title = metro['metro_data'].get('title', "")
+            if title == "":
+                continue
+            link = metro['link']
+            hotScore = metro['metro_data']['hot_value']
+            result.append({
+                "hot_label": title,
+                "hot_url": link,
+                "hot_value": hotScore
+            })
+    return result
+
+def parse_pmcaff(data):
+    result = []
+    results = data['data']['data']
+    for res in results:
+        title = res['title']
+        link = res['shareUrl']
+        hotScore = res['viewNum']
+        result.append({
+            'hot_label': title,
+            'hot_url': link,
+            'hot_value': hotScore,
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_woshipm(data):
+    results = data['data']
+    results = results.get('RESULT', [])
+    result = []
+    for result in results:
+        result_data = result['data']
+        title = result_data['articleTitle']
+        link = "https://www.woshipm.com/{}/{}.html".format(result_data['type'], result_data['id'])
+        hotScore = result['scores']
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hotScore
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_xueqiu(data):
+    data = data['data']
+    import pyquery
+    result = []
+    for i in data.get("items", []):
+        original = i['original_status']
+        title = original['description']
+        doc = pyquery.PyQuery(title)
+        title = doc.text()[0:60]
+        link = urljoin("https://xueqiu.com", original['target'])
+        hotScore = 0
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hotScore
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_yiche(data):
+    article_res_json = data['data']
+    result = []
+    article_results = article_res_json['data']
+    for result in article_results:
+        title = result['shareData']['title']
+        link = result['shareData']['link']
+        hotScore = 0
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hotScore
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_youshedubao(data):
+    uisdc_news = data[0]['dubao']
+    result = []
+    for news in uisdc_news:
+        title = news['title']
+        result.append({
+            "hot_label": title,
+            "hot_url": "https://www.uisdc.com/news",
+            "hot_value": 0
+        })
+    return result
+
+def parse_youxiputao(data):
+    res_json = data['data']
+    result = []
+    for item in res_json["data"]['data']:
+        title = item["title"]
+        link = "https://youxiputao.com/article/" + str(item['id'])
+        hotScore = 0
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hotScore
+        })
+    return result
+
+def parse_zhanku(data):
+    res_json = data['data']
+    result = []
+    results = res_json['datas']
+    for res in results:
+        title = res['rankingTitle']
+        link = res['pageUrl']
+        hotScore = res['rankScore']
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hotScore
+        })
+    return result
+
+def parse_zongheng(data):
+    res_json = data['data']
+    result = []
+    for item in res_json.get("result", {}).get("resultList", []):
+        result.append({
+            "hot_label": item.get("bookName"),
+            "hot_url": "https://www.zongheng.com/detail/{}".format(item.get("bookId")),
+            "hot_value": 0
+        })
     return result
