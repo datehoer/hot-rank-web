@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import redis.asyncio as redis
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from redis.asyncio import ConnectionPool
 import json
 import traceback
 from config import *
@@ -25,15 +26,22 @@ mongo_client = AsyncIOMotorClient(MONGODB_URI)
 mongo_db = mongo_client[MONGODB_DB_NAME]
 backoff = ExponentialBackoff(cap=2, base=2)
 retry = Retry(backoff=backoff, retries=10)
-redis_client = redis.Redis(
+# 创建连接池
+redis_pool = ConnectionPool(
     host=REDIS_HOST,
     port=REDIS_PORT,
     db=REDIS_DB,
     password=REDIS_PASSWORD,
     decode_responses=True,
     retry=retry,
-    socket_timeout=10
+    socket_timeout=60,
+    socket_connect_timeout=60,
+    socket_keepalive=True,
+    health_check_interval=60,
+    max_connections=10
 )
+# 使用连接池创建客户端
+redis_client = redis.Redis(connection_pool=redis_pool)
 class Feedback(BaseModel):
     subject: str
     content: str

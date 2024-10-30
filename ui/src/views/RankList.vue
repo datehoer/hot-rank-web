@@ -92,16 +92,20 @@ export default {
       return Math.min(this.newsSections.length, 4)
     },
     filteredNewsSections() {
-      return this.newsSections.filter(section => 
-        this.selectedSites.includes(section.name)
-      );
+      if (this.selectedSites.includes("*")){
+        return this.newsSections
+      }else{
+        return this.newsSections.filter(section => 
+          this.selectedSites.includes(section.name)
+        );
+      }
     }
   },
   created() {
     this.fetchRankList();
     this.columnsCount = this.$localStorage.get('columnsCount', 3);
     this.wrapText = this.$localStorage.get('wrapText', true);
-    this.selectedSites = this.$localStorage.get('selectedSites', ['B站热榜', '抖音热搜']);
+    this.selectedSites = this.$localStorage.get('selectedSites', ['*']);
   },
   methods: {
     updateSelectedSites(sites) {

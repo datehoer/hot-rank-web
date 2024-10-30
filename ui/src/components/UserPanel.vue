@@ -13,8 +13,8 @@
         </button>
         <div
           class="record"
-          :style="transformStyle"
-          @click="toggleSpin"
+          @click="openMusicPlayer"
+          title="唱片"
         ></div>
         <button class="action-button" @click="openFeedback">
           <i class="icon-feedback"></i>
@@ -33,54 +33,54 @@
     </div>
 
     <!-- 设置弹窗 -->
-  <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
-    <div class="modal">
-      <h3>设置</h3>
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="基础设置" name="basic">
-          <div class="settings-item">
-            <span>设置列数：{{localColumnsCount}}</span>
-            <el-slider
-              v-model="localColumnsCount"
-              :min="1"
-              :max="4"
-              :step="1"
-              show-stops
-            ></el-slider>
-          </div>
-          <div class="settings-item">
-            <div class="switch-wrapper">
-              <span>标题超出隐藏：</span>
-              <el-switch
-                v-model="localWrapText"
-                inline-prompt
-                :active-text="'换行'"
-                :inactive-text="'不换行'"
-              />
+    <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
+      <div class="modal">
+        <h3>设置</h3>
+        <el-tabs v-model="activeTab">
+          <el-tab-pane label="基础设置" name="basic">
+            <div class="settings-item">
+              <span>设置列数：{{localColumnsCount}}</span>
+              <el-slider
+                v-model="localColumnsCount"
+                :min="1"
+                :max="4"
+                :step="1"
+                show-stops
+              ></el-slider>
             </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="热榜设置" name="hotlist">
-          <div class="settings-item">
-            <div class="checkbox-group">
-              <el-checkbox
-                v-for="site in availableSites"
-                :key="site.name"
-                v-model="selectedSites"
-                :label="site.name"
-              >
-                {{ site.name }}
-              </el-checkbox>
+            <div class="settings-item">
+              <div class="switch-wrapper">
+                <span>标题超出隐藏：</span>
+                <el-switch
+                  v-model="localWrapText"
+                  inline-prompt
+                  :active-text="'换行'"
+                  :inactive-text="'不换行'"
+                />
+              </div>
             </div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-      <div class="modal-actions">
-        <button @click="saveSettings">保存</button>
-        <button @click="closeSettings">取消</button>
+          </el-tab-pane>
+          <el-tab-pane label="热榜设置" name="hotlist">
+            <div class="settings-item">
+              <div class="checkbox-group">
+                <el-checkbox
+                  v-for="site in availableSites"
+                  :key="site.name"
+                  v-model="selectedSites"
+                  :label="site.name"
+                >
+                  {{ site.name }}
+                </el-checkbox>
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+        <div class="modal-actions">
+          <button @click="saveSettings">保存</button>
+          <button @click="closeSettings">取消</button>
+        </div>
       </div>
     </div>
-  </div>
 
     <!-- 反馈弹窗 -->
     <div v-if="showFeedback" class="modal-overlay" @click.self="closeFeedback">
@@ -104,6 +104,15 @@
         </div>
       </div>
     </div>
+    <el-dialog
+      width="35%"
+      :before-close="handleClose"
+      :visible.sync="showMusicPlayer"
+      :modal="false"
+      custom-class="music-player-dialog"
+    >
+      <music-player />
+    </el-dialog>
   </div>
 </template>
 
@@ -112,13 +121,15 @@ import { getCopyWriting, getAvatar, getUsername, postFeedback, getCards } from "
 import CalendarComponent from '@/components/CalendarComponent.vue';
 import HoroscopeComponent from '@/components/HoroscopeComponent.vue';
 import CountdownComponent from '@/components/CountdownComponent.vue';
+import MusicPlayer from '@/components/Player.vue'
 
 export default {
   name: 'UserPanel',
   components: {
     CalendarComponent,
     HoroscopeComponent,
-    CountdownComponent
+    CountdownComponent,
+    MusicPlayer
   },
   props: {
     columnsCount: {
@@ -141,6 +152,7 @@ export default {
       // 状态控制
       showSettings: false,
       showFeedback: false,
+      showMusicPlayer: false,
       // 设置表单
       settings: {
         color: '#FFFFFF',
@@ -174,7 +186,7 @@ export default {
       this.username = response.data;
       this.settings.username = response.data; // 初始化设中的用户名
     });
-    this.selectedSites = this.$localStorage.get('selectedSites', ['B站热榜', '抖音热搜']);
+    this.selectedSites = this.$localStorage.get('selectedSites', ['*']);
     this.fetchCards();
   },
   beforeDestroy() {
@@ -182,6 +194,9 @@ export default {
     clearInterval(this.intervalId);
   },
   methods: {
+    openMusicPlayer(){
+      this.showMusicPlayer = true;
+    },
     toggleSpin() {
       if (this.isSpinning) {
         // 停止旋转
@@ -200,6 +215,17 @@ export default {
       getCards().then(response => {
         this.availableSites = response.data;
       });
+    },
+    handleClose(done) {
+      this.$confirm('确认关闭音乐播放器？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        customClass: 'music-player-close-dialog',
+        center: true
+      }).then(() => {
+        done();
+      }).catch(() => {});
     },
     openSettings() {
       this.showSettings = true;
@@ -478,7 +504,7 @@ export default {
   padding: 8px 0;
 }
 
-/* Element Plus 组件样式覆盖 */
+/* Element Plus 件样式覆盖 */
 :deep(.el-tabs__item) {
   color: #909399 !important;
   font-size: 14px;
@@ -581,5 +607,108 @@ export default {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 添加音乐播放器弹窗样式 */
+:deep(.music-player-dialog) {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+:deep(.music-player-dialog .el-dialog__header) {
+  padding: 0;
+}
+
+:deep(.music-player-dialog .el-dialog__body) {
+  padding: 0;
+  background: transparent;
+  color: #E5EAF3;
+}
+
+:deep(.music-player-dialog .el-dialog__headerbtn) {
+  top: 8px;
+  right: 8px;
+}
+
+:deep(.music-player-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: #909399;
+}
+
+:deep(.music-player-dialog .el-dialog__headerbtn:hover .el-dialog__close) {
+  color: #E5EAF3;
+}
+
+/* 音乐播放器关闭确认框样式 */
+:deep(.music-player-close-dialog) {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+:deep(.music-player-close-dialog .el-message-box__header) {
+  padding: 20px 20px 10px;
+  background: transparent;
+}
+
+:deep(.music-player-close-dialog .el-message-box__title) {
+  color: #E5EAF3;
+  font-size: 16px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__content) {
+  padding: 10px 20px;
+  background: transparent;
+  color: #909399;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns) {
+  padding: 10px 20px 20px;
+  background: transparent;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns button) {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns button:first-child) {
+  background-color: #909399;
+  color: white;
+  margin-right: 10px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns button:first-child:hover) {
+  background-color: #a6a9ad;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns button:last-child) {
+  background-color: #409EFF;
+  color: white;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns button:last-child:hover) {
+  background-color: #66b1ff;
+}
+
+:deep(.music-player-close-dialog .el-message-box__status) {
+  color: #E6A23C;
+  font-size: 20px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__close) {
+  color: #909399;
+  font-size: 16px;
+  top: 15px;
+  right: 15px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__close:hover) {
+  color: #E5EAF3;
 }
 </style>
