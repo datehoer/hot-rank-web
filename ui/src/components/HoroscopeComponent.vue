@@ -16,7 +16,13 @@
         <img :src="yellowCalendar.center_note.img" alt="备注" class="info-icon" />
         <span class="info-value">{{ yellowCalendar.center_note.text }}</span>
       </div>
-      
+
+      <!-- 日期选择器 -->
+      <div class="info-row">
+        <span class="info-label">日期：</span>
+        <span class="info-value">{{ yellowCalendar.center_datepicker }}</span>
+      </div>
+
       <!-- 农历日期 -->
       <div class="info-row">
         <span class="info-label">农历日期：</span>
@@ -27,12 +33,6 @@
       <div class="info-row">
         <span class="info-label">今日星座：</span>
         <span class="info-value">{{ yellowCalendar.center_today_constellation.constellation }}</span>
-      </div>
-      
-      <!-- 日期选择器 -->
-      <div class="info-row">
-        <span class="info-label">日期：</span>
-        <span class="info-value">{{ yellowCalendar.center_datepicker }}</span>
       </div>
       
       <!-- 今日宜 -->

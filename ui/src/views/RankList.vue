@@ -54,7 +54,7 @@
     </div>
 
     <!-- 右侧用户面板 -->
-    <user-panel/>
+    <user-panel @update-columns-count="updateColumnsCount" :columns-count="columnsCount" />
   </div>
 </template>
 
@@ -85,20 +85,14 @@ export default {
     }
   },
   created() {
-    this.fetchRankList()
-  },
-  watch: {
-    // 监听 columnsCount 确保不超过最大值
-    columnsCount(newVal) {
-      if (newVal > this.maxColumns) {
-        this.columnsCount = this.maxColumns
-      }
-      if (newVal < 1) {
-        this.columnsCount = 1
-      }
-    }
+    this.fetchRankList();
+    this.columnsCount = this.$localStorage.get('columnsCount', 3);
   },
   methods: {
+    updateColumnsCount(newColumnsCount) {
+      this.columnsCount = newColumnsCount;
+      this.$localStorage.set('columnsCount', this.columnsCount);
+    },
     fetchRankList() {
       this.loading = true
       getRankList().then(response => {

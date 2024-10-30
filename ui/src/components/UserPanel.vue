@@ -31,6 +31,16 @@
     <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
       <div class="modal">
         <h3>设置</h3>
+        <div class="settings-item">
+          <label>设置列数：{{localColumnsCount}}</label>
+          <el-slider
+            v-model="localColumnsCount"
+            :min="1"
+            :max="4"
+            :step="1"
+            show-stops
+          ></el-slider>
+        </div>
         <!-- <label>
           颜色:
           <input type="color" v-model="settings.color" />
@@ -84,6 +94,12 @@ export default {
     HoroscopeComponent,
     CountdownComponent
   },
+  props: {
+    columnsCount: {
+      type: Number,
+      default: 3
+    }
+  },
   data() {
     return {
       tip: "今天也要加油哦！",
@@ -103,7 +119,8 @@ export default {
         username: '',
         email: '',
         content: ''
-      }
+      },
+      localColumnsCount: this.columnsCount,
     }
   },
   created() {
@@ -126,8 +143,7 @@ export default {
       this.showSettings = false;
     },
     saveSettings() {
-      this.username = this.settings.username;
-      document.documentElement.style.setProperty('--user-panel-bg', this.settings.color);
+      this.$emit('update-columns-count', this.localColumnsCount);
       this.closeSettings();
     },
     openFeedback() {
@@ -242,6 +258,8 @@ export default {
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
+  width: 30px;
+  text-align: center;
 }
 
 .action-button:hover .tooltip {

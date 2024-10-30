@@ -151,8 +151,11 @@ def parse_common(data):
     result = []
     data = data['data']
     for item in data:
+        hot_value = item['hotScore']
+        if isinstance(hot_value, str):
+            hot_value = float(hot_value.replace("热度", '').replace("万", "0000"))
         result.append({
-            "hot_value": item['hotSource'],
+            "hot_value": math.floor(hot_value),
             "hot_url": item['url'],
             "hot_label": item['title']
         })
@@ -161,7 +164,7 @@ def parse_common(data):
 
 def parse_anquanke(data):
     result = []
-    data = data['list']
+    data = data['data']['list']
     for item in data:
         result.append({
             "hot_value": 0,
@@ -201,7 +204,7 @@ def parse_douban(data):
 
 def parse_openeye(data):
     result = []
-    items = data['data'].get("result", [])
+    items = data.get("result", [])
     for item in items.get("card_list", []):
         metro_list = item['card_data']['body'].get('metro_list', [])
         for metro in metro_list:
@@ -219,7 +222,7 @@ def parse_openeye(data):
 
 def parse_pmcaff(data):
     result = []
-    results = data['data']['data']
+    results = data['data']
     for res in results:
         title = res['title']
         link = res['shareUrl']
@@ -233,14 +236,13 @@ def parse_pmcaff(data):
     return result
 
 def parse_woshipm(data):
-    results = data['data']
-    results = results.get('RESULT', [])
+    results = data.get('RESULT', [])
     result = []
-    for result in results:
-        result_data = result['data']
+    for res in results:
+        result_data = res['data']
         title = result_data['articleTitle']
         link = "https://www.woshipm.com/{}/{}.html".format(result_data['type'], result_data['id'])
-        hotScore = result['scores']
+        hotScore = res['scores']
         result.append({
             "hot_label": title,
             "hot_url": link,
@@ -250,7 +252,6 @@ def parse_woshipm(data):
     return result
 
 def parse_xueqiu(data):
-    data = data['data']
     import pyquery
     result = []
     for i in data.get("items", []):
@@ -271,10 +272,9 @@ def parse_xueqiu(data):
 def parse_yiche(data):
     article_res_json = data['data']
     result = []
-    article_results = article_res_json['data']
-    for result in article_results:
-        title = result['shareData']['title']
-        link = result['shareData']['link']
+    for res in article_res_json:
+        title = res['shareData']['title']
+        link = res['shareData']['link']
         hotScore = 0
         result.append({
             "hot_label": title,
@@ -285,7 +285,7 @@ def parse_yiche(data):
     return result
 
 def parse_youshedubao(data):
-    uisdc_news = data[0]['dubao']
+    uisdc_news = data['data'][0]['dubao']
     result = []
     for news in uisdc_news:
         title = news['title']
@@ -299,7 +299,7 @@ def parse_youshedubao(data):
 def parse_youxiputao(data):
     res_json = data['data']
     result = []
-    for item in res_json["data"]['data']:
+    for item in res_json['data']:
         title = item["title"]
         link = "https://youxiputao.com/article/" + str(item['id'])
         hotScore = 0
@@ -311,9 +311,8 @@ def parse_youxiputao(data):
     return result
 
 def parse_zhanku(data):
-    res_json = data['data']
     result = []
-    results = res_json['datas']
+    results = data['datas']
     for res in results:
         title = res['rankingTitle']
         link = res['pageUrl']
@@ -326,12 +325,46 @@ def parse_zhanku(data):
     return result
 
 def parse_zongheng(data):
-    res_json = data['data']
     result = []
-    for item in res_json.get("result", {}).get("resultList", []):
+    for item in data.get("result", {}).get("resultList", []):
         result.append({
             "hot_label": item.get("bookName"),
             "hot_url": "https://www.zongheng.com/detail/{}".format(item.get("bookId")),
             "hot_value": 0
         })
+    return result
+
+def parse_tencent_news(data):
+    data = data['idlist'][0]['newslist']
+    result = []
+    for item in data:
+        if not item.get('url'):
+            continue
+        comment_count = int(item.get('commentNum', 0))
+        read_count = int(item.get('readCount', 0))
+        collect_count = int(item.get('collectCount', 0))
+        hot_value = comment_count*0.6 + read_count*0.3 + collect_count*0.1
+        result.append({
+            "hot_label": item['title'],
+            "hot_url": item['url'],
+            "hot_value": math.floor(hot_value)
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+
+def parse_hupu(data):
+    data = data['data']
+    result = []
+    for item in data:
+        try:
+            hot_label = item['title'].encode('ISO-8859-1').decode('utf-8')
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            hot_label = item['title']
+        result.append({
+            "hot_value": item['hotScore'],
+            "hot_url": item['url'],
+            "hot_label": hot_label
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
