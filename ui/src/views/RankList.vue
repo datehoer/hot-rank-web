@@ -11,12 +11,12 @@
       <div class="header-content">
         <div class="logo-search">
           <!-- 左侧 logo -->
-          <div class="logo">
+          <div class="logo" title="HotRank">
             <img src="@/assets/logo.png" alt="Logo" class="logo-image"/>
           </div>
           
           <!-- 搜索栏 -->
-          <div class="search-bar">
+          <!-- <div class="search-bar">
             <el-input
               placeholder="用来装饰的搜索栏"
               prefix-icon="el-icon-search"
@@ -24,7 +24,7 @@
               class="search-input"
               size="small"
             />
-          </div>
+          </div> -->
         </div>
 
         <!-- 右侧按钮组 -->
@@ -39,7 +39,7 @@
     <div class="main-content">
       <el-row :gutter="16">
         <el-col 
-          v-for="section in newsSections" 
+          v-for="section in filteredNewsSections" 
           :key="section.id"
           :span="24 / columnsCount"
         >
@@ -48,13 +48,19 @@
             :subtitle="section.subtitle"
             :type="section.type"
             :news-items="section.data"
+            :wrap-text="wrapText"
           />
         </el-col>
       </el-row>
     </div>
 
     <!-- 右侧用户面板 -->
-    <user-panel @update-columns-count="updateColumnsCount" :columns-count="columnsCount" />
+    <user-panel
+      @update-columns-count="updateColumnsCount"
+      @update-wrap-text="updateWrapText"
+      @update-selected-sites="updateSelectedSites"
+      :columns-count="columnsCount"
+    />
   </div>
 </template>
 
@@ -75,30 +81,52 @@ export default {
       // 设置每行显示的列数（1-4）
       columnsCount: 3,
       newsSections: [],
-      loading: false
+      selectedSites: [],
+      loading: false,
+      wrapText: true
     }
   },
   computed: {
     // 计算最大列数
     maxColumns() {
       return Math.min(this.newsSections.length, 4)
+    },
+    filteredNewsSections() {
+      return this.newsSections.filter(section => 
+        this.selectedSites.includes(section.name)
+      );
     }
   },
   created() {
     this.fetchRankList();
     this.columnsCount = this.$localStorage.get('columnsCount', 3);
+    this.wrapText = this.$localStorage.get('wrapText', true);
+    this.selectedSites = this.$localStorage.get('selectedSites', ['B站热榜', '抖音热搜']);
   },
   methods: {
+    updateSelectedSites(sites) {
+      this.selectedSites = sites;
+      this.$localStorage.set('selectedSites', sites);
+    },
     updateColumnsCount(newColumnsCount) {
       this.columnsCount = newColumnsCount;
       this.$localStorage.set('columnsCount', this.columnsCount);
+    },
+    updateWrapText(newWrapText) {
+      this.wrapText = newWrapText;
+      this.$localStorage.set('wrapText', this.wrapText);
     },
     fetchRankList() {
       this.loading = true
       getRankList().then(response => {
         this.newsSections = response.data.map(item => {
-          const subtitle = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss").fromNow()
-          const type = item.hot_type === '1' ? 'primary' : item.hot_type === '2' ? 'danger' : item.hot_type === '3' ? 'success' : 'warning'
+          const insertTime = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss");
+          const subtitle = insertTime.fromNow()
+          const now = moment()
+          const diffHours = now.diff(insertTime, 'hours')
+          const type = diffHours <= 1 ? 'primary' : 
+                   diffHours <= 4 ? 'danger' : 
+                   'warning';
           return {
             ...item,
             subtitle,
@@ -172,31 +200,6 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 16px;
-}
-
-.search-input {
-  width: 300px;
-}
-
-.search-input :deep(.el-input__inner) {
-  height: 36px; /* 增加高度 */
-  line-height: 36px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 18px; /* 更圆润的边框 */
-  color: #fff;
-  font-size: 14px;
-  padding-left: 12px; /* 内部左侧填充 */
-}
-
-
-.search-input :deep(.el-input__prefix) {
-  left: 12px; /* 调整图标位置 */
-}
-
-.search-input :deep(.el-input__icon) {
-  line-height: 32px;
-  color: #909399;
 }
 
 .header-buttons {

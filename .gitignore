@@ -21,3 +21,12 @@ pnpm-debug.log*
 *.sln
 *.sw?
 config.py
+
+*.tar
+*.zip
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+*.tar.lzma
+*.tar.lzma2
+
