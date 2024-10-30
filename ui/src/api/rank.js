@@ -42,3 +42,10 @@ export function postFeedback(data) {
   })
 }
 
+export function getCards() {
+  return request({
+    url: '/get_cards',
+    method: 'get'
+  })
+}
+
