@@ -43,6 +43,21 @@ export default {
     newsItems: {
       type: Array,
       required: true
+    },
+    wrapText: {
+      type: Boolean,
+      default: true
+    }
+  },
+  watch: {
+    wrapText: {
+      immediate: true,
+      handler(val) {
+        document.documentElement.style.setProperty(
+          '--news-title-white-space',
+          val ? 'nowrap' : 'normal'
+        );
+      }
     }
   },
   methods: {
@@ -64,30 +79,30 @@ export default {
 <style scoped>
 .news-section {
   background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px; /* 增加圆角 */
-  padding: 20px; /* 增加内边距 */
-  margin-bottom: 20px; /* 增加外边距 */
-  height: 400px; /* 设置最大高度 */
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  height: 400px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* 添加阴影 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px; /* 增加间距 */
+  margin-bottom: 16px;
 }
 
 .title {
   display: flex;
   align-items: center;
-  gap: 10px; /* 增加间距 */
+  gap: 10px;
 }
 
 .dot {
-  width: 8px; /* 增大点的尺寸 */
+  width: 8px;
   height: 8px;
   border-radius: 50%;
   margin-right: 6px;
@@ -100,12 +115,12 @@ export default {
 
 .title-text {
   color: #ffffff;
-  font-size: 16px; /* 增大字体 */
+  font-size: 16px;
   font-weight: 600;
 }
 
 .subtitle {
-  color: #bfbfbf; /* 更柔和的颜色 */
+  color: #bfbfbf;
   font-size: 14px;
 }
 
@@ -128,19 +143,24 @@ export default {
 
 .news-item {
   display: flex;
-  align-items: center; /* 垂直居中 */
-  gap: 16px; /* 增加间距 */
-  padding: 8px;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  gap: 16px;
+  padding: 3px;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .news-item:hover {
-  background-color: rgba(255, 255, 255, 0.1); /* 更明显的悬停效果 */
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .index {
-  min-width: 20px; /* 增大宽度 */
+  min-width: 20px;
   color: #bfbfbf;
   font-size: 14px;
   text-align: center;
@@ -156,22 +176,29 @@ export default {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  align-items: center; /* 垂直居中 */
-  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .news-title {
+  flex: 7;
+  min-width: 0;
   color: #e5eaf3;
   font-size: 14px;
   line-height: 1.6;
-  flex: 1;
-  margin-right: 12px; /* 增加右边距 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: var(--news-title-white-space);
+  padding-right: 12px;
 }
 
 .count {
+  flex: 3;
   color: #bfbfbf;
   font-size: 13px;
   white-space: nowrap;
+  text-align: right;
 }
 
 /* 自定义滚动条样式 */

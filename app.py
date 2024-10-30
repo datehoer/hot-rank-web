@@ -58,6 +58,10 @@ async def get_username():
 async def post_feedback(feedback: Feedback):
     send_email(feedback.subject, feedback.content, ["datehoer@gmail.com"])
     return {"code": 200, "msg": "success"}
+@app.get("/get_cards")
+async def get_cards():
+    data = await redis_client.get("card_table")
+    return {"code": 200, "msg": "success", "data": json.loads(data)}
 @app.get("/rank/{item_id}")
 async def get_data(item_id: str):
     if item_id != "hot":

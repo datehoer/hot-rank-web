@@ -11,6 +11,11 @@
           <i class="icon-settings"></i>
           <span class="tooltip">设置</span>
         </button>
+        <div
+          class="record"
+          :style="transformStyle"
+          @click="toggleSpin"
+        ></div>
         <button class="action-button" @click="openFeedback">
           <i class="icon-feedback"></i>
           <span class="tooltip">反馈</span>
@@ -28,33 +33,54 @@
     </div>
 
     <!-- 设置弹窗 -->
-    <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
-      <div class="modal">
-        <h3>设置</h3>
-        <div class="settings-item">
-          <label>设置列数：{{localColumnsCount}}</label>
-          <el-slider
-            v-model="localColumnsCount"
-            :min="1"
-            :max="4"
-            :step="1"
-            show-stops
-          ></el-slider>
-        </div>
-        <!-- <label>
-          颜色:
-          <input type="color" v-model="settings.color" />
-        </label>
-        <label>
-          用户名:
-          <input type="text" v-model="settings.username" />
-        </label> -->
-        <div class="modal-actions">
-          <button @click="saveSettings">保存</button>
-          <button @click="closeSettings">取消</button>
-        </div>
+  <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
+    <div class="modal">
+      <h3>设置</h3>
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="基础设置" name="basic">
+          <div class="settings-item">
+            <span>设置列数：{{localColumnsCount}}</span>
+            <el-slider
+              v-model="localColumnsCount"
+              :min="1"
+              :max="4"
+              :step="1"
+              show-stops
+            ></el-slider>
+          </div>
+          <div class="settings-item">
+            <div class="switch-wrapper">
+              <span>标题超出隐藏：</span>
+              <el-switch
+                v-model="localWrapText"
+                inline-prompt
+                :active-text="'换行'"
+                :inactive-text="'不换行'"
+              />
+            </div>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="热榜设置" name="hotlist">
+          <div class="settings-item">
+            <div class="checkbox-group">
+              <el-checkbox
+                v-for="site in availableSites"
+                :key="site.name"
+                v-model="selectedSites"
+                :label="site.name"
+              >
+                {{ site.name }}
+              </el-checkbox>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+      <div class="modal-actions">
+        <button @click="saveSettings">保存</button>
+        <button @click="closeSettings">取消</button>
       </div>
     </div>
+  </div>
 
     <!-- 反馈弹窗 -->
     <div v-if="showFeedback" class="modal-overlay" @click.self="closeFeedback">
@@ -82,7 +108,7 @@
 </template>
 
 <script>
-import { getCopyWriting, getAvatar, getUsername, postFeedback } from "@/api/rank.js";
+import { getCopyWriting, getAvatar, getUsername, postFeedback, getCards } from "@/api/rank.js";
 import CalendarComponent from '@/components/CalendarComponent.vue';
 import HoroscopeComponent from '@/components/HoroscopeComponent.vue';
 import CountdownComponent from '@/components/CountdownComponent.vue';
@@ -102,6 +128,12 @@ export default {
   },
   data() {
     return {
+      isSpinning: false,
+      rotation: 0,
+      intervalId: null,
+      activeTab: 'basic',
+      availableSites: [],
+      selectedSites: [],
       tip: "今天也要加油哦！",
       quoteContent: '',
       avatar: '',
@@ -121,7 +153,15 @@ export default {
         content: ''
       },
       localColumnsCount: this.columnsCount,
+      localWrapText: true,
     }
+  },
+  computed: {
+    transformStyle() {
+      return {
+        transform: `rotate(${this.rotation}deg)`,
+      };
+    },
   },
   created() {
     getCopyWriting().then(response => {
@@ -132,10 +172,35 @@ export default {
     });
     getUsername().then(response => {
       this.username = response.data;
-      this.settings.username = response.data; // 初始化设置中的用户名
+      this.settings.username = response.data; // 初始化设中的用户名
     });
+    this.selectedSites = this.$localStorage.get('selectedSites', ['B站热榜', '抖音热搜']);
+    this.fetchCards();
+  },
+  beforeDestroy() {
+    // 清除定时器
+    clearInterval(this.intervalId);
   },
   methods: {
+    toggleSpin() {
+      if (this.isSpinning) {
+        // 停止旋转
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        this.isSpinning = false;
+      } else {
+        // 开始旋转
+        this.isSpinning = true;
+        this.intervalId = setInterval(() => {
+          this.rotation = (this.rotation + 5) % 360;
+        }, 16);
+      }
+    },
+    fetchCards() {
+      getCards().then(response => {
+        this.availableSites = response.data;
+      });
+    },
     openSettings() {
       this.showSettings = true;
     },
@@ -144,6 +209,8 @@ export default {
     },
     saveSettings() {
       this.$emit('update-columns-count', this.localColumnsCount);
+      this.$emit('update-wrap-text', this.localWrapText);
+      this.$emit('update-selected-sites', this.selectedSites);
       this.closeSettings();
     },
     openFeedback() {
@@ -181,7 +248,7 @@ export default {
   position: fixed;
   right: 20px;
   top: 80px;
-  width: 300px;
+  width: 350px;
 }
 
 .user-info {
@@ -258,7 +325,7 @@ export default {
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
-  width: 30px;
+  width: 40px;
   text-align: center;
 }
 
@@ -338,52 +405,181 @@ export default {
 }
 
 .modal {
-  background: #333;
-  padding: 20px;
-  border-radius: 5px;
-  width: 300px;
+  background: #2b2b2b;
+  padding: 24px;
+  border-radius: 8px;
+  width: 400px;
+  height: 500px;
+  color: #E5EAF3;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal h3 {
-  margin-top: 0;
+  margin: 0 0 20px 0;
+  color: #E5EAF3;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
-.modal label {
+:deep(.el-tabs) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+:deep(.el-tabs__content) {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  height: 300px;
+}
+
+:deep(.el-tabs__content)::-webkit-scrollbar {
+  width: 6px;
+}
+
+:deep(.el-tabs__content)::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+:deep(.el-tabs__content)::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+:deep(.el-tabs__content)::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.settings-item {
+  margin-bottom: 20px;
+}
+
+.settings-item span {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  color: #E5EAF3;
+}
+
+.switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 8px 0;
+}
+
+/* Element Plus 组件样式覆盖 */
+:deep(.el-tabs__item) {
+  color: #909399 !important;
   font-size: 14px;
 }
 
-.modal input,
-.modal textarea {
-  width: 100%;
-  padding: 6px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
+:deep(.el-tabs__item.is-active) {
+  color: #409EFF !important;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+:deep(.el-checkbox) {
+  color: #E5EAF3;
+  margin-right: 0;
+}
+
+:deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: #409EFF;
+}
+
+:deep(.el-slider__runway) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.el-slider__bar) {
+  background-color: #409EFF;
+}
+
+:deep(.el-slider__button) {
+  border-color: #409EFF;
 }
 
 .modal-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .modal-actions button {
-  padding: 6px 12px;
+  padding: 8px 20px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
 .modal-actions button:first-child {
-  background-color: #4CAF50;
+  background-color: #409EFF;
   color: white;
 }
 
+.modal-actions button:first-child:hover {
+  background-color: #66b1ff;
+}
+
 .modal-actions button:last-child {
-  background-color: #f44336;
+  background-color: #909399;
   color: white;
+}
+
+.modal-actions button:last-child:hover {
+  background-color: #a6a9ad;
+}
+
+:deep(.el-switch__core) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:deep(.el-switch.is-checked .el-switch__core) {
+  background-color: #409EFF !important;
+}
+
+:deep(.el-tabs__header) {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.record {
+  width: 40px;
+  height: 40px;
+  background-image: url('https://oss.datehoer.com/default-images/cartoondisc_1.png'); /* 请替换为您的唱片图片路径 */
+  background-size: cover;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s linear;
+}
+
+.spinning {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
