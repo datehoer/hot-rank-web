@@ -79,6 +79,7 @@
         </div>
       </div>
     </div>
+  </div>
 
     <!-- 反馈弹窗 -->
     <div v-if="showFeedback" class="modal-overlay" @click.self="closeFeedback">
