@@ -135,6 +135,12 @@ export default {
       default: 3
     }
   },
+  props: {
+    columnsCount: {
+      type: Number,
+      default: 3
+    }
+  },
   data() {
     return {
       isSpinning: false,
