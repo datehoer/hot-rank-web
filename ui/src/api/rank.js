@@ -49,3 +49,9 @@ export function getCards() {
   })
 }
 
+export function getMusic() {
+  return request({
+    url: '/music',
+    method: 'get'
+  })
+}

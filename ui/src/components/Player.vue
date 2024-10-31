@@ -70,6 +70,7 @@
 </template>
 
 <script>
+import { getMusic } from '@/api/rank'
 export default {
   name: 'MusicPlayer',
   data() {
@@ -77,32 +78,14 @@ export default {
       isPlaying: false,
       isLoading: false,
       currentTrack: null,
-      tracks: [
-        {
-          id: 1,
-          title: 'Take Me To Your Heart',
-          cover: "https://oss.datehoer.com/music/cover/TakeMeToYourHeart.jpg",
-          url: "https://oss.datehoer.com/music/mp3/TakeMeToYourHeart.m4a"
-        },
-        {
-          id: 2,
-          title: 'I Really Like You',
-          cover: "https://oss.datehoer.com/music/cover/ireallylikeyou.jpg",
-          url: "https://oss.datehoer.com/music/mp3/IReallyLikeYou.m4a"
-        },
-        {
-          id: 3,
-          title: 'APT.',
-          cover: "https://oss.datehoer.com/music/cover/APT.jpg",
-          url: "https://oss.datehoer.com/music/mp3/APT.m4a"
-        },
-      ],
+      tracks: [],
       audio: null
     }
   },
   created() {
     // 确保在组件创建时设置默认曲目
     this.currentTrack = this.tracks[0]
+    this.getMusic()
   },
   mounted() {
     this.$nextTick(() => {
@@ -113,6 +96,11 @@ export default {
     })
   },
   methods: {
+    getMusic() {
+      getMusic().then(res => {
+        this.tracks = res.data
+      })
+    },
     async togglePlay() {
       if (!this.audio) return
 
