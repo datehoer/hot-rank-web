@@ -1,6 +1,6 @@
 <template>
-  <div class="music-player">
-    <div class="current-player">
+  <div class="music-player" v-loading="loading">
+    <div class="current-player" v-if="currentTrack">
       <el-card class="player-card" shadow="hover">
         <div class="vinyl-player">
           <!-- 唱片指针结构 -->
@@ -49,7 +49,7 @@
           class="track-item"
         >
           <div 
-            :title="currentTrack.title"
+            :title="track.title"
             class="album-container"
             :class="{ 'active': currentTrack.id === track.id }"
             @click="selectTrack(track)"
@@ -79,13 +79,13 @@ export default {
       isLoading: false,
       currentTrack: null,
       tracks: [],
-      audio: null
+      audio: null,
+      loading: false
     }
   },
   created() {
     // 确保在组件创建时设置默认曲目
-    this.currentTrack = this.tracks[0]
-    this.getMusic()
+    this.getMusicList()
   },
   mounted() {
     this.$nextTick(() => {
@@ -96,19 +96,33 @@ export default {
     })
   },
   methods: {
-    getMusic() {
+    getMusicList() {
+      this.loading = true
       getMusic().then(res => {
         this.tracks = res.data
+        if (this.tracks && this.tracks.length > 0) {
+          this.currentTrack = this.tracks[0]
+        }
+      }).finally(() => {
+        this.loading = false
       })
     },
     async togglePlay() {
-      if (!this.audio) return
+      if (!this.audio) {
+        // 确保audio元素存在
+        this.audio = this.$refs.audioPlayer
+      }
+      if (!this.audio || !this.currentTrack) return
 
       try {
         this.isLoading = true
         if (this.isPlaying) {
           await this.audio.pause()
         } else {
+          // 确保设置了音频源
+          if (!this.audio.src) {
+            this.audio.src = this.currentTrack.url
+          }
           await this.audio.load()
           await this.audio.play()
         }
@@ -122,20 +136,27 @@ export default {
       }
     },
     selectTrack(track) {
+      if (!this.audio) {
+        // 确保audio元素存在
+        this.audio = this.$refs.audioPlayer
+      }
       if (!this.audio) return
       
-      // 如果选择了不��的曲目
-      if(this.currentTrack.id !== track.id) {
+      // 停止当前播放
+      if (this.isPlaying) {
+        this.audio.pause()
+        this.isPlaying = false
+      }
+      
+      if (this.currentTrack?.id !== track.id) {
         this.currentTrack = track
         this.audio.src = track.url
-        if (this.isPlaying) {
-          this.audio.play()
-        }
+        // // 自动播放新选择的曲目
+        // this.togglePlay()
       }
     },
     handleTrackEnd() {
       this.isPlaying = false
-      // Optional: Auto-play next track
       const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
       const nextIndex = (currentIndex + 1) % this.tracks.length
       this.selectTrack(this.tracks[nextIndex])
