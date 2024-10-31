@@ -118,54 +118,121 @@ redis_client = redis.Redis(
 # for text in copywriting:
 #     redis_client.sadd("copywriting", text)
 
-table = [
-    {"name": "B站热榜", "tablename": "bilibili_hot"},
-    {"name": "抖音热搜", "tablename": "douyin_hot"},
-    {"name": "掘金热榜", "tablename": "juejin_hot"},
-    {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
-    {"name": "贴吧热议", "tablename": "tieba_topic"},
-    {"name": "头条热榜", "tablename": "toutiao_hot"},
-    {"name": "微博热搜", "tablename": "weibo_hot_search"},
-    {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
-    {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
-    {"name": "3DM", "tablename": "3dm"},
-    {"name": "36氪", "tablename": "36kr"},
-    {"name": "52破解热榜", "tablename": "52pj"},
-    {"name": "AcFun热榜", "tablename": "acfun"},
-    {"name": "安全客安全快讯", "tablename": "anquanke"},
-    {"name": "百度热搜", "tablename": "baidu_hot_search"},
-    {"name": "白鲸出海", "tablename": "baijingchuhai"},
-    {"name": "CSDN热榜", "tablename": "csdn"},
-    {"name": "电商报最新消息", "tablename": "dianshangbao"},
-    {"name": "第一财经热榜", "tablename": "diyicaijing"},
-    {"name": "懂车帝热搜榜", "tablename": "dongchedi"},
-    {"name": "豆瓣电影排行", "tablename": "douban_movie"},
-    {"name": "FreeBuf咨询", "tablename": "freebuf"},
-    {"name": "GitHub Trending", "tablename": "github"},
-    {"name": "Google 热搜", "tablename": "google_search"},
-    {"name": "虎扑社区热帖", "tablename": "hupu"},
-    {"name": "虎嗅热文", "tablename": "huxiu"},
-    {"name": "IT之家热榜", "tablename": "ithome"},
-    {"name": "开眼", "tablename": "openeye"},
-    {"name": "看雪热门", "tablename": "kanxue"},
-    {"name": "宽带山热榜", "tablename": "kuandaishan"},
-    {"name": "PMCAFF精选", "tablename": "pmcaff"},
-    {"name": "汽车之家热帖榜", "tablename": "qichezhijia"},
-    {"name": "起点榜单", "tablename": "qidian"},
-    {"name": "水木社区热门话题", "tablename": "shuimu"},
-    {"name": "新浪热门", "tablename": "sina"},
-    {"name": "新浪体育热门", "tablename": "sina_sport"},
-    {"name": "新浪新闻热门", "tablename": "sina_news"},
-    {"name": "太平洋汽车热门", "tablename": "taipingyang"},
-    {"name": "TapTap热门", "tablename": "taptap"},
-    {"name": "腾讯新闻热点榜", "tablename": "tencent_news"},
-    {"name": "人人都是产品经理热门", "tablename": "woshipm"},
-    {"name": "雪球热门", "tablename": "xueqiu"},
-    {"name": "易车热门", "tablename": "yiche"},
-    {"name": "优设读报", "tablename": "youshedubao"},
-    {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
-    {"name": "站酷榜单", "tablename": "zhanku"},
-    {"name": "纵横24小时畅销榜", "tablename": "zongheng"}
+# table = [
+#     {"name": "B站热榜", "tablename": "bilibili_hot"},
+#     {"name": "抖音热搜", "tablename": "douyin_hot"},
+#     {"name": "掘金热榜", "tablename": "juejin_hot"},
+#     {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
+#     {"name": "贴吧热议", "tablename": "tieba_topic"},
+#     {"name": "头条热榜", "tablename": "toutiao_hot"},
+#     {"name": "微博热搜", "tablename": "weibo_hot_search"},
+#     {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
+#     {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
+#     {"name": "3DM", "tablename": "3dm"},
+#     {"name": "36氪", "tablename": "36kr"},
+#     {"name": "52破解热榜", "tablename": "52pj"},
+#     {"name": "AcFun热榜", "tablename": "acfun"},
+#     {"name": "安全客安全快讯", "tablename": "anquanke"},
+#     {"name": "百度热搜", "tablename": "baidu_hot_search"},
+#     {"name": "白鲸出海", "tablename": "baijingchuhai"},
+#     {"name": "CSDN热榜", "tablename": "csdn"},
+#     {"name": "电商报最新消息", "tablename": "dianshangbao"},
+#     {"name": "第一财经热榜", "tablename": "diyicaijing"},
+#     {"name": "懂车帝热搜榜", "tablename": "dongchedi"},
+#     {"name": "豆瓣电影排行", "tablename": "douban_movie"},
+#     {"name": "FreeBuf咨询", "tablename": "freebuf"},
+#     {"name": "GitHub Trending", "tablename": "github"},
+#     {"name": "Google 热搜", "tablename": "google_search"},
+#     {"name": "虎扑社区热帖", "tablename": "hupu"},
+#     {"name": "虎嗅热文", "tablename": "huxiu"},
+#     {"name": "IT之家热榜", "tablename": "ithome"},
+#     {"name": "开眼", "tablename": "openeye"},
+#     {"name": "看雪热门", "tablename": "kanxue"},
+#     {"name": "宽带山热榜", "tablename": "kuandaishan"},
+#     {"name": "PMCAFF精选", "tablename": "pmcaff"},
+#     {"name": "汽车之家热帖榜", "tablename": "qichezhijia"},
+#     {"name": "起点榜单", "tablename": "qidian"},
+#     {"name": "水木社区热门话题", "tablename": "shuimu"},
+#     {"name": "新浪热门", "tablename": "sina"},
+#     {"name": "新浪体育热门", "tablename": "sina_sport"},
+#     {"name": "新浪新闻热门", "tablename": "sina_news"},
+#     {"name": "太平洋汽车热门", "tablename": "taipingyang"},
+#     {"name": "TapTap热门", "tablename": "taptap"},
+#     {"name": "腾讯新闻热点榜", "tablename": "tencent_news"},
+#     {"name": "人人都是产品经理热门", "tablename": "woshipm"},
+#     {"name": "雪球热门", "tablename": "xueqiu"},
+#     {"name": "易车热门", "tablename": "yiche"},
+#     {"name": "优设读报", "tablename": "youshedubao"},
+#     {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
+#     {"name": "站酷榜单", "tablename": "zhanku"},
+#     {"name": "纵横24小时畅销榜", "tablename": "zongheng"}
+# ]
+# redis_client.set("card_table", json.dumps(table))
+
+# online_movies = [{
+#     "name": "播剧影视网",
+#     "url": "https://www.boju.cc/"
+# },{
+#     "name": "Lemo",
+#     "url": "https://lemo.us.kg/"
+# },{"name": "555电影", "url": "https://www.55flix.com/"},
+#     {"name": "低端影视", "url": "https://ddys.pro/"},
+#     {"name": "LIBVIO", "url": "https://www.libvio.pro/"},
+#     {"name": "热播之家", "url": "https://rebozj.pro/"},
+#     {"name": "蛋蛋赞影院", "url": "https://www.dandanzan.club/"},
+#     {"name": "大师兄影视", "url": "https://dsxys.pro/"},
+#     {"name": "楓林網", "url": "https://imaple8.co/"},
+#     {"name": "Gimy 劇迷", "url": "https://gimy.im/"},
+#     {"name": "Gimy小鴨影音", "url": "https://gimy.cc/"},
+#     {"name": "94i影城", "url": "https://94itv.app/"},
+#     {"name": "Vidhub视频库", "url": "https://vidhub.tv/"},
+#     {"name": "厂长资源", "url": "https://www.czzy77.com/"},
+#     {"name": "HDmoli", "url": "https://www.hdmoli.pro/"},
+#     {"name": "电影先生", "url": "https://dyxs39.com/"},
+#     {"name": "4k影视", "url": "https://www.4kvm.net/"},
+#     {"name": "美柏影视", "url": "https://www.mp4br.com/"},
+#     {"name": "素白白影视", "url": "https://www.subaibaiys.com/"},
+#     {"name": "OK电影院", "url": "https://www.okdyy.com/"},
+#     {"name": "奈飞中文影视", "url": "https://netfly.fun/"},
+#     {"name": "毒舌电影", "url": "https://www.duse1.com/"},
+#     {"name": "胖虎免费svip影视", "url": "https://www.phyt.net/"},
+#     {"name": "五五短剧", "url": "https://www.duanju55.com/"},
+#     {"name": "短剧网", "url": "https://www.duanju001.com/"},
+#     {"name": "短剧搜索", "url": "https://www.kdocs.cn/l/cp1MFwlimAAm?R=L1MvMQ=="},
+#     {"name": "红果短剧", "url": "https://novelquickapp.com/hongguo"},
+#     {"name": "全民短剧", "url": "https://playlet.kuwo.cn/"},
+#     {"name": "短剧狗", "url": "https://duanjugou.top/"}
+# ]
+
+# for movie in online_movies:
+#     redis_client.sadd("online_movies", json.dumps(movie))
+
+music_list =[
+    {
+        'id': 1,
+        'title': 'Take Me To Your Heart',
+        'cover': "https://oss.datehoer.com/music/cover/TakeMeToYourHeart.jpg",
+        'url': "https://oss.datehoer.com/music/mp3/TakeMeToYourHeart.m4a"
+    },
+    {
+        'id': 2,
+        'title': 'I Really Like You',
+        'cover': "https://oss.datehoer.com/music/cover/ireallylikeyou.jpg",
+        'url': "https://oss.datehoer.com/music/mp3/IReallyLikeYou.m4a"
+    },
+    {
+        'id': 3,
+        'title': 'APT.',
+        'cover': "https://oss.datehoer.com/music/cover/APT.jpg",
+        'url': "https://oss.datehoer.com/music/mp3/APT.m4a"
+    },
+    {
+        'id': 4,
+        'title': 'I Really Like You',
+        'cover': "https://oss.datehoer.com/music/cover/FeelLikeANumber.jpg",
+        'url': "https://oss.datehoer.com/music/mp3/FeelLikeANumber.mp3"
+    }
 ]
-redis_client.set("card_table", json.dumps(table))
+for music in music_list:
+    redis_client.sadd("music", json.dumps(music))
 

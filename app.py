@@ -54,6 +54,10 @@ async def get_copywriting():
 async def get_copywriting():
     data = await redis_client.get("yellowCalendar")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+@app.get("/music")
+async def get_music():
+    data = await redis_client.srandmember("music")
+    return {"code": 200, "msg": "success", "data": data}
 @app.get("/avatar")
 async def get_avatar():
     data = await redis_client.srandmember("avatar")
