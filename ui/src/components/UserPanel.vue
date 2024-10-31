@@ -54,8 +54,6 @@
                 <el-switch
                   v-model="localWrapText"
                   inline-prompt
-                  :active-text="'换行'"
-                  :inactive-text="'不换行'"
                 />
               </div>
             </div>
