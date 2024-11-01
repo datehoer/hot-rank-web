@@ -63,6 +63,9 @@ export default {
       }
       
       const daysToWeekend = 5 - currentDay
+      if (daysToWeekend === 0) {
+        return '明天就是周末了，加油！'
+      }
       return `还有${daysToWeekend}天`
     },
     nextYearCountdown() {
