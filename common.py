@@ -368,3 +368,35 @@ def parse_hupu(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
+def parse_coolan(data):
+    data = data['data']
+    result = []
+    for item in data:
+        title = item.get('title')
+        if not title:
+            continue
+        url = "https://www.coolapk.com" + item['turl']
+        hot_value = item['rank_score']
+        result.append({
+            "hot_value": hot_value,
+            "hot_url": url,
+            "hot_label": title
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
+
+def parse_wallstreetcn(data):
+    data = data['data']['day_items']
+    result = []
+    for item in data:
+        title = item['title']
+        link = item['uri']
+        hot_value = item['pageviews']
+        result.append({
+            "hot_label": title,
+            "hot_url": link,
+            "hot_value": hot_value
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
