@@ -167,7 +167,7 @@ table = [
     {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
     {"name": "站酷榜单", "tablename": "zhanku"},
     {"name": "纵横24小时畅销榜", "tablename": "zongheng"},
-    {"name": "酷安热门话题", "tablename": "coolan"},
+    # {"name": "酷安热门话题", "tablename": "coolan"},
     {"name": "hacknews", "tablename": "hacknews"},
 ]
 redis_client.set("card_table", json.dumps(table))
