@@ -17,7 +17,8 @@ RUN pip install \
     uvicorn[standard] \
     motor \
     redis \
-    pydantic
+    pydantic \
+    pyquery
 
 EXPOSE 7545
 
