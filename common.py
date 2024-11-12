@@ -154,16 +154,21 @@ def parse_zhihu_hot_list(data):
 def parse_common(data):
     result = []
     data = data['data']
+    is_percent = False
     for item in data:
         hot_value = item['hotScore']
         if isinstance(hot_value, str):
-            hot_value = float(hot_value.replace("热度", '').replace("万", "0000"))
+            if "%" in hot_value:
+                is_percent = True
+            else:
+                hot_value = float(hot_value.replace("热度", '').replace("万", "0000"))
         result.append({
             "hot_value": math.floor(hot_value),
             "hot_url": item['url'],
             "hot_label": item['title']
         })
-    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    if not is_percent:
+        result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
 def parse_anquanke(data):
