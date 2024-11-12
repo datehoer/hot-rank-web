@@ -159,6 +159,8 @@ async def get_data(item_id: str):
                     latest_record = parse_wallstreetcn(latest_record)
                 elif collection_name == "coolan":
                     latest_record = parse_coolan(latest_record)
+                elif collection_name == "pengpai":
+                    latest_record = parse_pengpai(latest_record)
                 local_time = time.localtime(insert_time)
                 if collection_name != "douban_movie":
                     data.append({

@@ -404,3 +404,15 @@ def parse_wallstreetcn(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
+def parse_pengpai(data):
+    data = data['data']['hotNews']
+    result = []
+    for item in data:
+        result.append({
+            "hot_label": item['name'],
+            "hot_url": "https://www.thepaper.cn/newsDetail_forward_" +item['contId'],
+            "hot_value": 0
+        })
+    return result
+
