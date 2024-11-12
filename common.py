@@ -162,8 +162,10 @@ def parse_common(data):
                 is_percent = True
             else:
                 hot_value = float(hot_value.replace("热度", '').replace("万", "0000"))
+        if not is_percent:
+            hot_value = math.floor(hot_value)
         result.append({
-            "hot_value": math.floor(hot_value),
+            "hot_value": hot_value,
             "hot_url": item['url'],
             "hot_label": item['title']
         })
