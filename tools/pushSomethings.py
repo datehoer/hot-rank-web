@@ -120,8 +120,10 @@ redis_client = redis.Redis(
 table = [
     {"name": "B站热榜", "tablename": "bilibili_hot"},
     {"name": "抖音热搜", "tablename": "douyin_hot"},
+    {"name": "澎湃新闻", "tablename": "pengpai"},
     {"name": "掘金热榜", "tablename": "juejin_hot"},
     {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
+    {"name": "加密货币", "tablename": "crypto_coin"},
     {"name": "贴吧热议", "tablename": "tieba_topic"},
     {"name": "头条热榜", "tablename": "toutiao_hot"},
     {"name": "微博热搜", "tablename": "weibo_hot_search"},
