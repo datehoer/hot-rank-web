@@ -1,4 +1,4 @@
-# moyu
+# today-hot-rank
 
 ## Project setup
 ```
