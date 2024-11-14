@@ -131,21 +131,14 @@ export default {
     }
   },
   created() {
-    this.fetchRankList();
-    this.columnsCount = this.$localStorage.get('columnsCount', 3);
-    this.wrapText = this.$localStorage.get('wrapText', true);
+    const savedOrder = this.$localStorage.get('sitesOrder', null);
     this.showAllSites = this.$localStorage.get('showAllSites', true);
     this.selectedSites = this.$localStorage.get('selectedSites', []);
+    this.fetchRankList(savedOrder);
+    this.columnsCount = this.$localStorage.get('columnsCount', 3);
+    this.wrapText = this.$localStorage.get('wrapText', true);
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
-    const savedOrder = this.$localStorage.get('sitesOrder', null);
-    if (savedOrder) {
-      this.newsSections.sort((a, b) => {
-        const indexA = savedOrder.indexOf(a.name);
-        const indexB = savedOrder.indexOf(b.name);
-        return indexA - indexB;
-      });
-    }
   },
   destroyed() {
     window.removeEventListener('resize', this.checkMobile);
@@ -176,34 +169,76 @@ export default {
       this.wrapText = newWrapText;
       this.$localStorage.set('wrapText', this.wrapText);
     },
-    fetchRankList() {
-      this.loading = true
-      getRankList().then(response => {
-        this.newsSections = response.data.map(item => {
-          const insertTime = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss");
-          const subtitle = insertTime.fromNow()
-          const now = moment()
-          const diffHours = now.diff(insertTime, 'hours')
-          const type = diffHours <= 1 ? 'primary' : 
-                   diffHours <= 4 ? 'danger' : 
-                   'warning';
-          return {
-            ...item,
-            subtitle,
-            type
-          }
-        })
-        if (this.showAllSites) {
-          this.selectedSites = this.newsSections.map(section => section.name);
+    fetchRankList(savedOrder = null) {
+    this.loading = true;
+    getRankList().then(response => {
+      // 1. 先处理新数据
+      this.newsSections = response.data.map(item => {
+        const insertTime = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss");
+        const subtitle = insertTime.fromNow();
+        const now = moment();
+        const diffHours = now.diff(insertTime, 'hours');
+        const type = diffHours <= 1 ? 'primary' : 
+                 diffHours <= 4 ? 'danger' : 
+                 'warning';
+        return {
+          ...item,
+          subtitle,
+          type
+        };
+      });
+
+      // 2. 处理排序
+      const allSiteNames = this.newsSections.map(section => section.name);
+      if (savedOrder) {
+        // 清理排序数据，只保留存在的站点
+        const cleanedOrder = savedOrder.filter(site => allSiteNames.includes(site));
+        // 添加新增的站点到排序末尾
+        const newSites = allSiteNames.filter(site => !cleanedOrder.includes(site));
+        const updatedOrder = [...cleanedOrder, ...newSites];
+        
+        // 更新排序并保存
+        this.$localStorage.set('sitesOrder', updatedOrder);
+        
+        // 应用排序
+        this.newsSections.sort((a, b) => {
+          const indexA = updatedOrder.indexOf(a.name);
+          const indexB = updatedOrder.indexOf(b.name);
+          return indexA - indexB;
+        });
+      } else {
+        // 如果没有保存的排序，创建新的排序并保存
+        this.$localStorage.set('sitesOrder', allSiteNames);
+      }
+
+      // 3. 处理站点选择
+      if (this.showAllSites) {
+        this.selectedSites = allSiteNames;
+      } else {
+        const savedSelectedSites = this.$localStorage.get('selectedSites', []);
+        // 清理选中的站点，只保留仍然存在的站点
+        this.selectedSites = savedSelectedSites.filter(site => 
+          allSiteNames.includes(site)
+        );
+        // 如果清理后没有选中的站点，则选择所有站点
+        if (this.selectedSites.length === 0) {
+          this.selectedSites = allSiteNames;
+          this.showAllSites = true;
         }
-        this.loading = false
-      })
+      }
+      
+      // 保存最终状态
+      this.$localStorage.set('selectedSites', this.selectedSites);
+      this.$localStorage.set('showAllSites', this.showAllSites);
+      this.loading = false;
+      });
     },
     updateShowAllSites(value) {
       this.showAllSites = value;
       this.$localStorage.set('showAllSites', value);
       if (value) {
         this.selectedSites = this.newsSections.map(section => section.name);
+        this.$localStorage.set('selectedSites', this.selectedSites);
       }
     }
   }

@@ -61,18 +61,18 @@
           <el-tab-pane label="热榜设置" name="hotlist">
             <div class="settings-item">
               <div class="switch-wrapper">
-                <span>显示全部热榜：</span>
                 <el-switch
                   v-model="localShowAllSites"
-                  inline-prompt
                   @change="handleShowAllSitesChange"
-                />
+                  active-text="显示所有站点"
+                ></el-switch>
               </div>
               <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
                 <draggable 
                   v-model="availableSites"
                   :disabled="!dragEnabled || localShowAllSites"
                   handle=".drag-handle"
+                  @end="handleDragEnd"
                 >
                   <div v-for="site in availableSites" 
                       :key="site.name" 
@@ -193,6 +193,14 @@ export default {
       localShowAllSites: this.showAllSites,
     }
   },
+  watch: {
+    showAllSites: {
+      immediate: true,
+      handler(newVal) {
+        this.localShowAllSites = newVal;
+      }
+    }
+  },
   computed: {
     transformStyle() {
       return {
@@ -213,12 +221,22 @@ export default {
     });
     this.selectedSites = this.$localStorage.get('selectedSites', []);
     this.fetchCards();
+    const savedShowAllSites = this.$localStorage.get('showAllSites');
+    if (savedShowAllSites !== null) {
+      this.localShowAllSites = savedShowAllSites;
+      this.$emit('update-show-all-sites', savedShowAllSites);
+    }
   },
   beforeDestroy() {
     // 清除定时器
     clearInterval(this.intervalId);
   },
   methods: {
+    handleDragEnd() {
+      const orderedSites = this.availableSites.map(site => site.name);
+      this.$emit('update-sites-order', orderedSites);
+      this.$localStorage.set('sitesOrder', orderedSites);
+    },
     openMusicPlayer(){
       this.showMusicPlayer = true;
     },
@@ -260,16 +278,21 @@ export default {
     },
     handleShowAllSitesChange(value) {
       this.localShowAllSites = value;
+      this.$emit('update-show-all-sites', value);
+      this.$localStorage.set('showAllSites', value);
       if (value) {
-        this.selectedSites = this.availableSites.map(site => site.name);
+        const allSites = this.availableSites.map(site => site.name);
+        this.selectedSites = allSites;
+        this.$emit('update-selected-sites', allSites);
+        this.$localStorage.set('selectedSites', allSites);
       }
     },
     saveSettings() {
       this.$emit('update-columns-count', this.localColumnsCount);
       this.$emit('update-wrap-text', this.localWrapText);
       this.$emit('update-selected-sites', this.selectedSites);
-      this.$emit('update-sites-order', this.availableSites.map(site => site.name));
       this.$emit('update-show-all-sites', this.localShowAllSites);
+      this.$localStorage.set('selectedSites', this.selectedSites);
       this.closeSettings();
     },
     openFeedback() {
