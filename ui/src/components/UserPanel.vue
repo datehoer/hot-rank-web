@@ -66,6 +66,12 @@
                   @change="handleShowAllSitesChange"
                   active-text="显示所有站点"
                 ></el-switch>
+                <el-switch
+                  v-model="selectAll"
+                  @change="handleSelectAllChange"
+                  active-text="全选"
+                  :disabled="localShowAllSites"
+                ></el-switch>
               </div>
               <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
                 <draggable 
@@ -191,6 +197,7 @@ export default {
       localWrapText: true,
       dragEnabled: true,
       localShowAllSites: this.showAllSites,
+      selectAll: false,
     }
   },
   watch: {
@@ -199,6 +206,13 @@ export default {
       handler(newVal) {
         this.localShowAllSites = newVal;
       }
+    },
+    selectedSites: {
+      handler(newVal) {
+        // 当选中的站点数量等于可用站点数量时，设置全选状态为true
+        this.selectAll = newVal.length === this.availableSites.length;
+      },
+      deep: true
     }
   },
   computed: {
@@ -232,8 +246,21 @@ export default {
     clearInterval(this.intervalId);
   },
   methods: {
+    handleSelectAllChange(value) {
+      if (value) {
+        // 全选
+        this.selectedSites = this.availableSites.map(site => site.name);
+      } else {
+        // 取消全选
+        this.selectedSites = [];
+      }
+    },
     handleDragEnd() {
-      const orderedSites = this.availableSites.map(site => site.name);
+      const orderedSites = this.availableSites.map(site => {
+        if (this.selectedSites.includes(site.name)) {
+          return site.name;
+        }
+      }).filter(site => site !== undefined);
       this.$emit('update-sites-order', orderedSites);
       this.$localStorage.set('sitesOrder', orderedSites);
     },
@@ -293,6 +320,7 @@ export default {
       this.$emit('update-selected-sites', this.selectedSites);
       this.$emit('update-show-all-sites', this.localShowAllSites);
       this.$localStorage.set('selectedSites', this.selectedSites);
+      this.handleDragEnd();
       this.closeSettings();
     },
     openFeedback() {
@@ -806,5 +834,9 @@ export default {
 .checkbox-group.disabled {
   opacity: 0.6;
   pointer-events: none;
+}
+
+.switch-wrapper :deep(.el-switch__label) {
+  color: #898989;
 }
 </style>
