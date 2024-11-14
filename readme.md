@@ -64,4 +64,8 @@ demo: https://hotrank.datehoer.com/
 - 纵横24小时畅销榜 (Zongheng 24h Bestseller Rankings)
 - hacknews
 
-![效果图](https://oss.datehoer.com/blog/imgs/2024102912203591-20241029122035.png)
+![效果图1](https://oss.datehoer.com/blog/imgs/2024102912203591-20241029122035.png)
+
+![效果图2](https://oss.datehoer.com/blog/imgs/2024111423022431-20241114230224.png)
+
+![效果图3](https://oss.datehoer.com/blog/imgs/2024111423024744-20241114230247.png)
