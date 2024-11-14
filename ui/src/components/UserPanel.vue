@@ -60,15 +60,34 @@
           </el-tab-pane>
           <el-tab-pane label="热榜设置" name="hotlist">
             <div class="settings-item">
-              <div class="checkbox-group">
-                <el-checkbox
-                  v-for="site in availableSites"
-                  :key="site.name"
-                  v-model="selectedSites"
-                  :label="site.name"
+              <div class="switch-wrapper">
+                <span>显示全部热榜：</span>
+                <el-switch
+                  v-model="localShowAllSites"
+                  inline-prompt
+                  @change="handleShowAllSitesChange"
+                />
+              </div>
+              <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
+                <draggable 
+                  v-model="availableSites"
+                  :disabled="!dragEnabled || localShowAllSites"
+                  handle=".drag-handle"
                 >
-                  {{ site.name }}
-                </el-checkbox>
+                  <div v-for="site in availableSites" 
+                      :key="site.name" 
+                      class="site-item"
+                  >
+                    <i class="el-icon-rank drag-handle"></i>
+                    <el-checkbox
+                      v-model="selectedSites"
+                      :label="site.name"
+                      :disabled="localShowAllSites"
+                    >
+                      {{ site.name }}
+                    </el-checkbox>
+                  </div>
+                </draggable>
               </div>
             </div>
           </el-tab-pane>
@@ -115,6 +134,7 @@
 </template>
 
 <script>
+import draggable from 'vuedraggable'
 import { getCopyWriting, getAvatar, getUsername, postFeedback, getCards } from "@/api/rank.js";
 import CalendarComponent from '@/components/CalendarComponent.vue';
 import HoroscopeComponent from '@/components/HoroscopeComponent.vue';
@@ -127,18 +147,17 @@ export default {
     CalendarComponent,
     HoroscopeComponent,
     CountdownComponent,
-    MusicPlayer
+    MusicPlayer,
+    draggable
   },
   props: {
     columnsCount: {
       type: Number,
       default: 3
-    }
-  },
-  props: {
-    columnsCount: {
-      type: Number,
-      default: 3
+    },
+    showAllSites: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
@@ -170,6 +189,8 @@ export default {
       },
       localColumnsCount: this.columnsCount,
       localWrapText: true,
+      dragEnabled: true,
+      localShowAllSites: this.showAllSites,
     }
   },
   computed: {
@@ -190,7 +211,7 @@ export default {
       this.username = response.data;
       this.settings.username = response.data; // 初始化设中的用户名
     });
-    this.selectedSites = this.$localStorage.get('selectedSites', ['*']);
+    this.selectedSites = this.$localStorage.get('selectedSites', []);
     this.fetchCards();
   },
   beforeDestroy() {
@@ -221,7 +242,7 @@ export default {
       });
     },
     handleClose(done) {
-      this.$confirm('确认关闭音乐播放器？', '提示', {
+      this.$confirm('暂时关闭音乐播放器界面？不会停止播放音乐', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
@@ -237,10 +258,18 @@ export default {
     closeSettings() {
       this.showSettings = false;
     },
+    handleShowAllSitesChange(value) {
+      this.localShowAllSites = value;
+      if (value) {
+        this.selectedSites = this.availableSites.map(site => site.name);
+      }
+    },
     saveSettings() {
       this.$emit('update-columns-count', this.localColumnsCount);
       this.$emit('update-wrap-text', this.localWrapText);
       this.$emit('update-selected-sites', this.selectedSites);
+      this.$emit('update-sites-order', this.availableSites.map(site => site.name));
+      this.$emit('update-show-all-sites', this.localShowAllSites);
       this.closeSettings();
     },
     openFeedback() {
@@ -714,5 +743,45 @@ export default {
 
 :deep(.music-player-close-dialog .el-message-box__close:hover) {
   color: #E5EAF3;
+}
+
+/* 拖拽样式 */
+.site-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.drag-handle {
+  cursor: move;
+  color: #909399;
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+.drag-handle:hover {
+  color: #E5EAF3;
+}
+
+.site-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 拖拽时的样式 */
+.sortable-ghost {
+  opacity: 0.5;
+  background: rgba(64, 158, 255, 0.1) !important;
+}
+
+.sortable-drag {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.checkbox-group.disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 </style>

@@ -15,10 +15,14 @@
         class="news-item"
       >
         <span class="index" :class="{'hot-index': index < 3}">{{ index + 1 }}</span>
-        <a :href="item.hot_url" target="_blank" class="news-content">
+        <a v-if="item.hot_url" :href="item.hot_url" target="_blank" class="news-content">
           <span class="news-title" :title="item.hot_label">{{ item.hot_label }}</span>
           <span class="count">🔥 {{ item.hot_value }}</span>
         </a>
+        <span v-else class="news-content">
+          <span class="news-title" :title="item.hot_label">{{ item.hot_label }}</span>
+          <span class="count">🔥 {{ item.hot_value }}</span>
+        </span>
       </div>
     </div>
   </div>
@@ -70,7 +74,7 @@ export default {
       this.refreshNews();
     },
     refreshNews() {
-      console.log("something");
+      console.log("something happened");
     }
   },
   methods: {
@@ -83,7 +87,7 @@ export default {
       this.refreshNews();
     },
     refreshNews() {
-      console.log("something");
+      console.log("something happened");
     }
   }
 }

@@ -55,12 +55,38 @@
     </div>
 
     <!-- 右侧用户面板 -->
+    <el-button
+      v-if="isMobile"
+      class="mobile-panel-button"
+      type="primary"
+      circle
+      icon="el-icon-setting"
+      @click="showMobilePanel = true"
+    />
     <user-panel
+      v-if="!isMobile"
       @update-columns-count="updateColumnsCount"
       @update-wrap-text="updateWrapText"
       @update-selected-sites="updateSelectedSites"
       :columns-count="columnsCount"
     />
+    <el-drawer
+      :visible.sync="showMobilePanel"
+      direction="rtl"
+      size="80%"
+      :with-header="false"
+      custom-class="mobile-drawer"
+    >
+      <user-panel
+        @update-columns-count="updateColumnsCount"
+        @update-wrap-text="updateWrapText"
+        @update-selected-sites="updateSelectedSites"
+        @update-sites-order="updateSitesOrder"
+        @update-show-all-sites="updateShowAllSites"
+        :columns-count="columnsCount"
+        :show-all-sites="showAllSites"
+      />
+    </el-drawer>
   </div>
 </template>
 
@@ -83,7 +109,10 @@ export default {
       newsSections: [],
       selectedSites: [],
       loading: false,
-      wrapText: true
+      showMobilePanel: false,
+      isMobile: false,
+      wrapText: true,
+      showAllSites: true,
     }
   },
   computed: {
@@ -105,12 +134,39 @@ export default {
     this.fetchRankList();
     this.columnsCount = this.$localStorage.get('columnsCount', 3);
     this.wrapText = this.$localStorage.get('wrapText', true);
-    this.selectedSites = this.$localStorage.get('selectedSites', ['*']);
+    this.showAllSites = this.$localStorage.get('showAllSites', true);
+    this.selectedSites = this.$localStorage.get('selectedSites', []);
+    this.checkMobile();
+    window.addEventListener('resize', this.checkMobile);
+    const savedOrder = this.$localStorage.get('sitesOrder', null);
+    if (savedOrder) {
+      this.newsSections.sort((a, b) => {
+        const indexA = savedOrder.indexOf(a.name);
+        const indexB = savedOrder.indexOf(b.name);
+        return indexA - indexB;
+      });
+    }
+  },
+  destroyed() {
+    window.removeEventListener('resize', this.checkMobile);
   },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 1400;
+    },
     updateSelectedSites(sites) {
       this.selectedSites = sites;
       this.$localStorage.set('selectedSites', sites);
+    },
+    updateSitesOrder(orderedSites) {
+      // 根据排序后的站点名称重新排序 newsSections
+      this.newsSections.sort((a, b) => {
+        const indexA = orderedSites.indexOf(a.name);
+        const indexB = orderedSites.indexOf(b.name);
+        return indexA - indexB;
+      });
+      // 保存排序到本地存储
+      this.$localStorage.set('sitesOrder', orderedSites);
     },
     updateColumnsCount(newColumnsCount) {
       this.columnsCount = newColumnsCount;
@@ -137,8 +193,18 @@ export default {
             type
           }
         })
+        if (this.showAllSites) {
+          this.selectedSites = this.newsSections.map(section => section.name);
+        }
         this.loading = false
       })
+    },
+    updateShowAllSites(value) {
+      this.showAllSites = value;
+      this.$localStorage.set('showAllSites', value);
+      if (value) {
+        this.selectedSites = this.newsSections.map(section => section.name);
+      }
     }
   }
 }
@@ -260,10 +326,6 @@ body {
   .app-container {
     padding-right: 16px;
   }
-  
-  .user-panel {
-    display: none;
-  }
 }
 
 @media (max-width: 768px) {
@@ -330,5 +392,28 @@ body {
     padding: 0 12px;
     margin-top: 70px;
   }
+}
+.mobile-panel-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.mobile-drawer {
+  background-color: #242424;
+}
+
+.mobile-drawer :deep(.el-drawer__container) {
+  background-color: #242424;
+}
+
+/* 确保抽屉内的user-panel样式正确 */
+.el-drawer .user-panel {
+  position: static;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
 }
 </style>
