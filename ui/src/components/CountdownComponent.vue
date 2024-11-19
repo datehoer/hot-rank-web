@@ -114,6 +114,6 @@ export default {
 }
 
 .info-value {
-  color: #e5eaf3;
+  color: var(--text-color);
 }
 </style>

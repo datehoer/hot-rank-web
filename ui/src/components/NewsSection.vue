@@ -95,7 +95,8 @@ export default {
 
 <style scoped>
 .news-section {
-  background-color: rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  color: var(--text-color);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
@@ -131,25 +132,25 @@ export default {
 .dot-success { background-color: #67C23A; }
 
 .title-text {
-  color: #ffffff;
+  color: var(--text-color);
   font-size: 16px;
   font-weight: 600;
 }
 
 .subtitle {
-  color: #bfbfbf;
+  color: var(--text-color);
   font-size: 14px;
 }
 
 .refresh-btn {
-  color: #bfbfbf;
+  color: var(--text-color);
   font-size: 14px;
   padding: 0;
   transition: color 0.3s;
 }
 
 .refresh-btn:hover {
-  color: #ffffff;
+  color: var(--text-color);
 }
 
 .news-list {
@@ -173,19 +174,19 @@ export default {
 }
 
 .news-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
 }
 
 .index {
   min-width: 20px;
-  color: #bfbfbf;
+  color: var(--text-color);
   font-size: 14px;
   text-align: center;
   font-weight: 500;
 }
 
 .hot-index {
-  color: #F56C6C;
+  color: var(--text-color);
   font-weight: 600;
 }
 
@@ -201,7 +202,7 @@ export default {
 .news-title {
   flex: 7;
   min-width: 0;
-  color: #e5eaf3;
+  color: var(--text-color);
   font-size: 14px;
   line-height: 1.6;
   overflow: hidden;
@@ -212,7 +213,7 @@ export default {
 
 .count {
   flex: 3;
-  color: #bfbfbf;
+  color: var(--text-color);
   font-size: 13px;
   white-space: nowrap;
   text-align: right;
@@ -240,9 +241,9 @@ export default {
 
 
 a {
-    position: relative;
-    text-decoration: none;
-    color: #ffffff;
+  position: relative;
+  text-decoration: none;
+  color: #ffffff;
 }
 a:after {
     content: "";

@@ -157,7 +157,7 @@ export default {
 
 <style scoped>
 .calendar-container {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-color);
   border-radius: 4px;
   padding: 10px;
   margin-bottom: 10px;
@@ -174,7 +174,7 @@ export default {
 .calendar-title {
   font-size: 16px;
   font-weight: 600;
-  color: #e5eaf3;
+  color: var(--text-color);
 }
 
 .nav-button {

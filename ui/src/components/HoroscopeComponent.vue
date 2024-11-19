@@ -192,8 +192,8 @@ export default {
 .horoscope-info {
   position: relative;
   padding: 16px;
-  background-color: #2c3e50;
-  color: #e5eaf3;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-size: 14px;
   border-radius: 8px;
   max-width: 800px;
@@ -264,7 +264,7 @@ input:checked + .slider:before {
 
 .toggle-label {
   font-size: 14px;
-  color: #e5eaf3;
+  color: var(--text-color);
 }
 
 .base-info, .more-info {
@@ -274,7 +274,7 @@ input:checked + .slider:before {
 .info-section {
   margin-bottom: 12px;
   padding: 12px;
-  background-color: #34495e;
+  background-color: var(--bg-color);
   border-radius: 6px;
 }
 

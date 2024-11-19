@@ -246,10 +246,12 @@ export default {
 </script>
 
 <style>
+@import '@/styles/themes.css';
+
 body {
   margin: 0;
-  background-color: #1a1a1a;
-  color: #E5EAF3;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 .app-container {
@@ -260,8 +262,8 @@ body {
 
 .header {
   height: 50px;
-  background-color: #242424;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   position: fixed;
   top: 0;
   left: 0;

@@ -57,6 +57,16 @@
                 />
               </div>
             </div>
+            <div class="settings-item">
+              <div class="switch-wrapper">
+                <span>深色模式：</span>
+                <el-switch
+                  v-model="isDarkMode"
+                  @change="handleThemeChange"
+                  inline-prompt
+                />
+              </div>
+            </div>
           </el-tab-pane>
           <el-tab-pane label="热榜设置" name="hotlist">
             <div class="settings-item">
@@ -198,6 +208,7 @@ export default {
       dragEnabled: true,
       localShowAllSites: this.showAllSites,
       selectAll: false,
+      isDarkMode: true,
     }
   },
   watch: {
@@ -240,6 +251,8 @@ export default {
       this.localShowAllSites = savedShowAllSites;
       this.$emit('update-show-all-sites', savedShowAllSites);
     }
+    this.isDarkMode = this.$localStorage.get('isDarkMode', true);
+    this.applyTheme(this.isDarkMode);
   },
   beforeDestroy() {
     // 清除定时器
@@ -266,6 +279,14 @@ export default {
     },
     openMusicPlayer(){
       this.showMusicPlayer = true;
+    },
+    handleThemeChange(value) {
+      this.isDarkMode = value;
+      this.$localStorage.set('isDarkMode', value);
+      this.applyTheme(value);
+    },
+    applyTheme(isDark) {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     },
     toggleSpin() {
       if (this.isSpinning) {
@@ -362,7 +383,8 @@ export default {
 }
 
 .user-info {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 20px;
   text-align: center;
@@ -397,7 +419,7 @@ export default {
 }
 
 .login-tip {
-  color: #909399;
+  color: var(--secondary-text);
   font-size: 12px;
   margin-top: 8px;
   margin-bottom: 8px;
@@ -428,7 +450,7 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   background-color: #333;
-  color: #fff;
+  color: var(--text-color);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
@@ -488,14 +510,14 @@ export default {
 }
 
 .quote-content {
-  color: #E5EAF3;
+  color: var(--text-color);
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 12px;
 }
 
 .quote-source {
-  color: #909399;
+  color: var(--text-color);
   font-size: 12px;
   text-align: right;
 }
@@ -515,19 +537,19 @@ export default {
 }
 
 .modal {
-  background: #2b2b2b;
+  background: var(--card-bg);
+  color: var(--text-color);
   padding: 24px;
   border-radius: 8px;
   width: 400px;
   height: 500px;
-  color: #E5EAF3;
   display: flex;
   flex-direction: column;
 }
 
 .modal h3 {
   margin: 0 0 20px 0;
-  color: #E5EAF3;
+  color: var(--text-color);
   font-size: 18px;
   flex-shrink: 0;
 }
@@ -571,7 +593,7 @@ export default {
 .settings-item span {
   display: block;
   margin-bottom: 8px;
-  color: #E5EAF3;
+  color: var(--text-color);
 }
 
 .switch-wrapper {
@@ -590,7 +612,7 @@ export default {
 
 /* Element Plus 件样式覆盖 */
 :deep(.el-tabs__item) {
-  color: #909399 !important;
+  color: var(--secondary-text) !important;
   font-size: 14px;
 }
 
@@ -603,7 +625,7 @@ export default {
 }
 
 :deep(.el-checkbox) {
-  color: #E5EAF3;
+  color: var(--text-color);
   margin-right: 0;
 }
 
@@ -837,6 +859,6 @@ export default {
 }
 
 .switch-wrapper :deep(.el-switch__label) {
-  color: #898989;
+  color: var(--text-color);
 }
 </style>

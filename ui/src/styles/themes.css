@@ -1,0 +1,19 @@
+:root[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --text-color: #E5EAF3;
+  --header-bg: #242424;
+  --border-color: rgb(38, 38, 38);
+  --card-bg: rgb(38, 38, 38);
+  --hover-bg: rgb(38, 38, 38);
+  --secondary-text: #909399;
+}
+
+:root[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --header-bg: #ffffff;
+  --border-color: #e4e7ed;
+  --card-bg: #ffffff;
+  --hover-bg: #f5f7fa;
+  --secondary-text: #606266;
+}

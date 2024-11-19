@@ -32,6 +32,17 @@
               @click="togglePlay"
               round
             ></el-button>
+            <div class="volume-control">
+              <i class="microphone" style="color: #909399; margin-right: 5px;">📢</i>
+              <el-slider
+                v-model="volume"
+                :min="0"
+                :max="100"
+                @input="handleVolumeChange"
+                size="small"
+              ></el-slider>
+              <span class="volume-text">{{ volume }}%</span>
+            </div>
           </div>
         </div>
         <div v-loading="isLoading" element-loading-text="加载音频中...">
@@ -80,7 +91,8 @@ export default {
       currentTrack: null,
       tracks: [],
       audio: null,
-      loading: false
+      loading: false,
+      volume: 50
     }
   },
   created() {
@@ -92,6 +104,7 @@ export default {
       this.audio = this.$refs.audioPlayer
       if (this.audio && this.currentTrack) {
         this.audio.src = this.currentTrack.url
+        this.audio.volume = this.volume / 100
       }
     })
   },
@@ -161,6 +174,11 @@ export default {
       const nextIndex = (currentIndex + 1) % this.tracks.length
       this.selectTrack(this.tracks[nextIndex])
       this.togglePlay()
+    },
+    handleVolumeChange(value) {
+      if (this.audio) {
+        this.audio.volume = value / 100
+      }
     }
   }
 }
@@ -180,7 +198,7 @@ export default {
 .player-card {
   background-color: #333;
   border-radius: 8px;
-  width: 300px;
+  width: 400px;
   margin: 0 auto;
   overflow: visible;
   padding-top: 20px;
@@ -354,7 +372,7 @@ export default {
 .tonearm-wrapper {
   position: absolute;
   top: -20px;
-  right: 20px;
+  right: 60px;
   width: 120px;
   height: 120px;
   z-index: 10;
@@ -438,6 +456,42 @@ export default {
   background: #888;
   border-radius: 50%;
   border: 2px solid #777;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  background-color: #404040;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-left: 15px;
+}
+
+.volume-control .el-slider {
+  width: 80px;
+  margin: 0 8px;
+}
+
+.volume-text {
+  color: #909399;
+  font-size: 12px;
+  min-width: 35px;
+}
+
+/* 适配移动端 */
+@media screen and (max-width: 768px) {
+  .volume-control {
+    padding: 3px 8px;
+  }
+  
+  .volume-control .el-slider {
+    width: 60px;
+  }
+  
+  .volume-text {
+    min-width: 30px;
+    font-size: 11px;
+  }
 }
 
 </style>

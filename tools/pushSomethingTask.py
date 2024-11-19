@@ -38,7 +38,7 @@ def scrape_huangli():
     data['left_solar'] = left('.solar img').attr('src')
 
     # 提取左侧宜忌
-    data['left_yi_ji'] = [a.text() for a in left('.yi-ji a').items()]
+    data['left_yi_ji'] = [a.text() for a in left('.yi-ji').eq(0).find('a').items()]
 
     # 提取左侧吉神宜趋
     data['left_shen_sha'] = {
