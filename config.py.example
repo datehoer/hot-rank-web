@@ -5,10 +5,26 @@ REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
 REDIS_DB = 0
 REDIS_PASSWORD = None
-
+news_sites = [
+    "澎湃新闻",
+    "36氪",
+    "白鲸出海",
+    "虎嗅热文",
+    "IT之家热榜",
+    "腾讯新闻热点榜",
+    "少数派热榜",
+    "头条热榜",
+    "华尔街见闻"
+]
 EMAIL = {
     "host": "",
     "port": ,
     "user": "",
     "password": ""
+}
+api_url = "https://api.openai.com/v1/chat/completions"
+api_headers = {
+    "Authorization": "Bearer sk-aaaaaaaaaaa",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
 }

@@ -7,12 +7,14 @@ from redis.backoff import ExponentialBackoff
 from redis.asyncio import ConnectionPool
 import json
 import traceback
+import httpx
 from config import *
 import time
 from fastapi.middleware.cors import CORSMiddleware
 from sendEmail import send_email
 from common import *
 from pydantic import BaseModel
+from json_repair import repair_json
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +76,70 @@ async def post_feedback(feedback: Feedback):
 async def get_cards():
     data = await redis_client.get("card_table")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+@app.get("/todayTopNews")
+async def getTodayTopNews():
+    todayTopNewsData = await redis_client.get("todayTopNews")
+    if todayTopNewsData:
+        return {"code": 200, "msg": "success", "data": json.loads(todayTopNewsData)}
+    else:
+        mongoData = await get_data("hot")
+        data = mongoData['data']
+        filtered_sites = [site for site in data if site["name"] in news_sites]
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:  # 增加超时时间
+            try:
+                response = await client.post(
+                    api_url,
+                    headers=api_headers,
+                    json={
+                        "model": "gpt-4o",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事"
+                            },
+                            {
+                                "role": "user",
+                                "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式[{hot_lable:'',hot_url:'',hot_value:''}]\ndata:" + json.dumps(filtered_sites)
+                            }
+                        ],
+                        "stream": True,
+                        "temperature": 0,
+                        "response_format": {"type": "json_object"}
+                    }
+                )
+                
+                text = ""
+                try:
+                    async for line in response.aiter_lines():
+                        if line and line.startswith("data: ") and not line.endswith("[DONE]"):
+                            data = json.loads(line[len("data: "):])
+                            chunk = data["choices"][0]["delta"].get("content", "")
+                            text += chunk
+                except httpx.ReadTimeout:
+                    print("Stream reading timed out, using partial response")
+                    
+                if not text:
+                    return {"code": 500, "msg": "Failed to get response from API", "data": []}
+                
+                todayTopNewsData = json.loads(repair_json(text))
+                if "messages" in todayTopNewsData:
+                    todayTopNewsData = todayTopNewsData["messages"]
+                    if len(todayTopNewsData) == 1:
+                        todayTopNewsData = todayTopNewsData[0]
+                        if "content" in todayTopNewsData:
+                            todayTopNewsData = todayTopNewsData['content']
+                # 缓存结果到 Redis
+                await redis_client.setex("todayTopNews", 3600, json.dumps(todayTopNewsData))
+                
+                return {"code": 200, "msg": "success", "data": todayTopNewsData}
+                
+            except httpx.RequestError as e:
+                print(f"API request failed: {str(e)}")
+                return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse API response: {str(e)}")
+                return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
+            
 @app.get("/rank/{item_id}")
 async def get_data(item_id: str):
     if item_id != "hot":
