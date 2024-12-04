@@ -7,23 +7,10 @@
       <span class="username">{{ username }}</span>
       <div class="login-tip">{{ quoteContent }}</div>
       <div class="action-buttons">
-        <button class="action-button" @click="openSettings">
-          <i class="icon-settings"></i>
-          <span class="tooltip">设置</span>
-        </button>
-        <div
-          class="record"
-          @click="openMusicPlayer"
-          title="唱片"
-        ></div>
-        <button class="action-button" @click="openFeedback">
-          <i class="icon-feedback"></i>
-          <span class="tooltip">反馈</span>
-        </button>
-        <button class="action-button" @click="goToGitHub">
-          <i class="icon-github"></i>
-          <span class="tooltip">GitHub</span>
-        </button>
+        <setting-two class="action-button" title="设置" theme="outline" size="30" fill="#000000" @click="openSettings"/>
+        <record-disc class="action-button" title="唱片" theme="two-tone" size="30" :fill="['#000000' ,'#ffffff']" @click="openMusicPlayer"/>
+        <comments class="action-button" title="反馈" theme="two-tone" size="30" :fill="['#000000' ,'#ffffff']" @click="openFeedback"/>
+        <github class="action-button" theme="two-tone" size="30" fill="#000000" @click="goToGitHub"/>
       </div>
     </div>
     <div class="quote-card">
@@ -156,7 +143,7 @@ import CalendarComponent from '@/components/CalendarComponent.vue';
 import HoroscopeComponent from '@/components/HoroscopeComponent.vue';
 import CountdownComponent from '@/components/CountdownComponent.vue';
 import MusicPlayer from '@/components/Player.vue'
-
+import {SettingTwo, RecordDisc, Comments, Github} from '@icon-park/vue';
 export default {
   name: 'UserPanel',
   components: {
@@ -164,7 +151,11 @@ export default {
     HoroscopeComponent,
     CountdownComponent,
     MusicPlayer,
-    draggable
+    draggable,
+    SettingTwo,
+    RecordDisc,
+    Comments,
+    Github
   },
   props: {
     columnsCount: {
@@ -444,27 +435,6 @@ export default {
   transform: scale(1.2);
 }
 
-.tooltip {
-  position: absolute;
-  bottom: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #333;
-  color: var(--text-color);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-  width: 40px;
-  text-align: center;
-}
-
-.action-button:hover .tooltip {
-  opacity: 1;
-}
-
 .icon-settings::before {
   content: '⚙️';
   font-size: 20px;
@@ -693,16 +663,6 @@ export default {
 :deep(.el-tabs__header) {
   flex-shrink: 0;
   margin-bottom: 16px;
-}
-
-.record {
-  width: 40px;
-  height: 40px;
-  background-image: url('https://oss.datehoer.com/default-images/cartoondisc_1.png'); /* 请替换为您的唱片图片路径 */
-  background-size: cover;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s linear;
 }
 
 .spinning {

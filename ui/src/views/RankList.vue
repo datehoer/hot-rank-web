@@ -34,7 +34,7 @@
         </div> -->
       </div>
     </div>
-
+    <TodayTopNewsWithAI />
     <!-- 主要内容区域 -->
     <div class="main-content">
       <el-row :gutter="16">
@@ -93,6 +93,7 @@
 <script>
 import NewsSection from '@/components/NewsSection.vue'
 import UserPanel from '@/components/UserPanel.vue'
+import TodayTopNewsWithAI from "@/components/TodayTopNewsWithAI"
 import {getRankList} from "@/api/rank.js"
 import moment from 'moment'
 export default {
@@ -100,6 +101,7 @@ export default {
   components: {
     NewsSection,
     UserPanel,
+    TodayTopNewsWithAI
   },
   data() {
     return {

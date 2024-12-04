@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@icon-park/vue": "^1.4.2",
     "axios": "^1.7.7",
     "core-js": "^3.8.3",
     "element-ui": "^2.15.14",

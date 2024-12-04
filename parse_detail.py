@@ -3,15 +3,31 @@ import json
 import asyncio
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
-import pyquery
 import base64
 import re
+import markdownify
+from bs4 import BeautifulSoup
+
+async def remove_img_tags(html_content):
+    if not html_content:
+        return html_content
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for img in soup.find_all('img'):
+        img.decompose()
+    return str(soup)
+
 async def parse_detail(needKnowList):
     for needKnow in needKnowList:
         if "thepaper.cn" in needKnow['hot_url']:
             needKnow = await parse_pengpai(needKnow)
         elif "36kr.com" in needKnow['hot_url']:
             needKnow = await parse_36kr(needKnow)
+        elif "ithome.com" in needKnow['hot_url']:
+            needKnow = await parse_ithome(needKnow)
+        elif "sspai.com" in needKnow['hot_url']:
+            needKnow = await parse_sspai(needKnow)
+        elif "wallstreetcn.com" in needKnow['hot_url']:
+            needKnow = await parse_awatmt(needKnow)
     return needKnowList
 
 
@@ -24,8 +40,17 @@ async def fetch(url):
 async def parse_pengpai(needKnow):
     url = needKnow['hot_url']
     res = await fetch(url)
-    pq = pyquery.PyQuery(res)
-    detail = pq("h1~div").text()
+    soup = BeautifulSoup(res, 'html.parser')
+    try:
+        detail = soup.select_one("div[class^='index_cententWrap']")
+        if not detail:
+            detail = soup.select_one("div[class^='header_videoWrap'] ~ div")
+        if detail:
+            detail = str(detail)
+    except:
+        return needKnow
+    detail = await remove_img_tags(detail)
+    detail = markdownify.markdownify(detail).strip()
     needKnow['content'] = detail
     return needKnow
 
@@ -41,31 +66,43 @@ async def parse_36kr(needKnow):
     decrypted_bytes = unpad(decrypted_padded, AES.block_size)
     decrypted_text = decrypted_bytes.decode('utf-8')
     state_dict = json.loads(decrypted_text)
-    needKnow['content'] = state_dict['articleDetail']['articleDetailData']['data']['widgetContent']
+    detail = state_dict['articleDetail']['articleDetailData']['data']['widgetContent']
+    detail = await remove_img_tags(detail)
+    needKnow['content'] = markdownify.markdownify(detail).strip()
     return needKnow
 
-async def main():
-    # 测试数据
-    test_data = [
-        {
-            'hot_url': 'https://www.36kr.com/p/3061699221143300',
-            'title': 'Test Article 1'
-        },
-        {
-            'hot_url': 'https://www.36kr.com/p/3062989680862336',
-            'title': 'Test Article 2'
-        }
-    ]
-    
-    
-    results = await parse_detail(test_data)
-    
-    
-    for result in results:
-        print(f"Title: {result['title']}")
-        print(f"Content: {result['content'][:100]}...")
-        print("-" * 50)
+async def parse_ithome(needKnow):
+    url = needKnow['hot_url']
+    res = await fetch(url)
+    soup = BeautifulSoup(res, 'html.parser')
+    detail = soup.select_one(".news-content")
+    if detail:
+        detail = str(detail)
+        detail = await remove_img_tags(detail)
+        detail = markdownify.markdownify(detail).strip()
+        needKnow['content'] = detail
+    return needKnow
 
+async def parse_sspai(needKnow):
+    url = needKnow['hot_url']
+    res = await fetch(url)
+    soup = BeautifulSoup(res, 'html.parser')
+    detail = soup.select_one("div.content")
+    if detail:
+        detail = str(detail)
+        detail = await remove_img_tags(detail)
+        detail = markdownify.markdownify(detail).strip()
+        needKnow['content'] = detail
+    return needKnow
 
-if __name__ == "__main__":
-    asyncio.run(main())
+async def parse_awatmt(needKnow):
+    url = needKnow['hot_url']
+    artile_id = url.split("?")[0].split("/")[-1]
+    url = f"https://api-one-wscn.awtmt.com/apiv1/content/articles/{artile_id}?extract=0"
+    res = await fetch(url)
+    res_json = json.loads(res)
+    detail = res_json['data']['content']
+    detail = await remove_img_tags(detail)
+    detail = markdownify.markdownify(detail).strip()
+    needKnow['content'] = detail
+    return needKnow

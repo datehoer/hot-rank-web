@@ -15,6 +15,8 @@ from sendEmail import send_email
 from common import *
 from pydantic import BaseModel
 from json_repair import repair_json
+from parse_detail import parse_detail
+from feedgen.feed import FeedGenerator
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -76,38 +78,22 @@ async def post_feedback(feedback: Feedback):
 async def get_cards():
     data = await redis_client.get("card_table")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
-@app.get("/todayTopNews")
-async def getTodayTopNews():
-    todayTopNewsData = await redis_client.get("todayTopNews")
-    if todayTopNewsData:
-        return {"code": 200, "msg": "success", "data": json.loads(todayTopNewsData)}
-    else:
-        mongoData = await get_data("hot")
-        data = mongoData['data']
-        filtered_sites = [site for site in data if site["name"] in news_sites]
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:  # 增加超时时间
+async def chatWithModel(messages, check_list=True):
+    err = 10
+    while err > 0:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(360.0)) as client:
             try:
                 response = await client.post(
                     api_url,
                     headers=api_headers,
                     json={
                         "model": "gpt-4o",
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事"
-                            },
-                            {
-                                "role": "user",
-                                "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式[{hot_lable:'',hot_url:'',hot_value:''}]\ndata:" + json.dumps(filtered_sites)
-                            }
-                        ],
+                        "messages": messages,
                         "stream": True,
                         "temperature": 0,
                         "response_format": {"type": "json_object"}
                     }
                 )
-                
                 text = ""
                 try:
                     async for line in response.aiter_lines():
@@ -117,28 +103,104 @@ async def getTodayTopNews():
                             text += chunk
                 except httpx.ReadTimeout:
                     print("Stream reading timed out, using partial response")
-                    
+                    err -= 1
+                    continue
                 if not text:
-                    return {"code": 500, "msg": "Failed to get response from API", "data": []}
-                
-                todayTopNewsData = json.loads(repair_json(text))
-                if "messages" in todayTopNewsData:
-                    todayTopNewsData = todayTopNewsData["messages"]
-                    if len(todayTopNewsData) == 1:
-                        todayTopNewsData = todayTopNewsData[0]
-                        if "content" in todayTopNewsData:
-                            todayTopNewsData = todayTopNewsData['content']
-                # 缓存结果到 Redis
-                await redis_client.setex("todayTopNews", 3600, json.dumps(todayTopNewsData))
-                
-                return {"code": 200, "msg": "success", "data": todayTopNewsData}
-                
-            except httpx.RequestError as e:
-                print(f"API request failed: {str(e)}")
-                return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse API response: {str(e)}")
-                return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
+                    err -= 1
+                    continue
+                if check_list and "hot_value" not in text:
+                    err -= 1
+                    continue
+                if not check_list and "hot_tag" not in text:
+                    err -= 1
+                    continue
+                return text
+            except Exception as e:
+                print(e)
+                err -= 1
+    return ""
+@app.get("/todayTopNews")
+async def getTodayTopNews():
+    todayTopNewsData = await redis_client.get("todayTopNews")
+    if todayTopNewsData:
+        return {"code": 200, "msg": "success", "data": json.loads(todayTopNewsData)}
+    else:
+        mongoData = await get_data("hot")
+        data = mongoData['data']
+        filtered_sites = [site for site in data if site["name"] in news_sites]
+        try:
+            text = await chatWithModel([
+                    {
+                        "role": "system",
+                        "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事"
+                    },
+                    {
+                        "role": "user",
+                        "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_lable:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
+                    }
+                ])
+            todayTopNewsData = json.loads(repair_json(text))
+            if "messages" in todayTopNewsData:
+                todayTopNewsData = todayTopNewsData["messages"]
+                if len(todayTopNewsData) == 1:
+                    todayTopNewsData = todayTopNewsData[0]
+                    if "content" in todayTopNewsData:
+                        todayTopNewsData = todayTopNewsData['content']
+            if "hot_topics" in todayTopNewsData:
+                todayTopNewsData = todayTopNewsData['hot_topics']
+            needKnows = await parse_detail(todayTopNewsData)
+            summarizes = []
+            for needKnow in needKnows:
+                err = 3
+                while err > 0:
+                    try:
+                        summarize = await chatWithModel([
+                            {
+                                "role": "system",
+                                "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事,并且有丰富的内容总结经验"
+                            },
+                            {
+                                "role": "user",
+                                "content": "对下方数据的content进行300字左右的高效总结,并增加一个tag,作为hot_content的值,以json格式返回,返回格式{hot_lable:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                            }
+                        ], False)
+                        summarize = json.loads(repair_json(summarize))
+                        if "messages" in summarize:
+                            summarize = summarize["messages"]
+                            if len(summarize) == 1:
+                                summarize = summarize[0]
+                                if "content" in summarize:
+                                    summarize = summarize['content']
+                        del needKnow['content']
+                        needKnow['hot_content'] = summarize['hot_content']
+                        needKnow['hot_tag'] = summarize['hot_tag']
+                        summarizes.append(needKnow)
+                        break
+                    except Exception as e:
+                        print(e)
+                        err -= 1
+            await redis_client.setex("todayTopNews", 3600, json.dumps(summarizes))
+            fg = FeedGenerator()
+            fg.title('todayTopNewsWithAI')
+            fg.link(href='https://www.hotday.uk')
+            fg.description('Today top news with AI')
+            for item in summarizes:
+                fe = fg.add_entry()
+                fe.title(item.get('title', item['hot_lable']))
+                fe.link(href=item.get('url', item['hot_url']))
+                fe.description(item.get('description', item['hot_content']))
+            fg.rss_file('rss_feed_today_top_news.xml')
+            return {"code": 200, "msg": "success", "data": summarizes}
+            
+        except httpx.RequestError as e:
+            print(f"API request failed: {str(e)}")
+            return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse API response: {str(e)}")
+            return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
+        except Exception as e:
+            print(f"some error happen: {str(e)}")
+            return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
             
 @app.get("/rank/{item_id}")
 async def get_data(item_id: str):
@@ -261,7 +323,15 @@ async def get_data(item_id: str):
         except Exception as e:
             # 记录日志或处理 Redis 错误
             print(f"Redis setex error: {e}")
-
+        fg = FeedGenerator()
+        fg.title('todayTopNewsWithAI')
+        fg.link(href='https://www.hotday.uk')
+        fg.description('Today top news with AI')
+        for item in data:
+            fe = fg.add_entry()
+            fe.title(item.get('title', item['hot_lable']))
+            fe.link(href=item.get('url', item['hot_url']))
+        fg.rss_file('rss_feed.xml')
         return {
             "code": 200,
             "msg": "success",

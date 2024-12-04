@@ -154,7 +154,7 @@ def scrape_huangli():
 
     # 提取右侧宜忌
     data['right_yi_ji'] = [a.text() for a in right('.yi-ji a').items()]
-
+    data['left_yi_ji'] = [a for a in data['left_yi_ji'] if a not in data['right_yi_ji']]
     # 提取右侧凶煞宜忌
     data['right_shen_sha'] = {
         'title': right('.shen-sha .title span').text(),

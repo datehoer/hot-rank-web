@@ -55,3 +55,10 @@ export function getMusic() {
     method: 'get'
   })
 }
+
+export function getAiSummarizes(){
+  return request({
+    url: '/todayTopNews',
+    method: 'get'
+  })
+}
