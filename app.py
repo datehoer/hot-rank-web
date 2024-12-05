@@ -191,7 +191,7 @@ async def getTodayTopNews():
                 fe.title(item.get('title', item['hot_label']))
                 fe.link(href=item.get('url', item['hot_url']))
                 fe.description(item.get('description', item['hot_content']))
-            fg.rss_file('rss_feed_today_top_news.xml')
+            fg.rss_file('/app/rss_feed_today_top_news.xml')
             return {"code": 200, "msg": "success", "data": summarizes}
             
         except httpx.RequestError as e:
@@ -334,7 +334,7 @@ async def get_data(item_id: str):
                 fe = fg.add_entry()
                 fe.title(item.get('title', item['hot_label']))
                 fe.link(href=item.get('url', item['hot_url']))
-        fg.rss_file('rss_feed.xml')
+        fg.rss_file('/app/rss_feed.xml')
         return {
             "code": 200,
             "msg": "success",
