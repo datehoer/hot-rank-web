@@ -326,11 +326,11 @@ async def get_data(item_id: str):
             # 记录日志或处理 Redis 错误
             print(f"Redis setex error: {e}")
         fg = FeedGenerator()
-        fg.title('todayTopNewsWithAI')
+        fg.title('today news')
         fg.link(href='https://www.hotday.uk')
-        fg.description('Today top news with AI')
+        fg.description('Today news')
         for items in data:
-            for item in items:
+            for item in items['data']:
                 if item and "hot_label" in item:
                     fe = fg.add_entry()
                     fe.title(item.get('title', item['hot_label']))
