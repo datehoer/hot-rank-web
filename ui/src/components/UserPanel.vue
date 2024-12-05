@@ -648,6 +648,10 @@ export default {
   background-color: #409EFF !important;
 }
 
+:deep(.el-switch__label) {
+  color: var(--text-color);
+}
+
 :deep(.el-checkbox) {
   color: var(--text-color);
   margin-right: 0;

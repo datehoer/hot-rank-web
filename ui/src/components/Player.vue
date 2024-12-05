@@ -246,7 +246,7 @@ export default {
 /* 基础布局 */
 .music-player {
   padding: 20px;
-  background-color: #2b2b2b;
+  background-color: var(--bg-color);
   min-height: 30vh;
 }
 
@@ -256,13 +256,13 @@ export default {
 }
 
 .player-card {
-  background-color: #333;
+  background-color: var(--card-bg) !important;
   border-radius: 8px;
   width: 400px;
   margin: 0 auto;
   overflow: visible;
   padding-top: 20px;
-  border: none;
+  border: 1px solid var(--border-color) !important;
 }
 
 /* 唱片播放器 */
@@ -285,8 +285,7 @@ export default {
     circle at center,
     #000000,
     #000000 2px,
-    #171717 3px,
-    #171717 4px
+    #171717 3px, #171717 4px
   );
   margin: 0 auto;
   transition: transform 0.3s ease;
@@ -301,8 +300,8 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 15px solid #fff;
-  box-shadow: 0 0 0 2px #000;
+  border: 15px solid var(--bg-color);
+  box-shadow: 0 0 0 2px var(--border-color);
 }
 
 /* 唱臂样式 */
@@ -337,9 +336,9 @@ export default {
   transform: translate(-50%, -50%);
   width: 12px;
   height: 12px;
-  background: #888;
+  background: #444;
   border-radius: 50%;
-  border: 2px solid #777;
+  border: 2px solid #666;
 }
 
 .tonearm {
@@ -401,7 +400,7 @@ export default {
 .volume-control {
   display: flex;
   align-items: center;
-  background-color: #404040;
+  background-color: var(--hover-bg);
   padding: 5px 10px;
   border-radius: 20px;
   margin-left: 15px;
@@ -413,7 +412,7 @@ export default {
 }
 
 .volume-text {
-  color: #909399;
+  color: var(--secondary-text);
   font-size: 12px;
   min-width: 35px;
 }
@@ -421,6 +420,7 @@ export default {
 /* 播放列表 */
 .track-list {
   padding: 20px;
+  color: var(--text-color);
 }
 
 .track-item {
@@ -454,254 +454,33 @@ export default {
   object-fit: cover;
 }
 
-.album-disc {
-  position: absolute;
-  top: 10%;
-  right: -60%;
-  width: 80%;
-  height: 80%;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle at center,
-    #000000,
-    #000000 2px,
-    #171717 3px,
-    #171717 4px
-  );
-  transition: transform 0.3s ease;
-  z-index: 1;
-}
-
-.disc-inner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 40%;
-  height: 40%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  overflow: hidden;
-  border: 8px solid #fff;
-}
-
-.disc-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 动画效果 */
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.vinyl.is-playing {
-  animation: rotate 20s linear infinite;
-}
-
-.album-container:hover .album-disc {
-  transform: translateX(-70%);
-}
-
-.active .album-disc {
-  transform: translateX(-70%);
-}
-
-.active .album-cover-wrapper {
-  box-shadow: 0 0 20px rgba(64, 158, 255, 0.5);
-}
-
-/* PC端基础样式保持不变 */
-.music-player {
-  padding: 20px;
-  background-color: #2b2b2b;
-  min-height: 30vh;
-}
-
-.current-player {
-  margin-bottom: 40px;
-}
-
-/* PC端唱片机样式 */
-.player-card {
-  background-color: #333;
-  border-radius: 8px;
-  width: 400px;
-  margin: 0 auto;
-  overflow: visible;
-  padding-top: 20px;
-  border: none;
-}
-
-/* 保留原有的所有PC端样式... */
-/* [原有的PC端样式代码保持不变] */
-
-/* 移动端样式覆盖 */
+/* 移动端适配 */
 @media screen and (max-width: 768px) {
-  /* 隐藏PC端特有元素 */
-  .vinyl-player,
-  .vinyl,
-  .tonearm-wrapper,
-  .album-disc,
-  .player-card {
-    display: none;
+  .track-info {
+    color: var(--text-color);
   }
-
-  /* 移动端布局 */
-  .music-player {
-    padding: 12px;
-    min-height: 100vh;
+  
+  .track-title {
+    color: var(--text-color);
   }
-
-  .track-list {
-    padding: 10px;
-  }
-
-  /* 移动端列表样式 */
-  .track-item {
-    margin-bottom: 12px;
+  
+  .track-artist {
+    color: var(--secondary-text);
   }
 
   .album-container {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    background: #333;
-    border-radius: 8px;
-    cursor: pointer;
-    height: auto;
-    width: auto;
-    transition: background-color 0.3s;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
   }
 
   .album-container.active {
-    background: #404040;
+    background: var(--hover-bg);
   }
 
-  .album-cover-wrapper {
-    position: relative;
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .track-cover {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* 移动端音乐信息样式 */
-  .track-info {
-    flex: 1;
-    margin-left: 12px;
-    overflow: hidden;
-  }
-
-  .track-title {
-    color: #fff;
-    font-size: 15px;
-    margin: 0 0 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .track-artist {
-    color: #999;
-    font-size: 13px;
-  }
-
-  /* 移动端播放控制栏 */
   .mobile-controls {
-    display: none;
-  }
-
-  @media screen and (max-width: 768px) {
-    .mobile-controls {
-      display: flex;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1a1a1a;
-      padding: 12px 16px;
-      align-items: center;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-      z-index: 100;
-    }
-  }
-
-  .current-track-info {
-    flex: 1;
-    margin-right: 12px;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .play-pause-btn {
-    padding: 8px;
-    margin-left: 8px;
-  }
-
-  /* 移动端隐藏音量控制 */
-  .volume-control {
-    display: none;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  /* 覆盖 Element UI 对话框样式 */
-  :deep(.el-dialog) {
-    width: 100% !important;
-    margin: 0 !important;
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    height: 100vh;
-    margin: 0 !important;
-    border-radius: 0;
-  }
-
-  :deep(.el-dialog__body) {
-    height: calc(100vh - 108px); /* 减去header和footer的高度 */
-    padding: 0 !important;
-    overflow-y: auto;
-  }
-
-  /* 音乐播放器容器 */
-  .music-player {
-    padding: 0;
-    height: 100%;
-  }
-
-  /* 移动端列表样式 */
-  .mobile-track-list {
-    padding: 12px;
-  }
-
-  .track-item {
-    margin-bottom: 12px;
-  }
-
-  .album-container {
-    width: 100%;
-    box-sizing: border-box;
-  }
-}
-
-/* 超小屏幕额外优化 */
-@media screen and (max-width: 480px) {
-  /* 保持弹窗全屏 */
-  :deep(.el-dialog) {
-    width: 100% !important;
+    background: var(--header-bg);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-color);
   }
 }
 </style>
