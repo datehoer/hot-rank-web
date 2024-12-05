@@ -329,11 +329,12 @@ async def get_data(item_id: str):
         fg.title('todayTopNewsWithAI')
         fg.link(href='https://www.hotday.uk')
         fg.description('Today top news with AI')
-        for item in data:
-            if item and "hot_label" in item:
-                fe = fg.add_entry()
-                fe.title(item.get('title', item['hot_label']))
-                fe.link(href=item.get('url', item['hot_url']))
+        for items in data:
+            for item in items:
+                if item and "hot_label" in item:
+                    fe = fg.add_entry()
+                    fe.title(item.get('title', item['hot_label']))
+                    fe.link(href=item.get('url', item['hot_url']))
         fg.rss_file('/app/rss_feed.xml')
         return {
             "code": 200,
