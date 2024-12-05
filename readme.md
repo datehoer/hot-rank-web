@@ -3,7 +3,7 @@
 
 爬虫项目: https://github.com/datehoer/hotToday
 
-demo: https://hotrank.datehoer.com/
+demo: [~~原网站~~](https://hotrank.datehoer.com/) => https://www.hotday.uk/
 
 前后端项目 (Frontend and Backend Project)：
 
@@ -56,16 +56,24 @@ demo: https://hotrank.datehoer.com/
 - TapTap热门 (TapTap Hot Topics)
 - 腾讯新闻热点榜 (Tencent News Hot Rankings)
 - 人人都是产品经理热门 (Woshipm Hot Topics)
-- 雪球热门 (Xueqiu Hot Topics)
+- ~~雪球热门 (Xueqiu Hot Topics)~~
 - 易车热门 (Yiche Hot Topics)
 - 优设读报 (Uisdc News)
 - 游戏葡萄文章推荐 (GameGrape Article Recommendations)
 - 站酷榜单 (Zcool Rankings)
 - 纵横24小时畅销榜 (Zongheng 24h Bestseller Rankings)
 - hacknews
+- 要知
+- [我的博客](https://www.datehoer.com/)
 
-![效果图1](https://oss.datehoer.com/blog/imgs/2024102912203591-20241029122035.png)
 
-![效果图2](https://oss.datehoer.com/blog/imgs/2024111423022431-20241114230224.png)
 
-![效果图3](https://oss.datehoer.com/blog/imgs/2024111423024744-20241114230247.png)
+![效果图1](https://oss.datehoer.com/blog/imgs/2024120523075359-20241205230752.png)
+
+![效果图2](https://oss.datehoer.com/blog/imgs/2024120523082101-20241205230820.png)
+
+![效果图3](https://oss.datehoer.com/blog/imgs/2024120523084962-20241205230849.png)
+
+![效果图4](https://oss.datehoer.com/blog/imgs/2024120523090999-20241205230909.png)
+
+![效果图5](https://oss.datehoer.com/blog/imgs/2024120523185650-20241205231856.png)

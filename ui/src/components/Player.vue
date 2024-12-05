@@ -456,31 +456,169 @@ export default {
 
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
-  .track-info {
-    color: var(--text-color);
+  /* 隐藏PC端特有元素 */
+  .vinyl-player,
+  .vinyl,
+  .tonearm-wrapper,
+  .album-disc,
+  .player-card {
+    display: none;
   }
-  
-  .track-title {
-    color: var(--text-color);
+
+  /* 移动端布局 */
+  .music-player {
+    padding: 12px;
+    min-height: 100vh;
   }
-  
-  .track-artist {
-    color: var(--secondary-text);
+
+  .track-list {
+    padding: 10px;
+  }
+
+  /* 移动端列表样式 */
+  .track-item {
+    margin-bottom: 12px;
   }
 
   .album-container {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    height: auto;
+    width: auto;
+    transition: background-color 0.3s;
   }
 
   .album-container.active {
-    background: var(--hover-bg);
+    background: #404040;
   }
 
+  .album-cover-wrapper {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .track-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 移动端音乐信息样式 */
+  .track-info {
+    flex: 1;
+    margin-left: 12px;
+    overflow: hidden;
+  }
+
+  .track-title {
+    color: #fff;
+    font-size: 15px;
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-artist {
+    color: #999;
+    font-size: 13px;
+  }
+
+  /* 移动端播放控制栏 */
   .mobile-controls {
-    background: var(--header-bg);
-    border-top: 1px solid var(--border-color);
-    color: var(--text-color);
+    display: none;
+  }
+
+  @media screen and (max-width: 768px) {
+    .mobile-controls {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a1a;
+      padding: 12px 16px;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+    }
+  }
+
+  .current-track-info {
+    flex: 1;
+    margin-right: 12px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .play-pause-btn {
+    padding: 8px;
+    margin-left: 8px;
+  }
+
+  /* 移动端隐藏音量控制 */
+  .volume-control {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  /* 覆盖 Element UI 对话框样式 */
+  :deep(.el-dialog) {
+    width: 100% !important;
+    margin: 0 !important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    margin: 0 !important;
+    border-radius: 0;
+  }
+
+  :deep(.el-dialog__body) {
+    height: calc(100vh - 108px); /* 减去header和footer的高度 */
+    padding: 0 !important;
+    overflow-y: auto;
+  }
+
+  /* 音乐播放器容器 */
+  .music-player {
+    padding: 0;
+    height: 100%;
+  }
+
+  /* 移动端列表样式 */
+  .mobile-track-list {
+    padding: 12px;
+  }
+
+  .track-item {
+    margin-bottom: 12px;
+  }
+
+  .album-container {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* 超小屏幕额外优化 */
+@media screen and (max-width: 480px) {
+  /* 保持弹窗全屏 */
+  :deep(.el-dialog) {
+    width: 100% !important;
   }
 }
 </style>

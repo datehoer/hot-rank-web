@@ -111,6 +111,7 @@
       :visible.sync="showFeedback"
       width="30%"
       @close="closeFeedback"
+      class="feedback"
       :modal="false"
     >
       <el-form :model="feedback" label-width="80px">
@@ -701,7 +702,6 @@ export default {
   :deep(.music-player-dialog) {
     width: 100% !important;
     height: 100vh !important;
-    margin: 0 !important;
     padding: 0;
   }
   
@@ -787,4 +787,71 @@ export default {
     width: 90% !important;
   }
 }
+/* 移动端适配反馈弹窗 */
+@media screen and (max-width: 768px) {
+  /* 反馈弹窗容器 */
+  :deep(.feedback .el-dialog) {
+    width: 90% !important;
+    margin-top: 5vh !important;
+  }
+
+  /* 反馈表单样式调整 */
+  :deep(.feedback .el-form-item) {
+    margin-bottom: 15px;
+  }
+
+  :deep(.feedback .el-form-item__label) {
+    padding: 0 0 8px;
+    line-height: 1.2;
+    display: block;
+    text-align: left;
+  }
+
+  :deep(.feedback .el-form-item__content) {
+    line-height: 1.2;
+  }
+
+  /* 输入框样式调整 */
+  :deep(.feedback .el-input__inner) {
+    height: 36px;
+    line-height: 36px;
+  }
+
+  :deep(.feedback .el-textarea__inner) {
+    min-height: 100px;
+  }
+
+  /* 按钮样式调整 */
+  :deep(.feedback .dialog-footer) {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+  }
+
+  :deep(.feedback .dialog-footer .el-button) {
+    flex: 1;
+    margin: 0 5px;
+    padding: 10px 0;
+  }
+
+  /* 弹窗内边距调整 */
+  :deep(.feedback .el-dialog__body) {
+    padding: 15px;
+  }
+
+  :deep(.feedback .el-dialog__header) {
+    padding: 15px;
+  }
+
+  :deep(.feedback .el-dialog__footer) {
+    padding: 10px 15px;
+  }
+
+  /* 标题样式调整 */
+  :deep(.feedback .el-dialog__title) {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}
+
 </style>
