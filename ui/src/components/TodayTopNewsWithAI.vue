@@ -1,68 +1,6 @@
 <template>
   <div class="modal">
-    <el-dialog
-      title=""
-      :visible.sync="dialogVisible"
-      width="70%"
-      :before-close="handleClose"
-      custom-class="news-dialog"
-      v-loading="isLoading"
-    >
-      <template slot="title">
-        <div class="dialog-title">
-          <i class="el-icon-info"></i>
-          <span>今日热点总结|每小时更新</span>
-        </div>
-      </template>
-      
-      <div class="dialog-content">
-        <div class="news-container" ref="newsContainer">
-          <div 
-            v-for="(item, index) in aiSummarizes" 
-            :key="index" 
-            class="news-item"
-            :id="`news-${index}`"
-          >
-            <div class="news-header">
-              <div class="news-title-group">
-                <span class="news-tag">{{ item.hot_tag }}</span>
-                <h3 class="news-title">{{ item.hot_label }}</h3>
-              </div>
-              <el-button 
-                type="text"
-                size="small"
-                class="news-link"
-                @click="goToNews(item.hot_url)"
-              >
-                <i class="el-icon-link"></i>
-                查看原文
-              </el-button>
-            </div>
-            <p class="news-content">{{ item.hot_content }}</p>
-          </div>
-        </div>
 
-        <!-- 右侧导航栏 -->
-        <div class="news-nav">
-          <div 
-            v-for="(item, index) in aiSummarizes" 
-            :key="index"
-            class="nav-item"
-            :class="{ 'active': activeIndex === index }"
-            @click="scrollToNews(index)"
-          >
-            {{ item.hot_tag }}
-          </div>
-        </div>
-      </div>
-
-      <template slot="footer">
-        <div class="dialog-footer">
-          <el-button type="info" @click="handleCheckboxChange" size="small">今日不再提示</el-button>
-          <el-button type="primary" @click="dialogVisible = false" size="small">关 闭</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 

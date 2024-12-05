@@ -12,7 +12,8 @@
         <div class="logo-search">
           <!-- 左侧 logo -->
           <div class="logo" title="HotRank">
-            <img src="@/assets/logo.png" alt="Logo" class="logo-image"/>
+            <!-- <img src="@/assets/logo.png" alt="Logo" class="logo-image"/> -->
+            <robot theme="two-tone" size="30" :fill="['#e23333' ,'#db882c']" :strokeWidth="3" @click="dialogVisible = true" title="AI Summary"/>
           </div>
           
           <!-- 搜索栏 -->
@@ -34,7 +35,6 @@
         </div> -->
       </div>
     </div>
-    <TodayTopNewsWithAI />
     <!-- 主要内容区域 -->
     <div class="main-content">
       <el-row :gutter="16">
@@ -87,21 +87,86 @@
         :show-all-sites="showAllSites"
       />
     </el-drawer>
+    <el-dialog
+      class="news-summary-dialog"
+      title=""
+      :visible.sync="dialogVisible"
+      width="70%"
+      style="margin-top: -6vh"
+      :before-close="handleClose"
+      custom-class="news-dialog"
+      v-loading="isLoading"
+    >
+      <template slot="title">
+        <div class="dialog-title">
+          <i class="el-icon-info"></i>
+          <span>今日热点总结|每小时更新</span>
+        </div>
+      </template>
+      
+      <div class="dialog-content">
+        <div class="news-container" ref="newsContainer">
+          <div 
+            v-for="(item, index) in aiSummarizes" 
+            :key="index" 
+            class="news-item"
+            :id="`news-${index}`"
+          >
+            <div class="news-header">
+              <div class="news-title-group">
+                <span class="news-tag">{{ item.hot_tag }}</span>
+                <h3 class="news-title">{{ item.hot_label }}</h3>
+              </div>
+              <el-button 
+                type="text"
+                size="small"
+                class="news-link"
+                @click="goToNews(item.hot_url)"
+              >
+                <i class="el-icon-link"></i>
+                查看原文
+              </el-button>
+            </div>
+            <p class="news-content">{{ item.hot_content }}</p>
+          </div>
+        </div>
+
+        <!-- 右侧导航栏 -->
+        <div class="news-nav">
+          <div 
+            v-for="(item, index) in aiSummarizes" 
+            :key="index"
+            class="nav-item"
+            :class="{ 'active': activeIndex === index }"
+            @click="scrollToNews(index)"
+          >
+            {{ item.hot_tag }}
+          </div>
+        </div>
+      </div>
+
+      <template slot="footer">
+        <div class="dialog-footer">
+          <el-button type="info" @click="handleCheckboxChange" size="small">今日不再提示</el-button>
+          <el-button type="primary" @click="dialogVisible = false" size="small">关 闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import NewsSection from '@/components/NewsSection.vue'
 import UserPanel from '@/components/UserPanel.vue'
-import TodayTopNewsWithAI from "@/components/TodayTopNewsWithAI"
-import {getRankList} from "@/api/rank.js"
+import {getRankList, getAiSummarizes} from "@/api/rank.js"
 import moment from 'moment'
+import {Robot} from '@icon-park/vue';
 export default {
   name: 'App',
   components: {
     NewsSection,
     UserPanel,
-    TodayTopNewsWithAI
+    Robot
   },
   data() {
     return {
@@ -115,6 +180,11 @@ export default {
       isMobile: false,
       wrapText: true,
       showAllSites: true,
+      dialogVisible: true,
+      aiSummarizes: [],
+      activeIndex: 0,
+      observer: null,
+      isLoading: false,
     }
   },
   computed: {
@@ -141,11 +211,82 @@ export default {
     this.wrapText = this.$localStorage.get('wrapText', true);
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
+    const lastDateChecked = localStorage.getItem("dontShowToday");
+    const today = new Date().toDateString();
+    if (lastDateChecked === today) {
+      this.dialogVisible = false;
+    } else {
+      this.list();
+    }
   },
   destroyed() {
     window.removeEventListener('resize', this.checkMobile);
   },
+  beforeDestroy() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  },
   methods: {
+    list() {
+      this.isLoading=true;
+      getAiSummarizes().then((response) => {
+        this.aiSummarizes = response.data;
+        this.$nextTick(() => {
+          this.setupIntersectionObserver();
+        });
+        this.isLoading=false;
+      });
+    },
+    handleCheckboxChange() {
+      localStorage.removeItem("dontShowToday");
+      const today = new Date().toDateString();
+      localStorage.setItem("dontShowToday", today);
+      this.dialogVisible = false;
+    },
+    handleClose(done) {
+      done();
+    },
+    scrollToNews(index) {
+      const element = document.getElementById(`news-${index}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    setupIntersectionObserver() {
+      // 清除旧的观察者
+      if (this.observer) {
+        this.observer.disconnect();
+      }
+
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const index = Number(entry.target.id.split('-')[1]);
+              this.activeIndex = index;
+            }
+          });
+        },
+        {
+          root: this.$refs.newsContainer,
+          threshold: 0.5
+        }
+      );
+
+      // 观察所有新闻项
+      this.aiSummarizes.forEach((_, index) => {
+        const element = document.getElementById(`news-${index}`);
+        if (element) {
+          this.observer.observe(element);
+        }
+      });
+    },
+    goToNews(url) {
+      if (url) {
+        window.open(url, '_blank');
+      }
+    },
     checkMobile() {
       this.isMobile = window.innerWidth <= 1400;
     },
@@ -250,18 +391,22 @@ export default {
 <style>
 @import '@/styles/themes.css';
 
+/* 基础样式 */
 body {
   margin: 0;
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* 容器布局 */
 .app-container {
   min-height: 100vh;
   padding: 16px;
   padding-right: 340px;
 }
 
+/* 头部样式 */
 .header {
   height: 50px;
   background-color: var(--header-bg);
@@ -286,58 +431,24 @@ body {
 .logo-search {
   display: flex;
   align-items: center;
-  gap: 16px; /* Logo 和搜索栏之间的间距 */
+  gap: 16px;
 }
 
 .logo {
-  color: #409EFF;
+  color: var(--text-color);
   font-size: 24px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .logo-image {
-  height: 40px; /* 根据需要调整 */
+  height: 40px;
   width: auto;
 }
 
-.search-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.login-btn {
-  border: 1px solid #67c23a;
-  color: #67c23a;
-  background: transparent;
-}
-
-.login-btn:hover {
-  color: #fff;
-  border-color: #67c23a;
-  background-color: #67c23a;
-}
-
-.register-btn {
-  background-color: #409EFF;
-  border-color: #409EFF;
-}
-
-:deep(.el-button--small) {
-  padding: 8px 15px;
-  font-size: 13px;
-}
-
+/* 主要内容区域 */
 .main-content {
   margin-top: 66px;
   padding: 0 16px;
@@ -346,21 +457,216 @@ body {
   margin-right: auto;
 }
 
+/* 新闻摘要对话框 */
+::v-deep .news-dialog.el-dialog {
+  margin-top: 8vh !important;
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.dialog-title i {
+  color: #409EFF;
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* 新闻内容区域 */
+.dialog-content {
+  display: flex;
+  position: relative;
+}
+
+.news-container {
+  flex: 1;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding: 20px;
+  padding-right: 10px;
+  background-color: var(--bg-color);
+}
+
+.news-nav {
+  width: 120px;
+  padding: 20px 10px;
+  background-color: var(--card-bg);
+  border-left: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  height: fit-content;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.nav-item {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--secondary-text);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.nav-item:last-child {
+  margin-bottom: 0;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: #409EFF;
+  background-color: var(--hover-bg);
+}
+
+/* 新闻项样式 */
+.news-item {
+  background-color: var(--card-bg);
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px var(--border-color);
+}
+
+.news-item:last-child {
+  margin-bottom: 0;
+}
+
+.news-header {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.news-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.news-tag {
+  background-color: var(--hover-bg);
+  color: #409EFF;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.news-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+.news-content {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--secondary-text);
+  text-align: justify;
+}
+
+.news-link {
+  padding: 4px 0;
+  color: #409EFF;
+  font-size: 13px;
+}
+
+.news-link i {
+  margin-right: 4px;
+}
+
+.news-link:hover {
+  color: #66b1ff;
+}
+
+/* 移动端样式 */
+.mobile-panel-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.mobile-drawer {
+  background-color: var(--card-bg);
+}
+
+.mobile-drawer :deep(.el-drawer__container) {
+  background-color: var(--card-bg);
+}
+
+.el-drawer .user-panel {
+  position: static;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Element UI 组件样式覆盖 */
+:deep(.el-dialog__body) {
+  padding: 0 !important;
+  color: var(--text-color);
+}
+
+:deep(.el-dialog__header) {
+  padding: 15px 20px !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+:deep(.el-dialog__footer) {
+  border-top: 1px solid var(--border-color);
+  padding: 10px 20px !important;
+}
+
+:deep(.el-loading-mask) {
+  background-color: var(--bg-color);
+  opacity: 0.9;
+}
+
+:deep(.el-loading-text) {
+  color: var(--text-color);
+}
+
 :deep(.el-button--small) {
   padding: 8px 15px;
+  font-size: 13px;
 }
 
-/* 响应式布局样式 */
-@media (max-width: 768px) {
-  .search-bar {
-    max-width: 200px;
-  }
-  
-  .header-content {
-    padding: 0 8px;
-  }
+/* 统一滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-text);
+}
+
+/* 响应式布局 */
 @media (max-width: 1400px) {
   .app-container {
     padding-right: 16px;
@@ -371,45 +677,13 @@ body {
   [class*="el-col-"] {
     width: 100% !important;
   }
-}
-@media (max-width: 1200px) {
-  .search-input {
-    width: 250px;
-  }
-}
-
-@media (max-width: 992px) {
-  .search-input {
-    width: 200px;
-  }
-}
-
-@media (max-width: 768px) {
-  .search-input {
-    width: 150px;
-  }
-}
-
-@media (max-width: 576px) {
-  .search-input {
-    width: 120px;
-  }
-}
-@media (max-width: 768px) {
+  
   .logo-search {
     gap: 12px;
   }
-
-  .search-input {
-    width: 150px;
-  }
-
+  
   .header-content {
     padding: 0 12px;
-  }
-
-  .header-buttons {
-    gap: 8px;
   }
 }
 
@@ -418,41 +692,14 @@ body {
     height: 50px;
   }
 
-  .search-input {
-    width: 120px;
+  .main-content {
+    padding: 0 12px;
+    margin-top: 70px;
   }
 
   :deep(.el-button--small) {
     padding: 6px 12px;
     font-size: 12px;
   }
-
-  .main-content {
-    padding: 0 12px;
-    margin-top: 70px;
-  }
-}
-.mobile-panel-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-}
-
-.mobile-drawer {
-  background-color: #242424;
-}
-
-.mobile-drawer :deep(.el-drawer__container) {
-  background-color: #242424;
-}
-
-/* 确保抽屉内的user-panel样式正确 */
-.el-drawer .user-panel {
-  position: static;
-  width: 100%;
-  height: 100%;
-  padding: 20px;
-  box-sizing: border-box;
 }
 </style>

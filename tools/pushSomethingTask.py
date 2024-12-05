@@ -16,168 +16,63 @@ redis_client = redis.Redis(
 )
 
 def scrape_huangli():
-    url = "https://www.huangli.com/"
-    html_content = requests.get(url).text
+    url = "https://www.laohuangli.net/"
+    html_content = requests.get(url, proxies={'http': 'http://127.0.0.1:7890','https': 'http://127.0.0.1:7890'}).text
     doc = pq(html_content)
     data = {}
 
-    # 解析左侧部分
-    left = doc('.lunars-b .l')
-
-    # 提取左侧 Horoscope 信息
-    data['left_horoscopes'] = []
-    for elem in left('.horoscope').items():
-        data['left_horoscopes'].append({
-            'hit': elem.find('.hit').text(),
-            'gz': elem.find('.gz').text(),
-            'zodiac': elem.find('.zodiac').text(),
-            'nayin': elem.find('.nayin').text()
-        })
-
-    # 提取左侧 Solar 图片
-    data['left_solar'] = left('.solar img').attr('src')
-
-    # 提取左侧宜忌
-    data['left_yi_ji'] = [a.text() for a in left('.yi-ji').eq(0).find('a').items()]
-
-    # 提取左侧吉神宜趋
-    data['left_shen_sha'] = {
-        'title': left('.shen-sha .title span').text(),
-        'content': left('.shen-sha p').text()
-    }
-
-    # 提取左侧彭祖百忌和相冲
-    pz_chong = {}
-    for elem in left('.pz-chong div').items():
-        title = elem.find('.title').text()
-        text = elem.find('.text').text()
-        pz_chong[title] = text
-    data['left_pz_chong'] = pz_chong
-
-    # 提取左侧月名、物候、月相
-    yz_wh_yx = []
-    for elem in left('.yz-wh-yx div').items():
-        yz_wh_yx.append({
-            'title': elem.find('.title').text(),
-            'text': elem.find('.text').text(),
-            'img': elem.find('img').attr('src')
-        })
-    data['left_yz_wh_yx'] = yz_wh_yx
-
-    # 解析中间部分
-    center = doc('.lunars-b .c')
-    center_top = center('.top')
-
-    # 提取日期信息
-    data['center_datepicker'] = center_top('.form-data #datetimepicker').val()
-    data['center_return_today'] = center_top('.form-a').text()
-
-    # 提取今日幸运生肖
-    lucky_zodiac = {
-        'animals': [a.text() for a in center_top('.days-info .list').eq(0).find('.text a').items()],
-        'title': center_top('.days-info .list').eq(0).find('.title').text()
-    }
-    data['center_lucky_zodiac'] = lucky_zodiac
-
-    # 提取今日星座
-    today_constellation = {
-        'constellation': center_top('.days-info .list').eq(1).find('.text').text(),
-        'title': center_top('.days-info .list').eq(1).find('.title').text()
-    }
-    data['center_today_constellation'] = today_constellation
-
-    # 提取日期数字和农历日期
-    data['center_date_number'] = center_top('.days-info .su').text()
-    data['center_lunar_date'] = center_top('h4').text()
-
-    # 提取二维码链接
-    data['center_qr_codes'] = []
-    for elem in center_top('.down .QRcode').items():
-        data['center_qr_codes'].append({
-            'type': elem.attr('data-type'),
-            'img_src': elem.find('img').attr('src')
-        })
-
-    # 提取注意事项
-    data['center_note'] = {
-        'img': center_top('.note img').attr('src'),
-        'text': center_top('.note span').text()
-    }
-
-    # 提取底部信息
-    bottom = center('.bottom')
-
-    # 提取财神位
-    data['bottom_caishen'] = []
-    for elem in bottom('.lunars-info.shen .list .item').items():
-        data['bottom_caishen'].append({
-            'title': elem.find('.title').text(),
-            'text': elem.find('.text').text(),
-            'link': elem.attr('href')
-        })
-
-    # 提取阴阳贵神
-    data['bottom_yinyang_guishen'] = []
-    for elem in bottom('.lunars-info').eq(1).find('.list .item').items():
-        data['bottom_yinyang_guishen'].append({
-            'title': elem.find('.title').text(),
-            'text': elem.find('.text').text()
-        })
-
-    # 提取空亡所值
-    data['bottom_kongwang_souzhi'] = []
-    for elem in bottom('.lunars-info').eq(2).find('.list .item').items():
-        data['bottom_kongwang_souzhi'].append({
-            'title': elem.find('.title').text(),
-            'text': elem.find('.text').text()
-        })
-
-    # 提取九宫飞星
-    data['bottom_jiugong_feixing'] = [
-        elem.text() for elem in bottom('.lunars-info').eq(3).find('.list .item .text').items()
+    # 左侧年份、生肖、五行信息
+    left_divs = doc("td[class='tr-p0'] div")
+    data['year_info'] = [
+        {
+            "label": pq(span.eq(0)).text(),
+            "zodiac": pq(span.eq(1)).text(),
+            "element": pq(span.eq(2)).text()
+        }
+        for div in left_divs
+        for span in [pq(div).find("span")]
     ]
 
-    # 解析右侧部分
-    right = doc('.lunars-b .l.r')
+    # 提取公历和农历信息
+    calendar_info = doc("td[class='bg-table'] .middle-rowspan")
+    data['gregorian_calendar'] = calendar_info.find("p").eq(0).text()
+    data['lunar_calendar'] = calendar_info.find("p").eq(1).text()
 
-    # 提取右侧 Horoscope 信息
-    data['right_horoscopes'] = []
-    for elem in right('.horoscope').items():
-        data['right_horoscopes'].append({
-            'hit': elem.find('.hit').text(),
-            'gz': elem.find('.gz').text(),
-            'zodiac': elem.find('.zodiac').text()
-        })
+    # 提取宜和忌信息
+    good_div = doc(".table-three-div").eq(0)
+    bad_div = doc(".table-three-div").eq(1)
+    data['good_actions'] = [
+        pq(span).text() for span in good_div.find("span") if pq(span).text()
+    ]
+    data['bad_actions'] = [
+        pq(span).text() for span in bad_div.find("span") if pq(span).text()
+    ]
 
-    # 提取右侧 Solar 图片
-    data['right_solar'] = right('.solar img').attr('src')
+    # 提取彭祖百忌和相冲
+    fourth_row = doc(".table-four-tr")
+    data['pengzu_bai_ji'] = fourth_row.find(".col-td2").eq(0).find(".icon-none").text()
+    data['xiang_chong'] = fourth_row.find(".col-td2").eq(1).find(".icon-none").text()
 
-    # 提取右侧宜忌
-    data['right_yi_ji'] = [a.text() for a in right('.yi-ji a').items()]
-    data['left_yi_ji'] = [a for a in data['left_yi_ji'] if a not in data['right_yi_ji']]
-    # 提取右侧凶煞宜忌
-    data['right_shen_sha'] = {
-        'title': right('.shen-sha .title span').text(),
-        'content': right('.shen-sha p').text()
-    }
+    # 提取胎神信息
+    data['tai_shen'] = [
+        pq(span).text()
+        for span in fourth_row.find(".col-td2").eq(2).find(".icon-none")
+    ]
 
-    # 提取右侧本月胎神和今日胎神
-    pz_chong_right = {}
-    for elem in right('.pz-chong div').items():
-        title = elem.find('.title').text()
-        text = elem.find('.text').text()
-        pz_chong_right[title] = text
-    data['right_pz_chong'] = pz_chong_right
+    # 提取吉神和凶煞
+    fifth_row = doc(".table-five-div")
+    data['ji_shen'] = fifth_row.eq(0).find("p").text().replace(",", "").split()
+    data['xiong_sha'] = fifth_row.eq(2).find("p").text().replace(",", "").split()
 
-    # 提取右侧岁煞、六耀、日禄
-    yz_wh_yx_right = []
-    for elem in right('.yz-wh-yx div').items():
-        yz_wh_yx_right.append({
-            'title': elem.find('.title').text(),
-            'text': elem.find('.text').text(),
-            'img': elem.find('img').attr('src')
-        })
-    data['right_yz_wh_yx'] = yz_wh_yx_right
+    # 提取表格中的月份、物候等信息
+    month_table = doc("table")
+    data['month_table'] = [
+        {
+            pq(td.eq(0)).text(): pq(td.eq(1)).text()
+            for td in pq(tr).find("td").items()
+        }
+        for tr in month_table.find("tr").items()
+    ]
 
     # 保存到 Redis
     json_result = json.dumps(data, ensure_ascii=False, indent=4)

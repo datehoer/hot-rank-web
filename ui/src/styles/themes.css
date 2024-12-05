@@ -2,18 +2,112 @@
   --bg-color: #1a1a1a;
   --text-color: #E5EAF3;
   --header-bg: #242424;
-  --border-color: rgb(38, 38, 38);
-  --card-bg: rgb(38, 38, 38);
-  --hover-bg: rgb(38, 38, 38);
+  --border-color: #333333;
+  --card-bg: #242424;
+  --hover-bg: #2c2c2c;
   --secondary-text: #909399;
+  --modal-bg: #242424;
+  --modal-border: #333333;
+  --slider-bg: #4c4c4c;
+  --switch-off-bg: #4c4c4c;
+  --item-hover-bg: #2c2c2c;
+  --checkbox-bg: #242424;
+  --tab-hover-bg: #2c2c2c;
+  --scrollbar-thumb: #4c4c4c;
+  --scrollbar-track: #242424;
 }
 
 :root[data-theme="light"] {
   --bg-color: #ffffff;
-  --text-color: #000000;
+  --text-color: #303133;
   --header-bg: #ffffff;
   --border-color: #e4e7ed;
   --card-bg: #ffffff;
   --hover-bg: #f5f7fa;
   --secondary-text: #606266;
+  --modal-bg: #ffffff;
+  --modal-border: #dcdfe6;
+  --slider-bg: #e4e7ed;
+  --switch-off-bg: #dcdfe6;
+  --item-hover-bg: #f5f7fa;
+  --checkbox-bg: #ffffff;
+  --tab-hover-bg: #f5f7fa;
+  --scrollbar-thumb: #c0c4cc;
+  --scrollbar-track: #f4f4f5;
+}
+
+/* 深色模式下的Element UI组件样式覆盖 */
+[data-theme="dark"] .el-dialog {
+  background-color: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+}
+
+[data-theme="dark"] .el-tabs__nav-wrap::after {
+  background-color: var(--border-color);
+}
+
+[data-theme="dark"] .el-tabs__item {
+  color: var(--secondary-text);
+}
+
+[data-theme="dark"] .el-tabs__item.is-active {
+  color: #409EFF;
+}
+
+[data-theme="dark"] .el-tabs__item:hover {
+  color: #409EFF;
+  background-color: var(--tab-hover-bg);
+}
+
+[data-theme="dark"] .el-slider__runway {
+  background-color: var(--slider-bg);
+}
+
+[data-theme="dark"] .el-switch__core {
+  background-color: var(--switch-off-bg) !important;
+}
+
+[data-theme="dark"] .el-checkbox__inner {
+  background-color: var(--checkbox-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .el-dialog__body {
+  color: var(--text-color);
+}
+
+/* 浅色模式下的Element UI组件样式覆盖 */
+[data-theme="light"] .el-dialog {
+  background-color: var(--modal-bg);
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .el-tabs__item:hover {
+  color: #409EFF;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+/* 通用过渡效果 */
+.el-dialog,
+.el-tabs__item,
+.el-switch,
+.el-checkbox,
+.el-slider__runway,
+.el-slider__bar {
+  transition: all 0.3s ease;
 }

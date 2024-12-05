@@ -7,10 +7,10 @@
       <span class="username">{{ username }}</span>
       <div class="login-tip">{{ quoteContent }}</div>
       <div class="action-buttons">
-        <setting-two class="action-button" title="设置" theme="outline" size="30" fill="#000000" @click="openSettings"/>
-        <record-disc class="action-button" title="唱片" theme="two-tone" size="30" :fill="['#000000' ,'#ffffff']" @click="openMusicPlayer"/>
-        <comments class="action-button" title="反馈" theme="two-tone" size="30" :fill="['#000000' ,'#ffffff']" @click="openFeedback"/>
-        <github class="action-button" theme="two-tone" size="30" fill="#000000" @click="goToGitHub"/>
+        <setting-two class="action-button" title="设置" theme="outline" size="30" :fill="isDarkMode ? '#E5EAF3' : '#303133'" @click="openSettings"/>
+        <record-disc class="action-button" title="唱片" theme="two-tone" size="30" :fill="[isDarkMode ? '#E5EAF3' : '#303133', isDarkMode ? '#242424' : '#ffffff']" @click="openMusicPlayer"/>
+        <comments class="action-button" title="反馈" theme="two-tone" size="30" :fill="[isDarkMode ? '#E5EAF3' : '#303133', isDarkMode ? '#242424' : '#ffffff']" @click="openFeedback"/>
+        <github class="action-button" theme="two-tone" size="30" :fill="isDarkMode ? '#E5EAF3' : '#303133'" @click="goToGitHub"/>
       </div>
     </div>
     <div class="quote-card">
@@ -20,110 +20,120 @@
     </div>
 
     <!-- 设置弹窗 -->
-    <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
-      <div class="modal">
-        <h3>设置</h3>
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="基础设置" name="basic">
-            <div class="settings-item">
-              <span>设置列数：{{localColumnsCount}}</span>
-              <el-slider
-                v-model="localColumnsCount"
-                :min="1"
-                :max="4"
-                :step="1"
-                show-stops
-              ></el-slider>
+    <el-dialog
+      title="设置"
+      :visible.sync="showSettings"
+      width="400px"
+      custom-class="settings-dialog"
+      :modal="false"
+    >
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="基础设置" name="basic">
+          <div class="settings-item">
+            <span>设置列数：{{localColumnsCount}}</span>
+            <el-slider
+              v-model="localColumnsCount"
+              :min="1"
+              :max="4"
+              :step="1"
+              show-stops
+            ></el-slider>
+          </div>
+          <div class="settings-item">
+            <div class="switch-wrapper">
+              <span>标题超出隐藏：</span>
+              <el-switch
+                v-model="localWrapText"
+                inline-prompt
+              />
             </div>
-            <div class="settings-item">
-              <div class="switch-wrapper">
-                <span>标题超出隐藏：</span>
-                <el-switch
-                  v-model="localWrapText"
-                  inline-prompt
-                />
-              </div>
+          </div>
+          <div class="settings-item">
+            <div class="switch-wrapper">
+              <span>深色模式：</span>
+              <el-switch
+                v-model="isDarkMode"
+                @change="handleThemeChange"
+                inline-prompt
+              />
             </div>
-            <div class="settings-item">
-              <div class="switch-wrapper">
-                <span>深色模式：</span>
-                <el-switch
-                  v-model="isDarkMode"
-                  @change="handleThemeChange"
-                  inline-prompt
-                />
-              </div>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="热榜设置" name="hotlist">
+          <div class="settings-item">
+            <div class="switch-wrapper">
+              <el-switch
+                v-model="localShowAllSites"
+                @change="handleShowAllSitesChange"
+                active-text="显示所有站点"
+              ></el-switch>
+              <el-switch
+                v-model="selectAll"
+                @change="handleSelectAllChange"
+                active-text="全选"
+                :disabled="localShowAllSites"
+              ></el-switch>
             </div>
-          </el-tab-pane>
-          <el-tab-pane label="热榜设置" name="hotlist">
-            <div class="settings-item">
-              <div class="switch-wrapper">
-                <el-switch
-                  v-model="localShowAllSites"
-                  @change="handleShowAllSitesChange"
-                  active-text="显示所有站点"
-                ></el-switch>
-                <el-switch
-                  v-model="selectAll"
-                  @change="handleSelectAllChange"
-                  active-text="全选"
-                  :disabled="localShowAllSites"
-                ></el-switch>
-              </div>
-              <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
-                <draggable 
-                  v-model="availableSites"
-                  :disabled="!dragEnabled || localShowAllSites"
-                  handle=".drag-handle"
-                  @end="handleDragEnd"
+            <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
+              <draggable 
+                v-model="availableSites"
+                :disabled="!dragEnabled || localShowAllSites"
+                handle=".drag-handle"
+                @end="handleDragEnd"
+              >
+                <div v-for="site in availableSites" 
+                    :key="site.name" 
+                    class="site-item"
                 >
-                  <div v-for="site in availableSites" 
-                      :key="site.name" 
-                      class="site-item"
+                  <i class="el-icon-rank drag-handle"></i>
+                  <el-checkbox
+                    v-model="selectedSites"
+                    :label="site.name"
+                    :disabled="localShowAllSites"
                   >
-                    <i class="el-icon-rank drag-handle"></i>
-                    <el-checkbox
-                      v-model="selectedSites"
-                      :label="site.name"
-                      :disabled="localShowAllSites"
-                    >
-                      {{ site.name }}
-                    </el-checkbox>
-                  </div>
-                </draggable>
-              </div>
+                    {{ site.name }}
+                  </el-checkbox>
+                </div>
+              </draggable>
             </div>
-          </el-tab-pane>
-        </el-tabs>
-        <div class="modal-actions">
-          <button @click="saveSettings">保存</button>
-          <button @click="closeSettings">取消</button>
-        </div>
-      </div>
-    </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="closeSettings">取消</el-button>
+        <el-button type="primary" @click="saveSettings">保存</el-button>
+      </span>
+    </el-dialog>
 
     <!-- 反馈弹窗 -->
-    <div v-if="showFeedback" class="modal-overlay" @click.self="closeFeedback">
-      <div class="modal">
-        <h3>反馈</h3>
-        <label>
-          用户名:
-          <input type="text" v-model="feedback.username" :placeholder="username" required/>
-        </label>
-        <label>
-          邮箱:
-          <input type="email" v-model="feedback.email" placeholder="example@gmail.com" required/>
-        </label>
-        <label>
-          反馈内容:
-          <textarea v-model="feedback.content" placeholder="我希望增加百度热搜榜单" required></textarea>
-        </label>
-        <div class="modal-actions">
-          <button @click="submitFeedback">提交</button>
-          <button @click="closeFeedback">取消</button>
-        </div>
-      </div>
-    </div>
+    <el-dialog
+      title="反馈"
+      :visible.sync="showFeedback"
+      width="30%"
+      @close="closeFeedback"
+      :modal="false"
+    >
+      <el-form :model="feedback" label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="feedback.username" :placeholder="username" required />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="feedback.email" placeholder="example@gmail.com" required />
+        </el-form-item>
+        <el-form-item label="反馈内容">
+          <el-input
+            type="textarea"
+            v-model="feedback.content"
+            placeholder="我希望增加百度热搜榜单"
+            required
+          />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="closeFeedback">取消</el-button>
+        <el-button type="primary" @click="submitFeedback">提交</el-button>
+      </span>
+    </el-dialog>
     <el-dialog
       width="35%"
       :before-close="handleClose"
@@ -366,6 +376,7 @@ export default {
 </script>
 
 <style scoped>
+/* 基础布局 */
 .user-panel {
   position: fixed;
   right: 20px;
@@ -373,6 +384,7 @@ export default {
   width: 350px;
 }
 
+/* 用户信息区域 */
 .user-info {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -385,7 +397,7 @@ export default {
 .avatar {
   width: 80px;
   height: 80px;
-  background-color: #6B9EFF;
+  background-color: var(--card-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -393,8 +405,8 @@ export default {
   margin: 0 auto 12px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-  border: 2px solid #fff;
+  box-shadow: 0px 4px 8px var(--border-color);
+  border: 2px solid var(--border-color);
 }
 
 .avatar img {
@@ -416,10 +428,12 @@ export default {
   margin-bottom: 8px;
 }
 
+/* 动作按钮 */
 .action-buttons {
   display: flex;
   justify-content: space-around;
   margin-top: 12px;
+  color: var(--text-color);
 }
 
 .action-button {
@@ -429,29 +443,17 @@ export default {
   cursor: pointer;
   outline: none;
   transition: transform 0.3s;
+  fill: var(--text-color) !important;
 }
 
 .action-button:hover {
   transform: scale(1.2);
 }
 
-.icon-settings::before {
-  content: '⚙️';
-  font-size: 20px;
-}
-
-.icon-feedback::before {
-  content: '💬';
-  font-size: 20px;
-}
-
-.icon-github::before {
-  content: '🐱';
-  font-size: 20px;
-}
-
+/* 引用卡片 */
 .quote-card {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 16px;
   overflow-y: auto;
@@ -459,101 +461,31 @@ export default {
   height: 500px;
 }
 
-/* 自定义滚动条样式 */
-.quote-card::-webkit-scrollbar {
-  width: 8px;
-}
-
-.quote-card::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-.quote-card::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.quote-card::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.quote-content {
-  color: var(--text-color);
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 12px;
-}
-
-.quote-source {
-  color: var(--text-color);
-  font-size: 12px;
-  text-align: right;
-}
-
-/* 模态弹窗样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: var(--card-bg);
-  color: var(--text-color);
-  padding: 24px;
-  border-radius: 8px;
-  width: 400px;
-  height: 500px;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal h3 {
-  margin: 0 0 20px 0;
-  color: var(--text-color);
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-:deep(.el-tabs) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-:deep(.el-tabs__content) {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 8px;
-  height: 300px;
-}
-
-:deep(.el-tabs__content)::-webkit-scrollbar {
+/* 通用滚动条样式 */
+::-webkit-scrollbar {
   width: 6px;
 }
 
-:deep(.el-tabs__content)::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
   border-radius: 3px;
 }
 
-:deep(.el-tabs__content)::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
   border-radius: 3px;
+  transition: background-color 0.3s;
 }
 
-:deep(.el-tabs__content)::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--secondary-text);
+}
+
+/* 设置对话框样式 */
+.settings-dialog {
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 .settings-item {
@@ -580,18 +512,130 @@ export default {
   padding: 8px 0;
 }
 
-/* Element Plus 件样式覆盖 */
+.checkbox-group.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 站点项样式 */
+.site-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.site-item:hover {
+  background: var(--hover-bg);
+}
+
+.drag-handle {
+  cursor: move;
+  color: var(--secondary-text);
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+.drag-handle:hover {
+  color: var(--text-color);
+}
+
+/* 拖拽状态 */
+.sortable-ghost {
+  opacity: 0.5;
+  background: var(--hover-bg) !important;
+}
+
+.sortable-drag {
+  background: var(--card-bg) !important;
+}
+
+/* Element UI 组件样式覆盖 */
+:deep(.el-dialog) {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+:deep(.el-dialog__header) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px;
+}
+
+:deep(.el-dialog__body) {
+  padding: 20px;
+  color: var(--text-color);
+}
+
+:deep(.el-dialog__footer) {
+  padding: 10px 20px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+:deep(.el-dialog__title) {
+  color: var(--text-color);
+  font-size: 18px;
+  line-height: 24px;
+}
+
+/* 表单元素样式 */
+:deep(.el-form-item__label) {
+  color: var(--text-color);
+}
+
+:deep(.el-input__inner),
+:deep(.el-textarea__inner) {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+:deep(.el-input__inner:hover),
+:deep(.el-textarea__inner:hover),
+:deep(.el-input__inner:focus),
+:deep(.el-textarea__inner:focus) {
+  border-color: #409EFF;
+}
+
+:deep(.el-input__inner:focus),
+:deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+:deep(.el-input__inner::placeholder),
+:deep(.el-textarea__inner::placeholder) {
+  color: var(--secondary-text);
+}
+
+/* 禁用状态 */
+:deep(.el-input.is-disabled .el-input__inner) {
+  background-color: var(--hover-bg);
+  border-color: var(--border-color);
+  color: var(--secondary-text);
+}
+
+/* 标签页样式 */
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--border-color);
+}
+
 :deep(.el-tabs__item) {
-  color: var(--secondary-text) !important;
-  font-size: 14px;
+  color: var(--secondary-text);
 }
 
 :deep(.el-tabs__item.is-active) {
   color: #409EFF !important;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
-  background-color: rgba(255, 255, 255, 0.05);
+/* 开关和复选框 */
+:deep(.el-switch__core) {
+  background-color: var(--border-color) !important;
+}
+
+:deep(.el-switch.is-checked .el-switch__core) {
+  background-color: #409EFF !important;
 }
 
 :deep(.el-checkbox) {
@@ -603,68 +647,32 @@ export default {
   color: #409EFF;
 }
 
-:deep(.el-slider__runway) {
-  background-color: rgba(255, 255, 255, 0.1);
+/* 按钮样式 */
+:deep(.el-button) {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
 }
 
-:deep(.el-slider__bar) {
+:deep(.el-button:hover) {
+  background-color: var(--hover-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+:deep(.el-button--primary) {
   background-color: #409EFF;
-}
-
-:deep(.el-slider__button) {
   border-color: #409EFF;
+  color: #ffffff;
 }
 
-.modal-actions {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.modal-actions button {
-  padding: 8px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-.modal-actions button:first-child {
-  background-color: #409EFF;
-  color: white;
-}
-
-.modal-actions button:first-child:hover {
+:deep(.el-button--primary:hover) {
   background-color: #66b1ff;
+  border-color: #66b1ff;
+  color: #ffffff;
 }
 
-.modal-actions button:last-child {
-  background-color: #909399;
-  color: white;
-}
-
-.modal-actions button:last-child:hover {
-  background-color: #a6a9ad;
-}
-
-:deep(.el-switch__core) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-:deep(.el-switch.is-checked .el-switch__core) {
-  background-color: #409EFF !important;
-}
-
-:deep(.el-tabs__header) {
-  flex-shrink: 0;
-  margin-bottom: 16px;
-}
-
+/* 动画 */
 .spinning {
   animation: spin 2s linear infinite;
 }
@@ -673,152 +681,5 @@ export default {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* 添加音乐播放器弹窗样式 */
-:deep(.music-player-dialog) {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  border: none;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-:deep(.music-player-dialog .el-dialog__header) {
-  padding: 0;
-}
-
-:deep(.music-player-dialog .el-dialog__body) {
-  padding: 0;
-  background: transparent;
-  color: #E5EAF3;
-}
-
-:deep(.music-player-dialog .el-dialog__headerbtn) {
-  top: 8px;
-  right: 8px;
-}
-
-:deep(.music-player-dialog .el-dialog__headerbtn .el-dialog__close) {
-  color: #909399;
-}
-
-:deep(.music-player-dialog .el-dialog__headerbtn:hover .el-dialog__close) {
-  color: #E5EAF3;
-}
-
-/* 音乐播放器关闭确认框样式 */
-:deep(.music-player-close-dialog) {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  border: none;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-:deep(.music-player-close-dialog .el-message-box__header) {
-  padding: 20px 20px 10px;
-  background: transparent;
-}
-
-:deep(.music-player-close-dialog .el-message-box__title) {
-  color: #E5EAF3;
-  font-size: 16px;
-}
-
-:deep(.music-player-close-dialog .el-message-box__content) {
-  padding: 10px 20px;
-  background: transparent;
-  color: #909399;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns) {
-  padding: 10px 20px 20px;
-  background: transparent;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns button) {
-  padding: 8px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns button:first-child) {
-  background-color: #909399;
-  color: white;
-  margin-right: 10px;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns button:first-child:hover) {
-  background-color: #a6a9ad;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns button:last-child) {
-  background-color: #409EFF;
-  color: white;
-}
-
-:deep(.music-player-close-dialog .el-message-box__btns button:last-child:hover) {
-  background-color: #66b1ff;
-}
-
-:deep(.music-player-close-dialog .el-message-box__status) {
-  color: #E6A23C;
-  font-size: 20px;
-}
-
-:deep(.music-player-close-dialog .el-message-box__close) {
-  color: #909399;
-  font-size: 16px;
-  top: 15px;
-  right: 15px;
-}
-
-:deep(.music-player-close-dialog .el-message-box__close:hover) {
-  color: #E5EAF3;
-}
-
-/* 拖拽样式 */
-.site-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.drag-handle {
-  cursor: move;
-  color: #909399;
-  margin-right: 12px;
-  font-size: 16px;
-}
-
-.drag-handle:hover {
-  color: #E5EAF3;
-}
-
-.site-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* 拖拽时的样式 */
-.sortable-ghost {
-  opacity: 0.5;
-  background: rgba(64, 158, 255, 0.1) !important;
-}
-
-.sortable-drag {
-  background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.checkbox-group.disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.switch-wrapper :deep(.el-switch__label) {
-  color: var(--text-color);
 }
 </style>

@@ -136,7 +136,7 @@ async def getTodayTopNews():
                     },
                     {
                         "role": "user",
-                        "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_lable:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
+                        "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
                     }
                 ])
             todayTopNewsData = json.loads(repair_json(text))
@@ -161,7 +161,7 @@ async def getTodayTopNews():
                             },
                             {
                                 "role": "user",
-                                "content": "对下方数据的content进行300字左右的高效总结,并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_lable:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                "content": "对下方数据的content进行300字左右的高效总结,并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
                             }
                         ], False)
                         summarize = json.loads(repair_json(summarize))
@@ -172,6 +172,8 @@ async def getTodayTopNews():
                                 if "content" in summarize:
                                     summarize = summarize['content']
                         del needKnow['content']
+                        if "hot_label" not in summarize:
+                            continue
                         needKnow['hot_content'] = summarize['hot_content']
                         needKnow['hot_tag'] = summarize['hot_tag']
                         summarizes.append(needKnow)
@@ -186,7 +188,7 @@ async def getTodayTopNews():
             fg.description('Today top news with AI')
             for item in summarizes:
                 fe = fg.add_entry()
-                fe.title(item.get('title', item['hot_lable']))
+                fe.title(item.get('title', item['hot_label']))
                 fe.link(href=item.get('url', item['hot_url']))
                 fe.description(item.get('description', item['hot_content']))
             fg.rss_file('rss_feed_today_top_news.xml')
@@ -328,9 +330,10 @@ async def get_data(item_id: str):
         fg.link(href='https://www.hotday.uk')
         fg.description('Today top news with AI')
         for item in data:
-            fe = fg.add_entry()
-            fe.title(item.get('title', item['hot_lable']))
-            fe.link(href=item.get('url', item['hot_url']))
+            if item and "hot_label" in item:
+                fe = fg.add_entry()
+                fe.title(item.get('title', item['hot_label']))
+                fe.link(href=item.get('url', item['hot_url']))
         fg.rss_file('rss_feed.xml')
         return {
             "code": 200,

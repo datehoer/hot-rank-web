@@ -1,143 +1,25 @@
 <template>
   <div class="horoscope-info">
-    <!-- 切换开关按钮 -->
-    <div class="toggle-switch">
-      <label class="switch">
-        <input type="checkbox" v-model="showMore">
-        <span class="slider round"></span>
-      </label>
-      <span class="toggle-label">{{ showMore ? '显示更多' : '显示基本' }}</span>
-    </div>
-
-    <!-- 基础信息部分 -->
-    <div class="base-info">
-      <!-- 中心备注 -->
-      <div class="info-row">
-        <img :src="yellowCalendar.center_note.img" alt="备注" class="info-icon" />
-        <span class="info-value">{{ yellowCalendar.center_note.text }}</span>
-      </div>
-
-      <!-- 日期选择器 -->
       <div class="info-row">
         <span class="info-label">日期：</span>
-        <span class="info-value">{{ yellowCalendar.center_datepicker }}</span>
+        <span class="info-value">{{ yellowCalendar.gregorian_calendar }}</span>
       </div>
 
-      <!-- 农历日期 -->
       <div class="info-row">
         <span class="info-label">农历日期：</span>
-        <span class="info-value">{{ yellowCalendar.center_lunar_date }}</span>
+        <span class="info-value">{{ yellowCalendar.lunar_calendar }}</span>
       </div>
+
       
-      <!-- 今日星座 -->
-      <div class="info-row">
-        <span class="info-label">今日星座：</span>
-        <span class="info-value">{{ yellowCalendar.center_today_constellation.constellation }}</span>
-      </div>
-      
-      <!-- 今日宜 -->
       <div class="info-row">
         <span class="info-label">今日宜：</span>
-        <span class="info-value">{{ yellowCalendar.left_yi_ji.join('、') }}</span>
+        <span class="info-value">{{ yellowCalendar.good_actions.join('、') }}</span>
       </div>
       
-      <!-- 今日忌 -->
       <div class="info-row">
         <span class="info-label">今日忌：</span>
-        <span class="info-value">{{ yellowCalendar.right_yi_ji.join('、') }}</span>
+        <span class="info-value">{{ yellowCalendar.bad_actions.join('、') }}</span>
       </div>
-    </div>
-    
-    <!-- 更多信息部分 -->
-    <div v-if="showMore" class="more-info">
-      <!-- 左侧星座数据 -->
-      <div class="info-section">
-        <h3 class="section-title">星座信息</h3>
-        <div class="info-row" v-for="item in yellowCalendar.left_horoscopes" :key="item.hit">
-          <span class="info-label">{{ item.hit }}：</span>
-          <span class="info-value">{{ item.gz }} {{ item.zodiac }} {{ item.nayin }}</span>
-        </div>
-      </div>
-      
-      <!-- 左侧宜忌 -->
-      <div class="info-section">
-        <h3 class="section-title">宜忌</h3>
-        <div class="info-row">
-          <span class="info-label">吉神宜趋：</span>
-          <span class="info-value">{{ yellowCalendar.left_shen_sha.content }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">凶煞宜忌：</span>
-          <span class="info-value">{{ yellowCalendar.right_shen_sha.content }}</span>
-        </div>
-      </div>
-      
-      <!-- 左侧彭祖百忌 -->
-      <div class="info-section">
-        <h3 class="section-title">彭祖百忌</h3>
-        <div class="info-row">
-          <span class="info-label">彭祖百忌：</span>
-          <span class="info-value">{{ yellowCalendar.left_pz_chong["彭祖百忌"] }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">相冲：</span>
-          <span class="info-value">{{ yellowCalendar.left_pz_chong.xiang_chong }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">本月胎神：</span>
-          <span class="info-value">{{ yellowCalendar.right_pz_chong["本月胎神"] }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">今日胎神：</span>
-          <span class="info-value">{{ yellowCalendar.right_pz_chong["今日胎神"] }}</span>
-        </div>
-      </div>
-      
-      <!-- 左侧物候信息 -->
-      <div class="info-section">
-        <h3 class="section-title">物候信息</h3>
-        <div class="info-row" v-for="item in yellowCalendar.left_yz_wh_yx" :key="item.title">
-          <span class="info-label">{{ item.title }}：</span>
-          <span class="info-value">{{ item.text }}</span>
-        </div>
-      </div>
-      
-      <!-- 底部财神信息 -->
-      <div class="info-section">
-        <h3 class="section-title">财神信息</h3>
-        <div class="info-row" v-for="item in yellowCalendar.bottom_caishen" :key="item.title">
-          <span class="info-label">{{ item.title }}：</span>
-          <a :href="item.link" class="info-value">{{ item.text }}</a>
-        </div>
-      </div>
-      
-      <!-- 底部阴阳贵神信息 -->
-      <div class="info-section">
-        <h3 class="section-title">阴阳贵神</h3>
-        <div class="info-row" v-for="item in yellowCalendar.bottom_yinyang_guishen" :key="item.title">
-          <span class="info-label">{{ item.title }}：</span>
-          <span class="info-value">{{ item.text }}</span>
-        </div>
-      </div>
-      
-      <!-- 底部空亡梓信息 -->
-      <div class="info-section">
-        <h3 class="section-title">空亡梓</h3>
-        <div class="info-row" v-for="item in yellowCalendar.bottom_kongwang_souzhi" :key="item.title">
-          <span class="info-label">{{ item.title }}：</span>
-          <span class="info-value">{{ item.text }}</span>
-        </div>
-      </div>
-      
-      <!-- 底部九宫飞星信息 -->
-      <div class="info-section">
-        <h3 class="section-title">九宫飞星</h3>
-        <div class="info-row" v-for="(item, index) in yellowCalendar.bottom_jiugong_feixing" :key="index">
-          <span class="info-label">飞星{{ index + 1 }}：</span>
-          <span class="info-value">{{ item }}</span>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -149,24 +31,10 @@ export default {
   data() {
     return {
       yellowCalendar: {
-        left_horoscopes: [],
-        left_yi_ji: [],
-        left_shen_sha: {},
-        left_pz_chong: {},
-        left_yz_wh_yx: [],
-        right_horoscopes: [],
-        right_yi_ji: [],
-        right_shen_sha: {},
-        right_pz_chong: {},
-        right_yz_wh_yx: [],
-        center_note: {},
-        center_lunar_date: '',
-        center_today_constellation: {},
-        center_datepicker: '',
-        bottom_caishen: [],
-        bottom_yinyang_guishen: [],
-        bottom_kongwang_souzhi: [],
-        bottom_jiugong_feixing: []
+        gregorian_calendar: "",
+        lunar_calendar: "",
+        good_actions: [],
+        bad_actions: [],
       },
       showMore: false // 默认关闭
     };
