@@ -18,7 +18,13 @@ RUN pip install \
     motor \
     redis \
     pydantic \
-    pyquery
+    pyquery \
+    httpx \
+    feedgen \
+    json-repair \
+    pycryptodome \
+    beautifulsoup4 \
+    markdownify
 
 EXPOSE 7545
 
