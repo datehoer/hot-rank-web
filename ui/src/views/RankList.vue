@@ -229,14 +229,23 @@ export default {
   },
   methods: {
     list() {
-      this.isLoading=true;
-      getAiSummarizes().then((response) => {
-        this.aiSummarizes = response.data;
-        this.$nextTick(() => {
-          this.setupIntersectionObserver();
+      this.isLoading = true;
+      getAiSummarizes()
+        .then((response) => {
+          this.aiSummarizes = response.data;
+          this.$nextTick(() => {
+            this.setupIntersectionObserver();
+          });
+        })
+        .catch((error) => {
+          console.error('获取AI摘要失败:', error);
+          // 设置为空数组，确保组件不会崩溃
+          this.aiSummarizes = [];
+        })
+        .finally(() => {
+          // 无论成功失败都会执行
+          this.isLoading = false;
         });
-        this.isLoading=false;
-      });
     },
     handleCheckboxChange() {
       localStorage.removeItem("dontShowToday");
