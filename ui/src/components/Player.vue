@@ -51,20 +51,22 @@
       </el-card>
     </div>
 
+    <!-- 音乐列表 -->
     <div class="track-list">
-      <el-row :gutter="20">
+      <!-- PC端列表 -->
+      <el-row :gutter="16" v-if="!isMobile">
         <el-col 
-          :span="6" 
           v-for="(track, index) in tracks" 
           :key="index"
+          :span="24 / columnsCount"
           class="track-item"
         >
           <div 
-            :title="track.title"
             class="album-container"
-            :class="{ 'active': currentTrack.id === track.id }"
+            :class="{ 'active': currentTrack?.id === track.id }"
             @click="selectTrack(track)"
           >
+            <!-- PC端专辑展示 -->
             <div class="album-cover-wrapper">
               <img :src="track.cover" alt="album cover" class="track-cover">
             </div>
@@ -76,7 +78,50 @@
           </div>
         </el-col>
       </el-row>
+
+      <!-- 移动端列表 -->
+      <div v-else class="mobile-track-list">
+        <div 
+          v-for="(track, index) in tracks" 
+          :key="index"
+          class="track-item"
+        >
+          <div 
+            class="album-container"
+            :class="{ 'active': currentTrack?.id === track.id }"
+            @click="selectTrack(track)"
+          >
+            <div class="album-cover-wrapper">
+              <img :src="track.cover" alt="album cover" class="track-cover">
+            </div>
+            <div class="track-info">
+              <h3 class="track-title">{{ track.title }}</h3>
+              <div class="track-artist">{{ track.artist }}</div>
+            </div>
+            <div v-if="currentTrack?.id === track.id" class="playing-indicator">
+              <i class="el-icon-video-play"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- 移动端播放控制栏 -->
+    <div class="mobile-controls" v-if="isMobile && currentTrack">
+      <div class="current-track-info">
+        {{ currentTrack.title }}
+      </div>
+      <el-button 
+        type="primary"
+        :icon="isPlaying ? 'el-icon-video-pause' : 'el-icon-video-play'"
+        @click="togglePlay"
+        class="play-pause-btn"
+        circle
+      ></el-button>
+    </div>
+
+    <!-- 音频播放器 -->
+    <audio ref="audioPlayer" @ended="handleTrackEnd"></audio>
   </div>
 </template>
 
@@ -92,12 +137,17 @@ export default {
       tracks: [],
       audio: null,
       loading: false,
-      volume: 50
+      volume: 50,
+      isMobile: false,
+      columnsCount: 4,
     }
   },
   created() {
     // 确保在组件创建时设置默认曲目
     this.getMusicList()
+    this.checkMobile()
+    // 添加窗口大小变化监听
+    window.addEventListener('resize', this.checkMobile)
   },
   mounted() {
     this.$nextTick(() => {
@@ -108,7 +158,15 @@ export default {
       }
     })
   },
+  destroyed() {
+    // 移除事件监听
+    window.removeEventListener('resize', this.checkMobile)
+  },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 768
+      this.columnsCount = this.isMobile ? 1 : 4
+    },
     getMusicList() {
       this.loading = true
       getMusic().then(res => {
@@ -185,12 +243,14 @@ export default {
 </script>
 
 <style scoped>
+/* 基础布局 */
 .music-player {
   padding: 20px;
   background-color: #2b2b2b;
   min-height: 30vh;
 }
 
+/* 当前播放器 */
 .current-player {
   margin-bottom: 40px;
 }
@@ -205,11 +265,13 @@ export default {
   border: none;
 }
 
+/* 唱片播放器 */
 .vinyl-player {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-bottom: 20px;
 }
 
 /* 唱片样式 */
@@ -219,7 +281,6 @@ export default {
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  background: #000;
   background: repeating-radial-gradient(
     circle at center,
     #000000,
@@ -228,6 +289,7 @@ export default {
     #171717 4px
   );
   margin: 0 auto;
+  transition: transform 0.3s ease;
 }
 
 .album-cover {
@@ -243,17 +305,120 @@ export default {
   box-shadow: 0 0 0 2px #000;
 }
 
-/* 唱片指针样式 */
+/* 唱臂样式 */
 .tonearm-wrapper {
   position: absolute;
   top: -20px;
-  right: 20px;
+  right: 60px;
   width: 120px;
   height: 120px;
   z-index: 10;
 }
 
-/* 播放列表样式 */
+.tonearm-base {
+  position: absolute;
+  top: -7px;
+  right: 50%;
+  width: 30px;
+  height: 30px;
+  background: #444;
+  border-radius: 50%;
+  border: 4px solid #666;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateX(50%);
+  z-index: 1;
+}
+
+.tonearm-base::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: #888;
+  border-radius: 50%;
+  border: 2px solid #777;
+}
+
+.tonearm {
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  width: 6px;
+  height: 100px;
+  transform-origin: top center;
+  transform: translateX(50%) rotate(-45deg);
+  transition: transform 0.5s ease;
+  z-index: 2;
+}
+
+.tonearm.is-playing {
+  transform: translateX(50%) rotate(-10deg);
+}
+
+.tonearm-body {
+  position: relative;
+  width: 6px;
+  height: 80px;
+  background: linear-gradient(90deg, #333, #666);
+  border-radius: 3px;
+  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tonearm-head {
+  position: absolute;
+  bottom: -15px;
+  left: -7px;
+  width: 20px;
+  height: 15px;
+  background: #333;
+  border-radius: 4px;
+  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tonearm-needle {
+  position: absolute;
+  bottom: -8px;
+  left: 9px;
+  width: 2px;
+  height: 15px;
+  background: #666;
+  transform: rotate(30deg);
+  transform-origin: top center;
+}
+
+/* 控制按钮 */
+.controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  background-color: #404040;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-left: 15px;
+}
+
+.volume-control .el-slider {
+  width: 80px;
+  margin: 0 8px;
+}
+
+.volume-text {
+  color: #909399;
+  font-size: 12px;
+  min-width: 35px;
+}
+
+/* 播放列表 */
 .track-list {
   padding: 20px;
 }
@@ -268,6 +433,7 @@ export default {
   width: 80px;
   cursor: pointer;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .album-cover-wrapper {
@@ -295,7 +461,6 @@ export default {
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  background: #000;
   background: repeating-radial-gradient(
     circle at center,
     #000000,
@@ -325,21 +490,7 @@ export default {
   object-fit: cover;
 }
 
-/* 悬浮效果 */
-.album-container:hover .album-disc {
-  transform: translateX(-70%);
-}
-
-/* 当前选中的唱片 */
-.active .album-disc {
-  transform: translateX(-70%);
-}
-
-.active .album-cover-wrapper {
-  box-shadow: 0 0 20px rgba(64, 158, 255, 0.5);
-}
-
-/* 播放动画 */
+/* 动画效果 */
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -349,149 +500,208 @@ export default {
   animation: rotate 20s linear infinite;
 }
 
-/* 控制按钮样式 */
-.controls {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+.album-container:hover .album-disc {
+  transform: translateX(-70%);
 }
 
-/* 响应式布局 */
+.active .album-disc {
+  transform: translateX(-70%);
+}
+
+.active .album-cover-wrapper {
+  box-shadow: 0 0 20px rgba(64, 158, 255, 0.5);
+}
+
+/* PC端基础样式保持不变 */
+.music-player {
+  padding: 20px;
+  background-color: #2b2b2b;
+  min-height: 30vh;
+}
+
+.current-player {
+  margin-bottom: 40px;
+}
+
+/* PC端唱片机样式 */
+.player-card {
+  background-color: #333;
+  border-radius: 8px;
+  width: 400px;
+  margin: 0 auto;
+  overflow: visible;
+  padding-top: 20px;
+  border: none;
+}
+
+/* 保留原有的所有PC端样式... */
+/* [原有的PC端样式代码保持不变] */
+
+/* 移动端样式覆盖 */
 @media screen and (max-width: 768px) {
-  .el-col {
-    width: 100%;
+  /* 隐藏PC端特有元素 */
+  .vinyl-player,
+  .vinyl,
+  .tonearm-wrapper,
+  .album-disc,
+  .player-card {
+    display: none;
   }
-  
+
+  /* 移动端布局 */
+  .music-player {
+    padding: 12px;
+    min-height: 100vh;
+  }
+
+  .track-list {
+    padding: 10px;
+  }
+
+  /* 移动端列表样式 */
+  .track-item {
+    margin-bottom: 12px;
+  }
+
   .album-container {
-    height: 150px;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    height: auto;
+    width: auto;
+    transition: background-color 0.3s;
   }
-}
 
-/* 唱臂包装器 */
-.tonearm-wrapper {
-  position: absolute;
-  top: -20px;
-  right: 60px;
-  width: 120px;
-  height: 120px;
-  z-index: 10;
-}
+  .album-container.active {
+    background: #404040;
+  }
 
-/* 唱臂基座 */
-.tonearm-base {
-  position: absolute;
-  top: -7px;
-  right: 50%;
-  width: 30px;
-  height: 30px;
-  background: #444;
-  border-radius: 50%;
-  border: 4px solid #666;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transform: translateX(50%);
-  z-index: 1;
-}
+  .album-cover-wrapper {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
 
-/* 唱臂主体 */
-.tonearm {
-  position: absolute;
-  top: 10px;
-  right: 50%;
-  width: 6px;
-  height: 100px;
-  transform-origin: top center;
-  transform: translateX(50%) rotate(-45deg);
-  transition: transform 0.5s ease;
-  z-index: 2;
-}
+  .track-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-.tonearm.is-playing {
-  transform: translateX(50%) rotate(-10deg);
-}
+  /* 移动端音乐信息样式 */
+  .track-info {
+    flex: 1;
+    margin-left: 12px;
+    overflow: hidden;
+  }
 
-/* 唱臂主体部分 */
-.tonearm-body {
-  position: relative;
-  width: 6px;
-  height: 80px;
-  background: linear-gradient(90deg, #333, #666);
-  border-radius: 3px;
-  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
-}
+  .track-title {
+    color: #fff;
+    font-size: 15px;
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-/* 唱针头部 */
-.tonearm-head {
-  position: absolute;
-  bottom: -15px;
-  left: -7px;
-  width: 20px;
-  height: 15px;
-  background: #333;
-  border-radius: 4px;
-  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
-}
+  .track-artist {
+    color: #999;
+    font-size: 13px;
+  }
 
-/* 唱针尖 */
-.tonearm-needle {
-  position: absolute;
-  bottom: -8px;
-  left: 9px;
-  width: 2px;
-  height: 15px;
-  background: #666;
-  transform: rotate(30deg);
-  transform-origin: top center;
-}
+  /* 移动端播放控制栏 */
+  .mobile-controls {
+    display: none;
+  }
 
-/* 优化唱臂基座的金属质感 */
-.tonearm-base::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  background: #888;
-  border-radius: 50%;
-  border: 2px solid #777;
-}
+  @media screen and (max-width: 768px) {
+    .mobile-controls {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a1a;
+      padding: 12px 16px;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+    }
+  }
 
-.volume-control {
-  display: flex;
-  align-items: center;
-  background-color: #404040;
-  padding: 5px 10px;
-  border-radius: 20px;
-  margin-left: 15px;
-}
+  .current-track-info {
+    flex: 1;
+    margin-right: 12px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.volume-control .el-slider {
-  width: 80px;
-  margin: 0 8px;
-}
+  .play-pause-btn {
+    padding: 8px;
+    margin-left: 8px;
+  }
 
-.volume-text {
-  color: #909399;
-  font-size: 12px;
-  min-width: 35px;
-}
-
-/* 适配移动端 */
-@media screen and (max-width: 768px) {
+  /* 移动端隐藏音量控制 */
   .volume-control {
-    padding: 3px 8px;
-  }
-  
-  .volume-control .el-slider {
-    width: 60px;
-  }
-  
-  .volume-text {
-    min-width: 30px;
-    font-size: 11px;
+    display: none;
   }
 }
 
+@media screen and (max-width: 768px) {
+  /* 覆盖 Element UI 对话框样式 */
+  :deep(.el-dialog) {
+    width: 100% !important;
+    margin: 0 !important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    margin: 0 !important;
+    border-radius: 0;
+  }
+
+  :deep(.el-dialog__body) {
+    height: calc(100vh - 108px); /* 减去header和footer的高度 */
+    padding: 0 !important;
+    overflow-y: auto;
+  }
+
+  /* 音乐播放器容器 */
+  .music-player {
+    padding: 0;
+    height: 100%;
+  }
+
+  /* 移动端列表样式 */
+  .mobile-track-list {
+    padding: 12px;
+  }
+
+  .track-item {
+    margin-bottom: 12px;
+  }
+
+  .album-container {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* 超小屏幕额外优化 */
+@media screen and (max-width: 480px) {
+  /* 保持弹窗全屏 */
+  :deep(.el-dialog) {
+    width: 100% !important;
+  }
+}
 </style>

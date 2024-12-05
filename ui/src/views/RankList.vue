@@ -711,4 +711,137 @@ body {
     font-size: 12px;
   }
 }
+@media (max-width: 768px) {
+  /* 对话框宽度调整 */
+  ::v-deep .news-dialog.el-dialog {
+    width: 92% !important;
+    margin-top: 5vh !important;
+  }
+
+  /* 新闻内容和导航布局调整 */
+  .dialog-content {
+    flex-direction: column;
+  }
+
+  .news-container {
+    max-height: 50vh;
+    padding: 12px;
+  }
+
+  .news-nav {
+    position: relative;
+    width: 100%;
+    max-height: 60px;
+    padding: 8px;
+    border-left: none;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-item {
+    display: inline-block;
+    margin: 0 6px;
+    padding: 6px 12px;
+    background-color: var(--hover-bg);
+    border-radius: 16px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* 新闻项样式优化 */
+  .news-item {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .news-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .news-title-group {
+    width: 100%;
+  }
+
+  .news-title {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .news-content {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .news-tag {
+    font-size: 11px;
+    padding: 1px 6px;
+  }
+}
+
+/* 小屏幕设备额外优化 */
+@media (max-width: 576px) {
+  .app-container {
+    padding: 12px;
+  }
+
+  .main-content {
+    margin-top: 60px;
+    padding: 0 8px;
+  }
+
+  /* 头部样式调整 */
+  .header-content {
+    padding: 0 8px;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  /* 新闻导航进一步优化 */
+  .news-nav {
+    max-height: 50px;
+    padding: 6px;
+  }
+
+  .nav-item {
+    padding: 4px 10px;
+    margin: 0 4px;
+    font-size: 11px;
+  }
+
+  /* 对话框内容调整 */
+  .dialog-title {
+    font-size: 14px;
+  }
+
+  .dialog-title i {
+    font-size: 16px;
+  }
+
+  /* 滚动条优化 */
+  .news-container::-webkit-scrollbar,
+  .news-nav::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* 暗色模式下的额外优化 */
+@media (prefers-color-scheme: dark) {
+  @media (max-width: 768px) {
+    .nav-item {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .news-item {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+  }
+}
 </style>

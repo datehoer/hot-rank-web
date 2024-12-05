@@ -135,11 +135,13 @@
       </span>
     </el-dialog>
     <el-dialog
-      width="35%"
+      width="100%"
       :before-close="handleClose"
       :visible.sync="showMusicPlayer"
       :modal="false"
       custom-class="music-player-dialog"
+      :fullscreen="isMobile"
+      :append-to-body="true"
     >
       <music-player />
     </el-dialog>
@@ -210,6 +212,7 @@ export default {
       localShowAllSites: this.showAllSites,
       selectAll: false,
       isDarkMode: true,
+      isMobile: false,
     }
   },
   watch: {
@@ -254,12 +257,18 @@ export default {
     }
     this.isDarkMode = this.$localStorage.get('isDarkMode', true);
     this.applyTheme(this.isDarkMode);
+    this.checkMobile();
+    window.addEventListener('resize', this.checkMobile);
   },
   beforeDestroy() {
     // 清除定时器
+    window.removeEventListener('resize', this.checkMobile);
     clearInterval(this.intervalId);
   },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 768;
+    },
     handleSelectAllChange(value) {
       if (value) {
         // 全选
@@ -309,12 +318,13 @@ export default {
       });
     },
     handleClose(done) {
-      this.$confirm('暂时关闭音乐播放器界面？不会停止播放音乐', '提示', {
+      this.$confirm('暂时关闭音乐播放器界面？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'info',
         customClass: 'music-player-close-dialog',
-        center: true
+        center: true,
+        showClose: false
       }).then(() => {
         done();
       }).catch(() => {});
@@ -680,6 +690,97 @@ export default {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media screen and (max-width: 768px) {
+  :deep(.music-player-dialog) {
+    width: 100% !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0;
+  }
+  
+  :deep(.music-player-dialog .el-dialog__header) {
+    padding: 10px;
+  }
+  
+  :deep(.music-player-dialog .el-dialog__body) {
+    height: calc(100vh - 96px); /* 减去header和footer的高度 */
+    overflow-y: auto;
+  }
+}
+
+:deep(.music-player-dialog .el-dialog__header) {
+  padding: 10px;
+  position: relative;
+}
+
+/* 关闭按钮样式 */
+:deep(.music-player-dialog .el-dialog__headerbtn) {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 100;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.music-player-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: #fff;
+  font-weight: bold;
+}
+
+:deep(.music-player-dialog .el-dialog__headerbtn:hover) {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 确认关闭对话框样式 */
+:deep(.music-player-close-dialog) {
+  background: var(--card-bg);
+  border-radius: 8px;
+  max-width: 300px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__header) {
+  padding: 15px;
+  background: transparent;
+}
+
+:deep(.music-player-close-dialog .el-message-box__title) {
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__content) {
+  padding: 15px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+:deep(.music-player-close-dialog .el-message-box__btns) {
+  padding: 10px 15px;
+}
+
+:deep(.music-player-close-dialog .el-button) {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  :deep(.music-player-dialog .el-dialog__headerbtn) {
+    right: 15px;
+    top: 15px;
+  }
+
+  :deep(.music-player-close-dialog) {
+    width: 90% !important;
   }
 }
 </style>
