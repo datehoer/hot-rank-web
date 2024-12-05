@@ -17,7 +17,7 @@ redis_client = redis.Redis(
 
 def scrape_huangli():
     url = "https://www.laohuangli.net/"
-    html_content = requests.get(url, proxies={'http': 'http://127.0.0.1:7890','https': 'http://127.0.0.1:7890'}).text
+    html_content = requests.get(url).text
     doc = pq(html_content)
     data = {}
 
