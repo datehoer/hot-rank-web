@@ -156,7 +156,7 @@ def parse_common(data):
     data = data['data']
     is_percent = False
     for item in data:
-        hot_value = item['hotScore']
+        hot_value = item.get("hotScore")
         if isinstance(hot_value, str):
             if "%" in hot_value:
                 is_percent = True

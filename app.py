@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from json_repair import repair_json
 from parse_detail import parse_detail
 from feedgen.feed import FeedGenerator
+import traceback
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -99,8 +100,10 @@ async def chatWithModel(messages, check_list=True):
                     async for line in response.aiter_lines():
                         if line and line.startswith("data: ") and not line.endswith("[DONE]"):
                             data = json.loads(line[len("data: "):])
-                            chunk = data["choices"][0]["delta"].get("content", "")
-                            text += chunk
+                            if "choices" in data:
+                                if data["choices"] and len(data["choices"]) > 0 and "delta" in data["choices"][0]:
+                                    chunk = data["choices"][0]["delta"].get("content", "")
+                                    text += chunk
                 except httpx.ReadTimeout:
                     print("Stream reading timed out, using partial response")
                     err -= 1
@@ -116,7 +119,7 @@ async def chatWithModel(messages, check_list=True):
                     continue
                 return text
             except Exception as e:
-                print(e)
+                print("fetch ai error: " + str(e) + traceback.format_exc())
                 err -= 1
     return ""
 @app.get("/todayTopNews")
@@ -128,81 +131,93 @@ async def getTodayTopNews():
         mongoData = await get_data("hot")
         data = mongoData['data']
         filtered_sites = [site for site in data if site["name"] in news_sites]
-        try:
-            text = await chatWithModel([
-                    {
-                        "role": "system",
-                        "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事"
-                    },
-                    {
-                        "role": "user",
-                        "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
-                    }
-                ])
-            todayTopNewsData = json.loads(repair_json(text))
-            if "messages" in todayTopNewsData:
-                todayTopNewsData = todayTopNewsData["messages"]
-                if len(todayTopNewsData) == 1:
-                    todayTopNewsData = todayTopNewsData[0]
-                    if "content" in todayTopNewsData:
-                        todayTopNewsData = todayTopNewsData['content']
-            if "hot_topics" in todayTopNewsData:
-                todayTopNewsData = todayTopNewsData['hot_topics']
-            needKnows = await parse_detail(todayTopNewsData)
-            summarizes = []
-            for needKnow in needKnows:
-                err = 3
-                while err > 0:
-                    try:
-                        summarize = await chatWithModel([
-                            {
-                                "role": "system",
-                                "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事,并且有丰富的内容总结经验"
-                            },
-                            {
-                                "role": "user",
-                                "content": "对下方数据的content进行300字左右的高效总结(如果原文没有准确日期不要添加),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
-                            }
-                        ], False)
-                        summarize = json.loads(repair_json(summarize))
-                        if "messages" in summarize:
-                            summarize = summarize["messages"]
-                            if len(summarize) == 1:
-                                summarize = summarize[0]
-                                if "content" in summarize:
-                                    summarize = summarize['content']
-                        del needKnow['content']
-                        if "hot_label" not in summarize:
-                            continue
-                        needKnow['hot_content'] = summarize['hot_content']
-                        needKnow['hot_tag'] = summarize['hot_tag']
-                        summarizes.append(needKnow)
-                        break
-                    except Exception as e:
-                        print(e)
-                        err -= 1
-            await redis_client.setex("todayTopNews", 3600, json.dumps(summarizes))
-            fg = FeedGenerator()
-            fg.title('todayTopNewsWithAI')
-            fg.link(href='https://www.hotday.uk')
-            fg.description('Today top news with AI')
-            for item in summarizes:
-                fe = fg.add_entry()
-                fe.title(item.get('title', item['hot_label']))
-                fe.link(href=item.get('url', item['hot_url']))
-                fe.description(item.get('description', item['hot_content']))
-            fg.rss_file('/app/rss_feed_today_top_news.xml')
-            return {"code": 200, "msg": "success", "data": summarizes}
-            
-        except httpx.RequestError as e:
-            print(f"API request failed: {str(e)}")
-            return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse API response: {str(e)}")
-            return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
-        except Exception as e:
-            print(f"some error happen: {str(e)}")
-            return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
+        error = 3
+        while error > 0:
+            try:
+                text = await chatWithModel([
+                        {
+                            "role": "system",
+                            "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事"
+                        },
+                        {
+                            "role": "user",
+                            "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
+                        }
+                    ])
+                todayTopNewsData = json.loads(repair_json(text))
+                if "messages" in todayTopNewsData:
+                    messages = todayTopNewsData["messages"]
+                    if messages and len(messages) == 1:
+                        todayTopNewsData = messages[0]
+                        if "content" in todayTopNewsData:
+                            todayTopNewsData = todayTopNewsData['content']
+                if "hot_topics" in todayTopNewsData:
+                    todayTopNewsData = todayTopNewsData['hot_topics']
+                if not isinstance(todayTopNewsData, list):
+                    error -=  1
+                    continue
+                needKnows = await parse_detail(todayTopNewsData)
+                summarizes = []
+                for needKnow in needKnows:
+                    err = 3
+                    while err > 0:
+                        try:
+                            summarize = await chatWithModel([
+                                {
+                                    "role": "system",
+                                    "content": "你是一个新闻专家,熟悉各种新闻编写手段,并且熟知全球时事,并且有丰富的内容总结经验"
+                                },
+                                {
+                                    "role": "user",
+                                    "content": "对下方数据的content进行300字左右的高效总结(如果原文没有准确日期不要添加),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                }
+                            ], False)
+                            summarize = json.loads(repair_json(summarize))
+                            if "messages" in summarize:
+                                summarize = summarize["messages"]
+                                if summarize and len(summarize) == 1:
+                                    summarize = summarize[0]
+                                    if "content" in summarize:
+                                        summarize = summarize['content']
+                            if "content" in needKnow:
+                                del needKnow['content']
+                            if "hot_label" not in summarize:
+                                continue
+                            needKnow['hot_content'] = summarize['hot_content']
+                            needKnow['hot_tag'] = summarize['hot_tag']
+                            summarizes.append(needKnow)
+                            break
+                        except Exception as e:
+                            print("parse_needknow error:" + str(e) + traceback.format_exc())
+                            err -= 1
+                await redis_client.setex("todayTopNews", 3600, json.dumps(summarizes))
+                fg = FeedGenerator()
+                fg.title('todayTopNewsWithAI')
+                fg.link(href='https://www.hotday.uk')
+                fg.description('Today top news with AI')
+                for item in summarizes:
+                    fe = fg.add_entry()
+                    fe.title(item.get('title', item['hot_label']))
+                    fe.link(href=item.get('url', item['hot_url']))
+                    fe.description(item.get('description', item['hot_content']))
+                fg.rss_file('/app/rss_feed_today_top_news.xml')
+                return {"code": 200, "msg": "success", "data": summarizes}
+                
+            except httpx.RequestError as e:
+                print(f"API request failed: {str(e)}")
+                error -= 1
+                if err == 0:
+                    return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse API response: {str(e)}")
+                error -= 1
+                if err == 0:
+                    return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
+            except Exception as e:
+                print(f"some error happen: {str(e)}")
+                error -= 1
+                if err == 0:
+                    return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
             
 @app.get("/rank/{item_id}")
 async def get_data(item_id: str):
@@ -289,7 +304,7 @@ async def get_data(item_id: str):
                     latest_record = parse_coolan(latest_record)
                 elif collection_name == "pengpai":
                     latest_record = parse_pengpai(latest_record)
-                else:
+                elif collection_name not in ['douban_movie']:
                     latest_record = parse_common(latest_record)
                 local_time = time.localtime(insert_time)
                 if collection_name != "douban_movie":
