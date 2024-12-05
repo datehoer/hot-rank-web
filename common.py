@@ -422,4 +422,3 @@ def parse_pengpai(data):
             "hot_value": 0
         })
     return result
-

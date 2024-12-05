@@ -283,14 +283,14 @@ async def get_data(item_id: str):
                     latest_record = parse_zongheng(latest_record)
                 elif collection_name == "hupu":
                     latest_record = parse_hupu(latest_record)
-                elif collection_name in ["baidu_hot_search", 'crypto_coin', "hacknews", "historytoday", "3dm", "36kr", "52pj", "baijingchuhai", "dianshangbao", "diyicaijing", "dongchedi", "freebuf", "github", "google_search", "huxiu", "ithome", "kanxue", "kuandaishan", "qichezhijia", "qidian", "shuimu", "sina", "sina_sport", "sina_news", "taipingyang", "taptap"]:
-                    latest_record = parse_common(latest_record)
                 elif collection_name == "wallstreetcn":
                     latest_record = parse_wallstreetcn(latest_record)
                 elif collection_name == "coolan":
                     latest_record = parse_coolan(latest_record)
                 elif collection_name == "pengpai":
                     latest_record = parse_pengpai(latest_record)
+                else:
+                    latest_record = parse_common(latest_record)
                 local_time = time.localtime(insert_time)
                 if collection_name != "douban_movie":
                     data.append({
