@@ -82,13 +82,14 @@ async def get_cards():
 async def chatWithModel(messages, check_list=True):
     err = 10
     while err > 0:
+        model = await redis_client.get("model")
         async with httpx.AsyncClient(timeout=httpx.Timeout(360.0)) as client:
             try:
                 response = await client.post(
                     api_url,
                     headers=api_headers,
                     json={
-                        "model": "gpt-4o",
+                        "model": model,
                         "messages": messages,
                         "stream": True,
                         "temperature": 0,

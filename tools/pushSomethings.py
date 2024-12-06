@@ -212,31 +212,34 @@ redis_client = redis.Redis(
 # for movie in online_movies:
 #     redis_client.sadd("online_movies", json.dumps(movie))
 
-music_list =[
-    {
-        'id': 1,
-        'title': 'Take Me To Your Heart',
-        'cover': "https://oss.datehoer.com/music/cover/TakeMeToYourHeart.jpg",
-        'url': "https://oss.datehoer.com/music/mp3/TakeMeToYourHeart.m4a"
-    },
-    {
-        'id': 2,
-        'title': 'I Really Like You',
-        'cover': "https://oss.datehoer.com/music/cover/ireallylikeyou.jpg",
-        'url': "https://oss.datehoer.com/music/mp3/IReallyLikeYou.m4a"
-    },
-    {
-        'id': 3,
-        'title': 'APT.',
-        'cover': "https://oss.datehoer.com/music/cover/APT.jpg",
-        'url': "https://oss.datehoer.com/music/mp3/APT.m4a"
-    },
-    {
-        'id': 4,
-        'title': 'I Really Like You',
-        'cover': "https://oss.datehoer.com/music/cover/FeelLikeANumber.jpg",
-        'url': "https://oss.datehoer.com/music/mp3/FeelLikeANumber.mp3"
-    }
-]
-redis_client.set("music", json.dumps(music_list))
+# music_list =[
+#     {
+#         'id': 1,
+#         'title': 'Take Me To Your Heart',
+#         'cover': "https://oss.datehoer.com/music/cover/TakeMeToYourHeart.jpg",
+#         'url': "https://oss.datehoer.com/music/mp3/TakeMeToYourHeart.m4a"
+#     },
+#     {
+#         'id': 2,
+#         'title': 'I Really Like You',
+#         'cover': "https://oss.datehoer.com/music/cover/ireallylikeyou.jpg",
+#         'url': "https://oss.datehoer.com/music/mp3/IReallyLikeYou.m4a"
+#     },
+#     {
+#         'id': 3,
+#         'title': 'APT.',
+#         'cover': "https://oss.datehoer.com/music/cover/APT.jpg",
+#         'url': "https://oss.datehoer.com/music/mp3/APT.m4a"
+#     },
+#     {
+#         'id': 4,
+#         'title': 'I Really Like You',
+#         'cover': "https://oss.datehoer.com/music/cover/FeelLikeANumber.jpg",
+#         'url': "https://oss.datehoer.com/music/mp3/FeelLikeANumber.mp3"
+#     }
+# ]
+# redis_client.set("music", json.dumps(music_list))
 
+model = "grok-beta"
+
+redis_client.set("model", model)
