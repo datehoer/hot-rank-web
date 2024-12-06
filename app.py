@@ -110,12 +110,20 @@ async def chatWithModel(messages, check_list=True):
                     err -= 1
                     continue
                 if not text:
+                    if response.status_code == 504:
+                        print("time out")
+                    elif response.status_code == 401:
+                        print("no token")
+                    else:
+                        print("not text, code:"+str(response.status_code))
                     err -= 1
                     continue
                 if check_list and "hot_value" not in text:
+                    print('no hot value')
                     err -= 1
                     continue
                 if not check_list and "hot_tag" not in text:
+                    print('no hot tag')
                     err -= 1
                     continue
                 return text
@@ -170,7 +178,7 @@ async def getTodayTopNews():
                                 },
                                 {
                                     "role": "user",
-                                    "content": "对下方数据的content进行300字左右的高效总结(如果原文没有准确日期不要添加),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                    "content": "对下方数据的content进行最多300字的高效总结(如果原文没有准确日期不要添加),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
                                 }
                             ], False)
                             summarize = json.loads(repair_json(summarize))
@@ -192,32 +200,35 @@ async def getTodayTopNews():
                             print("parse_needknow error:" + str(e) + traceback.format_exc())
                             err -= 1
                 await redis_client.setex("todayTopNews", 3600, json.dumps(summarizes))
-                fg = FeedGenerator()
-                fg.title('todayTopNewsWithAI')
-                fg.link(href='https://www.hotday.uk')
-                fg.description('Today top news with AI')
-                for item in summarizes:
-                    fe = fg.add_entry()
-                    fe.title(item.get('title', item['hot_label']))
-                    fe.link(href=item.get('url', item['hot_url']))
-                    fe.description(item.get('description', item['hot_content']))
-                fg.rss_file('/app/rss_feed_today_top_news.xml')
+                try:
+                    fg = FeedGenerator()
+                    fg.title('todayTopNewsWithAI')
+                    fg.link(href='https://www.hotday.uk')
+                    fg.description('Today top news with AI')
+                    for item in summarizes:
+                        fe = fg.add_entry()
+                        fe.title(item.get('title', item['hot_label']))
+                        fe.link(href=item.get('url', item['hot_url']))
+                        fe.description(item.get('description', item['hot_content']))
+                    fg.rss_file('/app/rss_feed_today_top_news.xml')
+                except Exception as e:
+                    print("generate todayTopNewsWithAI rss feed error")
                 return {"code": 200, "msg": "success", "data": summarizes}
                 
             except httpx.RequestError as e:
                 print(f"API request failed: {str(e)}")
                 error -= 1
-                if err == 0:
+                if error == 0:
                     return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
             except json.JSONDecodeError as e:
                 print(f"Failed to parse API response: {str(e)}")
                 error -= 1
-                if err == 0:
+                if error == 0:
                     return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
             except Exception as e:
                 print(f"some error happen: {str(e)}")
                 error -= 1
-                if err == 0:
+                if error == 0:
                     return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
             
 @app.get("/rank/{item_id}")
@@ -341,17 +352,20 @@ async def get_data(item_id: str):
         except Exception as e:
             # 记录日志或处理 Redis 错误
             print(f"Redis setex error: {e}")
-        fg = FeedGenerator()
-        fg.title('today news')
-        fg.link(href='https://www.hotday.uk')
-        fg.description('Today news')
-        for items in data:
-            for item in items['data']:
-                if item and "hot_label" in item:
-                    fe = fg.add_entry()
-                    fe.title(item.get('title', item['hot_label']))
-                    fe.link(href=item.get('url', item['hot_url']))
-        fg.rss_file('/app/rss_feed.xml')
+        try:
+            fg = FeedGenerator()
+            fg.title('today news')
+            fg.link(href='https://www.hotday.uk')
+            fg.description('Today news')
+            for items in data:
+                for item in items['data']:
+                    if item and "hot_label" in item:
+                        fe = fg.add_entry()
+                        fe.title(item.get('title', item['hot_label']))
+                        fe.link(href=item.get('url', item['hot_url']))
+            fg.rss_file('/app/rss_feed.xml')
+        except Exception as e:
+            print("generate today news rss feed error")
         return {
             "code": 200,
             "msg": "success",

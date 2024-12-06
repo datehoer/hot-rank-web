@@ -18,16 +18,17 @@ async def remove_img_tags(html_content):
 
 async def parse_detail(needKnowList):
     for needKnow in needKnowList:
-        if "thepaper.cn" in needKnow['hot_url']:
-            needKnow = await parse_pengpai(needKnow)
-        elif "36kr.com" in needKnow['hot_url']:
-            needKnow = await parse_36kr(needKnow)
-        elif "ithome.com" in needKnow['hot_url']:
-            needKnow = await parse_ithome(needKnow)
-        elif "sspai.com" in needKnow['hot_url']:
-            needKnow = await parse_sspai(needKnow)
-        elif "wallstreetcn.com" in needKnow['hot_url']:
-            needKnow = await parse_awatmt(needKnow)
+        if "hot_url" in needKnow:
+            if "thepaper.cn" in needKnow['hot_url']:
+                needKnow = await parse_pengpai(needKnow)
+            elif "36kr.com" in needKnow['hot_url']:
+                needKnow = await parse_36kr(needKnow)
+            elif "ithome.com" in needKnow['hot_url']:
+                needKnow = await parse_ithome(needKnow)
+            elif "sspai.com" in needKnow['hot_url']:
+                needKnow = await parse_sspai(needKnow)
+            elif "wallstreetcn.com" in needKnow['hot_url']:
+                needKnow = await parse_awatmt(needKnow)
     return needKnowList
 
 
