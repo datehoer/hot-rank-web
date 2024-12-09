@@ -95,7 +95,7 @@
       style="margin-top: -6vh"
       :before-close="handleClose"
       custom-class="news-dialog"
-      v-loading="isLoading"
+      
     >
       <template slot="title">
         <div class="dialog-title">
@@ -104,7 +104,7 @@
         </div>
       </template>
       
-      <div class="dialog-content">
+      <div class="dialog-content" v-loading="isLoading" element-loading-text="星链查询中" element-loading-spinner="el-icon-loading" element-loading-background="rgba(0, 0, 0, 0.8)">
         <div class="news-container" ref="newsContainer">
           <div 
             v-for="(item, index) in aiSummarizes" 
@@ -233,17 +233,20 @@ export default {
       getAiSummarizes()
         .then((response) => {
           this.aiSummarizes = response.data;
+          this.$message({
+            message: '恭喜，星链链接成功今日热点总结已加载',
+            type: 'success'
+          });
           this.$nextTick(() => {
             this.setupIntersectionObserver();
           });
         })
         .catch((error) => {
           console.error('获取AI摘要失败:', error);
-          // 设置为空数组，确保组件不会崩溃
+          this.$message.error('太惨了，星链链接失败今日热点总结未加载');
           this.aiSummarizes = [];
         })
         .finally(() => {
-          // 无论成功失败都会执行
           this.isLoading = false;
         });
     },
