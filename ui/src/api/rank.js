@@ -62,3 +62,10 @@ export function getAiSummarizes(){
     method: 'get'
   })
 }
+
+export function refresh(){
+  return request({
+    url: '/refresh',
+    method: 'get'
+  })
+}

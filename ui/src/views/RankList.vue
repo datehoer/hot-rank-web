@@ -13,9 +13,16 @@
           <!-- 左侧 logo -->
           <div class="logo" title="HotRank">
             <!-- <img src="@/assets/logo.png" alt="Logo" class="logo-image"/> -->
-            <robot theme="two-tone" size="30" :fill="['#e23333' ,'#db882c']" :strokeWidth="3" @click="dialogVisible = true" title="AI Summary"/>
+            <robot
+              theme="two-tone"
+              size="30"
+              :fill="['#e23333', '#db882c']"
+              :strokeWidth="3"
+              @click="dialogVisible = true"
+              title="AI Summary"
+            />
           </div>
-          
+
           <!-- 搜索栏 -->
           <!-- <div class="search-bar">
             <el-input
@@ -38,8 +45,8 @@
     <!-- 主要内容区域 -->
     <div class="main-content">
       <el-row :gutter="16">
-        <el-col 
-          v-for="section in filteredNewsSections" 
+        <el-col
+          v-for="section in filteredNewsSections"
           :key="section.id"
           :span="24 / columnsCount"
         >
@@ -49,6 +56,7 @@
             :type="section.type"
             :news-items="section.data"
             :wrap-text="wrapText"
+            @update="handleUpdate"
           />
         </el-col>
       </el-row>
@@ -95,7 +103,6 @@
       style="margin-top: -6vh"
       :before-close="handleClose"
       custom-class="news-dialog"
-      
     >
       <template slot="title">
         <div class="dialog-title">
@@ -103,12 +110,18 @@
           <span>今日热点总结|每小时更新</span>
         </div>
       </template>
-      
-      <div class="dialog-content" v-loading="isLoading" element-loading-text="星链查询中" element-loading-spinner="el-icon-loading" element-loading-background="rgba(0, 0, 0, 0.8)">
+
+      <div
+        class="dialog-content"
+        v-loading="isLoading"
+        element-loading-text="星链查询中"
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.8)"
+      >
         <div class="news-container" ref="newsContainer">
-          <div 
-            v-for="(item, index) in aiSummarizes" 
-            :key="index" 
+          <div
+            v-for="(item, index) in aiSummarizes"
+            :key="index"
             class="news-item"
             :id="`news-${index}`"
           >
@@ -117,7 +130,7 @@
                 <span class="news-tag">{{ item.hot_tag }}</span>
                 <h3 class="news-title">{{ item.hot_label }}</h3>
               </div>
-              <el-button 
+              <el-button
                 type="text"
                 size="small"
                 class="news-link"
@@ -133,11 +146,11 @@
 
         <!-- 右侧导航栏 -->
         <div class="news-nav">
-          <div 
-            v-for="(item, index) in aiSummarizes" 
+          <div
+            v-for="(item, index) in aiSummarizes"
             :key="index"
             class="nav-item"
-            :class="{ 'active': activeIndex === index }"
+            :class="{ active: activeIndex === index }"
             @click="scrollToNews(index)"
           >
             {{ item.hot_tag }}
@@ -147,8 +160,12 @@
 
       <template slot="footer">
         <div class="dialog-footer">
-          <el-button type="info" @click="handleCheckboxChange" size="small">今日不再提示</el-button>
-          <el-button type="primary" @click="dialogVisible = false" size="small">关 闭</el-button>
+          <el-button type="info" @click="handleCheckboxChange" size="small"
+            >今日不再提示</el-button
+          >
+          <el-button type="primary" @click="dialogVisible = false" size="small"
+            >关 闭</el-button
+          >
         </div>
       </template>
     </el-dialog>
@@ -156,21 +173,21 @@
 </template>
 
 <script>
-import NewsSection from '@/components/NewsSection.vue'
-import UserPanel from '@/components/UserPanel.vue'
-import {getRankList, getAiSummarizes} from "@/api/rank.js"
-import moment from 'moment'
-import {Robot} from '@icon-park/vue';
+import NewsSection from "@/components/NewsSection.vue";
+import UserPanel from "@/components/UserPanel.vue";
+import { getRankList, getAiSummarizes } from "@/api/rank.js";
+import moment from "moment";
+import { Robot } from "@icon-park/vue";
 export default {
-  name: 'App',
+  name: "App",
   components: {
     NewsSection,
     UserPanel,
-    Robot
+    Robot,
   },
   data() {
     return {
-      searchText: '',
+      searchText: "",
       // 设置每行显示的列数（1-4）
       columnsCount: 3,
       newsSections: [],
@@ -185,32 +202,32 @@ export default {
       activeIndex: 0,
       observer: null,
       isLoading: false,
-    }
+    };
   },
   computed: {
     // 计算最大列数
     maxColumns() {
-      return Math.min(this.newsSections.length, 4)
+      return Math.min(this.newsSections.length, 4);
     },
     filteredNewsSections() {
-      if (this.selectedSites.includes("*")){
-        return this.newsSections
-      }else{
-        return this.newsSections.filter(section => 
+      if (this.selectedSites.includes("*")) {
+        return this.newsSections;
+      } else {
+        return this.newsSections.filter((section) =>
           this.selectedSites.includes(section.name)
         );
       }
-    }
+    },
   },
   created() {
-    const savedOrder = this.$localStorage.get('sitesOrder', null);
-    this.showAllSites = this.$localStorage.get('showAllSites', true);
-    this.selectedSites = this.$localStorage.get('selectedSites', []);
+    const savedOrder = this.$localStorage.get("sitesOrder", null);
+    this.showAllSites = this.$localStorage.get("showAllSites", true);
+    this.selectedSites = this.$localStorage.get("selectedSites", []);
     this.fetchRankList(savedOrder);
-    this.columnsCount = this.$localStorage.get('columnsCount', 3);
-    this.wrapText = this.$localStorage.get('wrapText', true);
+    this.columnsCount = this.$localStorage.get("columnsCount", 3);
+    this.wrapText = this.$localStorage.get("wrapText", true);
     this.checkMobile();
-    window.addEventListener('resize', this.checkMobile);
+    window.addEventListener("resize", this.checkMobile);
     const lastDateChecked = localStorage.getItem("dontShowToday");
     const today = new Date().toDateString();
     if (lastDateChecked === today) {
@@ -220,7 +237,7 @@ export default {
     }
   },
   destroyed() {
-    window.removeEventListener('resize', this.checkMobile);
+    window.removeEventListener("resize", this.checkMobile);
   },
   beforeDestroy() {
     if (this.observer) {
@@ -234,16 +251,16 @@ export default {
         .then((response) => {
           this.aiSummarizes = response.data;
           this.$message({
-            message: '恭喜，星链链接成功今日热点总结已加载',
-            type: 'success'
+            message: "恭喜，星链链接成功今日热点总结已加载",
+            type: "success",
           });
           this.$nextTick(() => {
             this.setupIntersectionObserver();
           });
         })
         .catch((error) => {
-          console.error('获取AI摘要失败:', error);
-          this.$message.error('太惨了，星链链接失败今日热点总结未加载');
+          console.error("获取AI摘要失败:", error);
+          this.$message.error("太惨了，星链链接失败今日热点总结未加载");
           this.aiSummarizes = [];
         })
         .finally(() => {
@@ -262,7 +279,7 @@ export default {
     scrollToNews(index) {
       const element = document.getElementById(`news-${index}`);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+        element.scrollIntoView({ behavior: "smooth" });
       }
     },
     setupIntersectionObserver() {
@@ -273,16 +290,16 @@ export default {
 
       this.observer = new IntersectionObserver(
         (entries) => {
-          entries.forEach(entry => {
+          entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              const index = Number(entry.target.id.split('-')[1]);
+              const index = Number(entry.target.id.split("-")[1]);
               this.activeIndex = index;
             }
           });
         },
         {
           root: this.$refs.newsContainer,
-          threshold: 0.5
+          threshold: 0.5,
         }
       );
 
@@ -296,7 +313,7 @@ export default {
     },
     goToNews(url) {
       if (url) {
-        window.open(url, '_blank');
+        window.open(url, "_blank");
       }
     },
     checkMobile() {
@@ -304,7 +321,7 @@ export default {
     },
     updateSelectedSites(sites) {
       this.selectedSites = sites;
-      this.$localStorage.set('selectedSites', sites);
+      this.$localStorage.set("selectedSites", sites);
     },
     updateSitesOrder(orderedSites) {
       // 根据排序后的站点名称重新排序 newsSections
@@ -314,101 +331,100 @@ export default {
         return indexA - indexB;
       });
       // 保存排序到本地存储
-      this.$localStorage.set('sitesOrder', orderedSites);
+      this.$localStorage.set("sitesOrder", orderedSites);
     },
     updateColumnsCount(newColumnsCount) {
       this.columnsCount = newColumnsCount;
-      this.$localStorage.set('columnsCount', this.columnsCount);
+      this.$localStorage.set("columnsCount", this.columnsCount);
     },
     updateWrapText(newWrapText) {
       this.wrapText = newWrapText;
-      this.$localStorage.set('wrapText', this.wrapText);
+      this.$localStorage.set("wrapText", this.wrapText);
     },
     fetchRankList(savedOrder = null) {
-    this.loading = true;
-    getRankList().then(response => {
-      // 1. 先处理新数据
-      this.newsSections = response.data.map(item => {
-        const insertTime = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss");
-        const subtitle = insertTime.fromNow();
-        const now = moment();
-        const diffHours = now.diff(insertTime, 'hours');
-        const type = diffHours <= 1 ? 'primary' : 
-                 diffHours <= 4 ? 'danger' : 
-                 'warning';
-        return {
-          ...item,
-          subtitle,
-          type
-        };
-      });
-
-      // 2. 处理排序
-      const allSiteNames = this.newsSections.map(section => section.name);
-      if (savedOrder) {
-        // 清理排序数据，只保留存在的站点
-        const cleanedOrder = savedOrder.filter(site => allSiteNames.includes(site));
-        // 添加新增的站点到排序末尾
-        const newSites = allSiteNames.filter(site => !cleanedOrder.includes(site));
-        const updatedOrder = [...cleanedOrder, ...newSites];
-        
-        // 更新排序并保存
-        this.$localStorage.set('sitesOrder', updatedOrder);
-        
-        // 应用排序
-        this.newsSections.sort((a, b) => {
-          const indexA = updatedOrder.indexOf(a.name);
-          const indexB = updatedOrder.indexOf(b.name);
-          return indexA - indexB;
+      this.loading = true;
+      getRankList().then((response) => {
+        this.newsSections = response.data.map((item) => {
+          const insertTime = moment(item.insert_time, "YYYY-MM-DD HH:mm:ss");
+          const subtitle = insertTime.fromNow();
+          const now = moment();
+          const diffHours = now.diff(insertTime, "hours");
+          const type =
+            diffHours <= 1 ? "primary" : diffHours <= 4 ? "danger" : "warning";
+          return {
+            ...item,
+            subtitle,
+            type,
+          };
         });
-      } else {
-        // 如果没有保存的排序，创建新的排序并保存
-        this.$localStorage.set('sitesOrder', allSiteNames);
-      }
 
-      // 3. 处理站点选择
-      if (this.showAllSites) {
-        this.selectedSites = allSiteNames;
-      } else {
-        const savedSelectedSites = this.$localStorage.get('selectedSites', []);
-        // 清理选中的站点，只保留仍然存在的站点
-        this.selectedSites = savedSelectedSites.filter(site => 
-          allSiteNames.includes(site)
-        );
-        // 如果清理后没有选中的站点，则选择所有站点
-        if (this.selectedSites.length === 0) {
-          this.selectedSites = allSiteNames;
-          this.showAllSites = true;
+        const allSiteNames = this.newsSections.map((section) => section.name);
+        if (savedOrder) {
+          const cleanedOrder = savedOrder.filter((site) =>
+            allSiteNames.includes(site)
+          );
+          const newSites = allSiteNames.filter(
+            (site) => !cleanedOrder.includes(site)
+          );
+          const updatedOrder = [...cleanedOrder, ...newSites];
+
+          this.$localStorage.set("sitesOrder", updatedOrder);
+
+          this.newsSections.sort((a, b) => {
+            const indexA = updatedOrder.indexOf(a.name);
+            const indexB = updatedOrder.indexOf(b.name);
+            return indexA - indexB;
+          });
+        } else {
+          this.$localStorage.set("sitesOrder", allSiteNames);
         }
-      }
-      
-      // 保存最终状态
-      this.$localStorage.set('selectedSites', this.selectedSites);
-      this.$localStorage.set('showAllSites', this.showAllSites);
-      this.loading = false;
+
+        if (this.showAllSites) {
+          this.selectedSites = allSiteNames;
+        } else {
+          const savedSelectedSites = this.$localStorage.get(
+            "selectedSites",
+            []
+          );
+          this.selectedSites = savedSelectedSites.filter((site) =>
+            allSiteNames.includes(site)
+          );
+          if (this.selectedSites.length === 0) {
+            this.selectedSites = allSiteNames;
+            this.showAllSites = true;
+          }
+        }
+
+        this.$localStorage.set("selectedSites", this.selectedSites);
+        this.$localStorage.set("showAllSites", this.showAllSites);
+        this.loading = false;
       });
     },
     updateShowAllSites(value) {
       this.showAllSites = value;
-      this.$localStorage.set('showAllSites', value);
+      this.$localStorage.set("showAllSites", value);
       if (value) {
-        this.selectedSites = this.newsSections.map(section => section.name);
-        this.$localStorage.set('selectedSites', this.selectedSites);
+        this.selectedSites = this.newsSections.map((section) => section.name);
+        this.$localStorage.set("selectedSites", this.selectedSites);
       }
-    }
-  }
-}
+    },
+    handleUpdate() {
+      this.fetchRankList();
+    },
+  },
+};
 </script>
 
 <style>
-@import '@/styles/themes.css';
+@import "@/styles/themes.css";
 
 /* 基础样式 */
 body {
   margin: 0;
   background-color: var(--bg-color);
   color: var(--text-color);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 /* 容器布局 */
@@ -483,7 +499,7 @@ body {
 }
 
 .dialog-title i {
-  color: #409EFF;
+  color: #409eff;
   margin-right: 8px;
   font-size: 18px;
 }
@@ -534,8 +550,9 @@ body {
   margin-bottom: 0;
 }
 
-.nav-item:hover, .nav-item.active {
-  color: #409EFF;
+.nav-item:hover,
+.nav-item.active {
+  color: #409eff;
   background-color: var(--hover-bg);
 }
 
@@ -568,7 +585,7 @@ body {
 
 .news-tag {
   background-color: var(--hover-bg);
-  color: #409EFF;
+  color: #409eff;
   padding: 2px 8px;
   border-radius: 3px;
   font-size: 12px;
@@ -592,7 +609,7 @@ body {
 
 .news-link {
   padding: 4px 0;
-  color: #409EFF;
+  color: #409eff;
   font-size: 13px;
 }
 
@@ -689,11 +706,11 @@ body {
   [class*="el-col-"] {
     width: 100% !important;
   }
-  
+
   .logo-search {
     gap: 12px;
   }
-  
+
   .header-content {
     padding: 0 12px;
   }
@@ -841,7 +858,7 @@ body {
     .nav-item {
       background-color: rgba(255, 255, 255, 0.05);
     }
-    
+
     .news-item {
       background-color: rgba(255, 255, 255, 0.03);
     }

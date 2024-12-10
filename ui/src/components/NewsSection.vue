@@ -29,6 +29,8 @@
 </template>
 
 <script>
+import { refresh } from '@/api/rank'
+
 export default {
   name: 'NewsSection',
   props: {
@@ -87,7 +89,14 @@ export default {
       this.refreshNews();
     },
     refreshNews() {
-      console.log("something happened");
+      refresh().then((response) => {
+        let message = response.msg;
+        this.$message({
+          message: message,
+          type: 'success'
+        });
+        this.$emit("update");
+      })
     }
   }
 }

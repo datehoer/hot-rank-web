@@ -10,6 +10,7 @@ import traceback
 import httpx
 from config import *
 import time
+from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from sendEmail import send_email
 from common import *
@@ -131,6 +132,25 @@ async def chatWithModel(messages, check_list=True):
                 print("fetch ai error: " + str(e) + traceback.format_exc())
                 err -= 1
     return ""
+@app.get("/refresh")
+async def refresh():
+    ttl_time_second = await redis_client.ttl("rank")
+    message = {
+            "code": 200,
+            "msg": "星链回复是最新数据啦",
+            "data": []
+        }
+    if ttl_time_second:
+        current_time = datetime.now()
+        total_ttl = timedelta(hours=1)
+        creation_time = current_time - (total_ttl - timedelta(seconds=ttl_time_second))
+        nearest_hour = current_time.replace(minute=0, second=0, microsecond=0)
+        if creation_time < nearest_hour:
+            await redis_client.delete("rank")
+            await redis_client.delete("todayTopNews")
+            message['msg'] = "已通知星链重新链接中"
+    return message
+
 @app.get("/todayTopNews")
 async def getTodayTopNews():
     todayTopNewsData = await redis_client.get("todayTopNews")
