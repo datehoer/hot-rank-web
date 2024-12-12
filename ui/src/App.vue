@@ -8,6 +8,15 @@
 
 export default {
   name: "App",
+  metaInfo: {
+    script: [
+      {
+        src: 'https://cloud.umami.is/script.js',
+        defer: true,
+        'data-website-id': '24595aed-c7d3-4407-9ce1-e3d54b58bf00'
+      }
+    ]
+  }
 };
 </script>
 <style scoped>
