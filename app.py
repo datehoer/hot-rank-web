@@ -132,6 +132,10 @@ async def chatWithModel(messages, check_list=True):
                 print("fetch ai error: " + str(e) + traceback.format_exc())
                 err -= 1
     return ""
+@app.get("/holiday")
+async def getHoliday():
+    holidays = await redis_client.get("holidays")
+    return {"code": 200, "msg": "success", "data": json.loads(holidays)}
 @app.get("/refresh")
 async def refresh():
     ttl_time_second = await redis_client.ttl("rank")

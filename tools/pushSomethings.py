@@ -240,6 +240,46 @@ redis_client = redis.Redis(
 # ]
 # redis_client.set("music", json.dumps(music_list))
 
-model = "grok-beta"
+# model = "grok-beta"
 
-redis_client.set("model", model)
+# redis_client.set("model", model)
+
+holides = [
+  {
+    "holiday_name": "元旦",
+    "date": "2025-01-01",
+    "timestamp": 1735689600,
+    "remarks": "周三放假1天，不调休。"
+  },
+  {
+    "holiday_name": "春节",
+    "date": "2025-01-28",
+    "timestamp": 1738012800,
+    "remarks": "农历除夕（周二）起放假调休，共8天。1月26日（周日）、2月8日（周六）上班。"
+  },
+  {
+    "holiday_name": "清明节",
+    "date": "2025-04-04",
+    "timestamp": 1743724800,
+    "remarks": "周五起放假，共3天。"
+  },
+  {
+    "holiday_name": "劳动节",
+    "date": "2025-05-01",
+    "timestamp": 1746124800,
+    "remarks": "周四起放假调休，共5天。4月27日（周日）上班。"
+  },
+  {
+    "holiday_name": "端午节",
+    "date": "2025-05-31",
+    "timestamp": 1748630400,
+    "remarks": "周六起放假，共3天。"
+  },
+  {
+    "holiday_name": "国庆节、中秋节",
+    "date": "2025-10-01",
+    "timestamp": 1759276800,
+    "remarks": "周三起放假调休，共8天。9月28日（周日）、10月11日（周六）上班。"
+  }
+]
+redis_client.set("holidays", json.dumps(holides))
