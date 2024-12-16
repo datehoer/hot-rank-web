@@ -69,3 +69,10 @@ export function refresh(){
     method: 'get'
   })
 }
+
+export function getHolidays(){
+  return request({
+    url: '/holiday',
+    method: 'get'
+  })
+}

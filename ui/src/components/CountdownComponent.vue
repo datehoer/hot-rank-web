@@ -19,15 +19,16 @@
 
 <script>
 import moment from 'moment'
+import { getHolidays } from "@/api/rank.js";
 
 export default {
   name: 'CountdownComponent',
   data() {
     return {
       holidays: [
-        { name: '元旦', date: '2025-01-01' },
-        { name: '劳动节', date: '2025-05-01' },
-        { name: '国庆节', date: '2024-10-01' },
+        { holiday_name: '元旦', date: '2025-01-01' },
+        { holiday_name: '劳动节', date: '2025-05-01' },
+        { holiday_name: '国庆节', date: '2024-10-01' },
       ],
       timer: null
     }
@@ -52,7 +53,7 @@ export default {
         return '暂无节假日信息'
       }
 
-      return `${nextHoliday.name}还有${minDays}天`
+      return `${nextHoliday.holiday_name}还有${minDays}天`
     },
     weekendCountdown() {
       const today = moment()
@@ -75,10 +76,20 @@ export default {
       return `还有${days}天`
     }
   },
+  created() {
+    this.listHoliday()
+  },
   methods: {
     updateCountdowns() {
       // 强制更新计算属性
       this.$forceUpdate()
+    },
+    listHoliday(){
+      getHolidays().then(response => {
+        this.holidays = response.data
+      }).catch(error => {
+        console.error('获取节假日信息失败', error)
+      })
     }
   },
   mounted() {

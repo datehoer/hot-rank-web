@@ -775,7 +775,14 @@ export default {
   font-size: 13px;
   padding: 8px 16px;
 }
-
+@media (max-width: 1700px) {
+  .user-panel {
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    width: 300px;
+  }
+}
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   :deep(.music-player-dialog .el-dialog__headerbtn) {
