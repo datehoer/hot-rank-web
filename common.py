@@ -444,6 +444,6 @@ def parse_linuxdo(data):
         result.append({
             "hot_label": item['title'],
             "hot_url": "https://linux.do/t/topic/" + str(item['id']),
-            "hot_value": heat_score
+            "hot_value": math.floor(heat_score)
         })
     return result
