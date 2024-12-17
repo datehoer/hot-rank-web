@@ -422,3 +422,28 @@ def parse_pengpai(data):
             "hot_value": 0
         })
     return result
+
+def parse_linuxdo(data):
+    data = data['data']
+    result = []
+    weight_posts = 1.0
+    weight_replies = 1.5
+    weight_views = 0.5
+    weight_likes = 2.0
+    for item in data:
+        posts_count = item.get("posts_count", 0)
+        reply_count = item.get("reply_count", 0)
+        views_count = item.get("views", 0)
+        like_count = item.get("like", 0)
+        heat_score = (
+            weight_posts * posts_count +
+            weight_replies * reply_count +
+            weight_views * math.log(views_count + 1) +
+            weight_likes * like_count
+        )
+        result.append({
+            "hot_label": item['title'],
+            "hot_url": "https://linux.do/t/topic/" +item['id'],
+            "hot_value": heat_score
+        })
+    return result

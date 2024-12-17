@@ -340,6 +340,8 @@ async def get_data(item_id: str):
                     latest_record = parse_coolan(latest_record)
                 elif collection_name == "pengpai":
                     latest_record = parse_pengpai(latest_record)
+                elif collection_name == "linuxdo":
+                    latest_record = parse_linuxdo(latest_record)
                 elif collection_name not in ['douban_movie']:
                     latest_record = parse_common(latest_record)
                 local_time = time.localtime(insert_time)
