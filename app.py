@@ -14,11 +14,12 @@ from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from sendEmail import send_email
 from common import *
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from json_repair import repair_json
 from parse_detail import parse_detail
 from feedgen.feed import FeedGenerator
-import traceback
+import random
+import string
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -52,6 +53,38 @@ class Feedback(BaseModel):
     subject: str
     content: str
     username: str
+class SubscriberRequest(BaseModel):
+    email: EmailStr
+class UnsubscribeRequest(BaseModel):
+    email: EmailStr
+    uuid: str
+def generate_uuid() -> str:
+    timestamp = int(time.time())
+    random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+    return f"{timestamp}{random_str}"
+@app.post("/subscribe")
+async def subscribe(subscriber: SubscriberRequest):
+    email = subscriber.email
+    exist_email = await redis_client.hget("subscriberEmail", email)
+    if exist_email:
+        return {"code": 500, "msg": "error, maybe the email in my database", "data": []}
+    uuid = generate_uuid()
+    await redis_client.hset(f"subscriberEmail", email, uuid)
+    send_email("Subscribe", f"Thank you for subscribing to my website. Below is your UUID. To unsubscribe, please enter your UUID ({uuid}) and your email ({email}) in the unsubscribe form on the website and submit it. Love from: https://www.hotday.uk ", [email])
+    return {"code": 200, "msg": "success", "data": {
+        "uuid": uuid,
+        "email": email
+    }}
+@app.post('/unsubscribe')
+async def unsubscribe(unsubscribe: UnsubscribeRequest):
+    uuid = await redis_client.hget("subscriberEmail", unsubscribe.email)
+    if uuid:
+        if uuid != unsubscribe.uuid:
+            return {"code": 500, "msg": "error, maybe the uuid is not correct", "data": []}
+        await redis_client.hdel("subscriberEmail", unsubscribe.email)
+        return {"code": 200, "msg": "success", "data": []}
+    else:
+        return {"code": 500, "msg": "error, maybe the email not in my database", "data": []}
 @app.get("/rankCopyWriting")
 async def get_copywriting():
     data = await redis_client.srandmember("copywriting")
@@ -174,7 +207,7 @@ async def getTodayTopNews():
                         },
                         {
                             "role": "user",
-                            "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
+                            "content": "请从下方数据中选出10条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
                         }
                     ])
                 todayTopNewsData = json.loads(repair_json(text))
