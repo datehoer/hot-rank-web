@@ -446,4 +446,5 @@ def parse_linuxdo(data):
             "hot_url": "https://linux.do/t/topic/" + str(item['id']),
             "hot_value": math.floor(heat_score)
         })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
