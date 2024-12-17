@@ -24,7 +24,8 @@ RUN pip install \
     json-repair \
     pycryptodome \
     beautifulsoup4 \
-    markdownify
+    markdownify \
+    pydantic[email]
 
 EXPOSE 7545
 
