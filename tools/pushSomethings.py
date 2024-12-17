@@ -117,62 +117,67 @@ redis_client = redis.Redis(
 # for text in copywriting:
 #     redis_client.sadd("copywriting", text)
 
-# table = [
-#     {"name": "B站热榜", "tablename": "bilibili_hot"},
-#     {"name": "抖音热搜", "tablename": "douyin_hot"},
-#     {"name": "澎湃新闻", "tablename": "pengpai"},
-#     {"name": "掘金热榜", "tablename": "juejin_hot"},
-#     {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
-#     {"name": "加密货币", "tablename": "crypto_coin"},
-#     {"name": "贴吧热议", "tablename": "tieba_topic"},
-#     {"name": "头条热榜", "tablename": "toutiao_hot"},
-#     {"name": "微博热搜", "tablename": "weibo_hot_search"},
-#     {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
-#     {"name": "虎扑社区热帖", "tablename": "hupu"},
-#     {"name": "历史上的今天", "tablename": "historytoday"},
-#     {"name": "华尔街见闻", "tablename": "wallstreetcn"},
-#     {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
-#     {"name": "36氪", "tablename": "36kr"},
-#     {"name": "52破解热榜", "tablename": "52pj"},
-#     {"name": "AcFun热榜", "tablename": "acfun"},
-#     {"name": "安全客安全快讯", "tablename": "anquanke"},
-#     {"name": "百度热搜", "tablename": "baidu_hot_search"},
-#     {"name": "白鲸出海", "tablename": "baijingchuhai"},
-#     {"name": "CSDN热榜", "tablename": "csdn"},
-#     {"name": "电商报最新消息", "tablename": "dianshangbao"},
-#     {"name": "第一财经热榜", "tablename": "diyicaijing"},
-#     {"name": "懂车帝热搜榜", "tablename": "dongchedi"},
-#     {"name": "豆瓣电影排行", "tablename": "douban_movie"},
-#     {"name": "FreeBuf咨询", "tablename": "freebuf"},
-#     {"name": "GitHub Trending", "tablename": "github"},
-#     {"name": "Google 热搜", "tablename": "google_search"},
-#     {"name": "虎嗅热文", "tablename": "huxiu"},
-#     {"name": "3DM", "tablename": "3dm"},
-#     {"name": "IT之家热榜", "tablename": "ithome"},
-#     {"name": "开眼", "tablename": "openeye"},
-#     {"name": "看雪热门", "tablename": "kanxue"},
-#     {"name": "宽带山热榜", "tablename": "kuandaishan"},
-#     {"name": "PMCAFF精选", "tablename": "pmcaff"},
-#     {"name": "汽车之家热帖榜", "tablename": "qichezhijia"},
-#     {"name": "起点榜单", "tablename": "qidian"},
-#     {"name": "水木社区热门话题", "tablename": "shuimu"},
-#     {"name": "新浪热门", "tablename": "sina"},
-#     {"name": "新浪体育热门", "tablename": "sina_sport"},
-#     {"name": "新浪新闻热门", "tablename": "sina_news"},
-#     {"name": "太平洋汽车热门", "tablename": "taipingyang"},
-#     {"name": "TapTap热门", "tablename": "taptap"},
-#     {"name": "腾讯新闻热点榜", "tablename": "tencent_news"},
-#     {"name": "人人都是产品经理热门", "tablename": "woshipm"},
-#     {"name": "雪球热门", "tablename": "xueqiu"},
-#     {"name": "易车热门", "tablename": "yiche"},
-#     {"name": "优设读报", "tablename": "youshedubao"},
-#     {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
-#     {"name": "站酷榜单", "tablename": "zhanku"},
-#     {"name": "纵横24小时畅销榜", "tablename": "zongheng"},
-#     # {"name": "酷安热门话题", "tablename": "coolan"},
-#     {"name": "hacknews", "tablename": "hacknews"},
-# ]
-# redis_client.set("card_table", json.dumps(table))
+table = [
+    {"name": "B站热榜", "tablename": "bilibili_hot"},
+    {"name": "抖音热搜", "tablename": "douyin_hot"},
+    {"name": "澎湃新闻", "tablename": "pengpai"},
+    {"name": "掘金热榜", "tablename": "juejin_hot"},
+    {"name": "少数派热榜", "tablename": "shaoshupai_hot"},
+    {"name": "加密货币", "tablename": "crypto_coin"},
+    {"name": "贴吧热议", "tablename": "tieba_topic"},
+    {"name": "头条热榜", "tablename": "toutiao_hot"},
+    {"name": "微博热搜", "tablename": "weibo_hot_search"},
+    {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
+    {"name": "虎扑社区热帖", "tablename": "hupu"},
+    {"name": "历史上的今天", "tablename": "historytoday"},
+    {"name": "华尔街见闻", "tablename": "wallstreetcn"},
+    {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
+    {"name": "36氪", "tablename": "36kr"},
+    {"name": "52破解热榜", "tablename": "52pj"},
+    {"name": "AcFun热榜", "tablename": "acfun"},
+    {"name": "安全客安全快讯", "tablename": "anquanke"},
+    {"name": "百度热搜", "tablename": "baidu_hot_search"},
+    {"name": "白鲸出海", "tablename": "baijingchuhai"},
+    {"name": "CSDN热榜", "tablename": "csdn"},
+    {"name": "电商报最新消息", "tablename": "dianshangbao"},
+    {"name": "第一财经热榜", "tablename": "diyicaijing"},
+    {"name": "懂车帝热搜榜", "tablename": "dongchedi"},
+    {"name": "豆瓣电影排行", "tablename": "douban_movie"},
+    {"name": "FreeBuf咨询", "tablename": "freebuf"},
+    {"name": "GitHub Trending", "tablename": "github"},
+    {"name": "Google 热搜", "tablename": "google_search"},
+    {"name": "虎嗅热文", "tablename": "huxiu"},
+    {"name": "3DM", "tablename": "3dm"},
+    {"name": "IT之家热榜", "tablename": "ithome"},
+    {"name": "开眼", "tablename": "openeye"},
+    {"name": "看雪热门", "tablename": "kanxue"},
+    {"name": "宽带山热榜", "tablename": "kuandaishan"},
+    {"name": "PMCAFF精选", "tablename": "pmcaff"},
+    {"name": "汽车之家热帖榜", "tablename": "qichezhijia"},
+    {"name": "起点榜单", "tablename": "qidian"},
+    {"name": "水木社区热门话题", "tablename": "shuimu"},
+    {"name": "新浪热门", "tablename": "sina"},
+    {"name": "新浪体育热门", "tablename": "sina_sport"},
+    {"name": "新浪新闻热门", "tablename": "sina_news"},
+    {"name": "太平洋汽车热门", "tablename": "taipingyang"},
+    {"name": "TapTap热门", "tablename": "taptap"},
+    {"name": "腾讯新闻热点榜", "tablename": "tencent_news"},
+    {"name": "人人都是产品经理热门", "tablename": "woshipm"},
+    {"name": "雪球热门", "tablename": "xueqiu"},
+    {"name": "易车热门", "tablename": "yiche"},
+    {"name": "优设读报", "tablename": "youshedubao"},
+    {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
+    {"name": "站酷榜单", "tablename": "zhanku"},
+    {"name": "纵横24小时畅销榜", "tablename": "zongheng"},
+    # {"name": "酷安热门话题", "tablename": "coolan"},
+    {"name": "hacknews", "tablename": "hacknews"},
+    {"name": "要知", "tablename": "needknow"},
+    {"name": "v2ex热门", "tablename": "v2ex"},
+    {"name": "nodeseed", "tablename": "nodeseed"},
+    {"name": "hostloc", "tablename": "hostloc"},
+    {"name": "linuxdo", "tablename": "linuxdo"},
+]
+redis_client.set("card_table", json.dumps(table))
 
 # online_movies = [{
 #     "name": "播剧影视网",
@@ -244,42 +249,42 @@ redis_client = redis.Redis(
 
 # redis_client.set("model", model)
 
-holides = [
-  {
-    "holiday_name": "元旦",
-    "date": "2025-01-01",
-    "timestamp": 1735689600,
-    "remarks": "周三放假1天，不调休。"
-  },
-  {
-    "holiday_name": "春节",
-    "date": "2025-01-28",
-    "timestamp": 1738012800,
-    "remarks": "农历除夕（周二）起放假调休，共8天。1月26日（周日）、2月8日（周六）上班。"
-  },
-  {
-    "holiday_name": "清明节",
-    "date": "2025-04-04",
-    "timestamp": 1743724800,
-    "remarks": "周五起放假，共3天。"
-  },
-  {
-    "holiday_name": "劳动节",
-    "date": "2025-05-01",
-    "timestamp": 1746124800,
-    "remarks": "周四起放假调休，共5天。4月27日（周日）上班。"
-  },
-  {
-    "holiday_name": "端午节",
-    "date": "2025-05-31",
-    "timestamp": 1748630400,
-    "remarks": "周六起放假，共3天。"
-  },
-  {
-    "holiday_name": "国庆节、中秋节",
-    "date": "2025-10-01",
-    "timestamp": 1759276800,
-    "remarks": "周三起放假调休，共8天。9月28日（周日）、10月11日（周六）上班。"
-  }
-]
-redis_client.set("holidays", json.dumps(holides))
+# holides = [
+#   {
+#     "holiday_name": "元旦",
+#     "date": "2025-01-01",
+#     "timestamp": 1735689600,
+#     "remarks": "周三放假1天，不调休。"
+#   },
+#   {
+#     "holiday_name": "春节",
+#     "date": "2025-01-28",
+#     "timestamp": 1738012800,
+#     "remarks": "农历除夕（周二）起放假调休，共8天。1月26日（周日）、2月8日（周六）上班。"
+#   },
+#   {
+#     "holiday_name": "清明节",
+#     "date": "2025-04-04",
+#     "timestamp": 1743724800,
+#     "remarks": "周五起放假，共3天。"
+#   },
+#   {
+#     "holiday_name": "劳动节",
+#     "date": "2025-05-01",
+#     "timestamp": 1746124800,
+#     "remarks": "周四起放假调休，共5天。4月27日（周日）上班。"
+#   },
+#   {
+#     "holiday_name": "端午节",
+#     "date": "2025-05-31",
+#     "timestamp": 1748630400,
+#     "remarks": "周六起放假，共3天。"
+#   },
+#   {
+#     "holiday_name": "国庆节、中秋节",
+#     "date": "2025-10-01",
+#     "timestamp": 1759276800,
+#     "remarks": "周三起放假调休，共8天。9月28日（周日）、10月11日（周六）上班。"
+#   }
+# ]
+# redis_client.set("holidays", json.dumps(holides))
