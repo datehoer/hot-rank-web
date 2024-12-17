@@ -1,0 +1,1 @@
+docker run -itd --name hotrank -v /opt/hot-rank-web/app.py:/app/app.py -v /opt/hot-rank-web/common.py:/app/common.py -v /opt/hot-rank-web/parse_detail.py:/app/parse_detail.py -v /opt/hot-rank-web/config.py:/app/config.py -p 127.0.0.1:7545:7545 hotrank:v0.1
