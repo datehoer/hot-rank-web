@@ -7,7 +7,7 @@ demo: [~~原网站~~](https://hotrank.datehoer.com/) => https://www.hotday.uk/
 
 前后端项目 (Frontend and Backend Project)：
 
-- 前端 (Frontend): vue2 + element-ui
+- 前端 (Frontend): vue2 + element-ui + [iconpark图标库](https://iconpark.oceanengine.com/official)
 - 后端 (Backend): python + fastapi
 
 目前采集平台有 (Current Collection Platforms):
@@ -65,6 +65,10 @@ demo: [~~原网站~~](https://hotrank.datehoer.com/) => https://www.hotday.uk/
 - hacknews
 - 要知
 - [我的博客](https://www.datehoer.com/)
+- Linuxdo
+- v2ex
+- nodeseed
+- hostloc
 
 
 

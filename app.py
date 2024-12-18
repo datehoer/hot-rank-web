@@ -77,11 +77,13 @@ async def subscribe(subscriber: SubscriberRequest):
     }}
 @app.post('/unsubscribe')
 async def unsubscribe(unsubscribe: UnsubscribeRequest):
-    uuid = await redis_client.hget("subscriberEmail", unsubscribe.email)
+    email = unsubscribe.email
+    uuid = await redis_client.hget("subscriberEmail", email)
     if uuid:
         if uuid != unsubscribe.uuid:
             return {"code": 500, "msg": "error, maybe the uuid is not correct", "data": []}
-        await redis_client.hdel("subscriberEmail", unsubscribe.email)
+        await redis_client.hdel("subscriberEmail", email)
+        send_email("Unsubscribe", f"Thank you for subscribing to my website. You have successfully unsubscribed from my website. Love from: https://www.hotday.uk ", [email])
         return {"code": 200, "msg": "success", "data": []}
     else:
         return {"code": 500, "msg": "error, maybe the email not in my database", "data": []}

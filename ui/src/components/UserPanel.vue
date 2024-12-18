@@ -11,6 +11,7 @@
         <record-disc class="action-button" title="唱片" theme="two-tone" size="30" :fill="[isDarkMode ? '#E5EAF3' : '#303133', isDarkMode ? '#242424' : '#ffffff']" @click="openMusicPlayer"/>
         <comments class="action-button" title="反馈" theme="two-tone" size="30" :fill="[isDarkMode ? '#E5EAF3' : '#303133', isDarkMode ? '#242424' : '#ffffff']" @click="openFeedback"/>
         <github class="action-button" theme="two-tone" size="30" :fill="isDarkMode ? '#E5EAF3' : '#303133'" @click="goToGitHub"/>
+        <vip-one class="action-button" title="订阅" theme="two-tone" size="30" :fill="[isDarkMode ? '#E5EAF3' : '#303133', isDarkMode ? '#242424' : '#ffffff']" :strokeWidth="3" @click="openSubscribe"/>
       </div>
     </div>
     <div class="quote-card">
@@ -146,17 +147,64 @@
     >
       <music-player />
     </el-dialog>
+    <!-- 订阅弹窗 -->
+    <el-dialog
+      title="订阅管理"
+      :visible.sync="showSubscribe"
+      width="400px"
+      custom-class="subscribe-dialog"
+      :modal="false"
+    >
+      <el-tabs v-model="subscribeTab">
+        <el-tab-pane label="订阅" name="subscribe">
+          <el-form :model="subscribeForm" :rules="subscribeRules" ref="subscribeForm">
+            <el-form-item label="邮箱" prop="email">
+              <el-input 
+                v-model="subscribeForm.email" 
+                placeholder="请输入您的邮箱"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+        
+        <el-tab-pane label="取消订阅" name="unsubscribe">
+          <el-form :model="unsubscribeForm" :rules="unsubscribeRules" ref="unsubscribeForm">
+            <el-form-item label="邮箱" prop="email">
+              <el-input 
+                v-model="unsubscribeForm.email" 
+                placeholder="请输入您的邮箱"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="UUID" prop="uuid">
+              <el-input 
+                v-model="unsubscribeForm.uuid" 
+                placeholder="请输入您的UUID"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+      
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="closeSubscribe">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="handleSubscribe"
+          :loading="subscribeLoading"
+        >确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import draggable from 'vuedraggable'
-import { getCopyWriting, getAvatar, getUsername, postFeedback, getCards } from "@/api/rank.js";
+import { getCopyWriting, getAvatar, getUsername, postFeedback, getCards, unsubscribe, subscribe } from "@/api/rank.js";
 import CalendarComponent from '@/components/CalendarComponent.vue';
 import HoroscopeComponent from '@/components/HoroscopeComponent.vue';
 import CountdownComponent from '@/components/CountdownComponent.vue';
 import MusicPlayer from '@/components/Player.vue'
-import {SettingTwo, RecordDisc, Comments, Github} from '@icon-park/vue';
+import {SettingTwo, RecordDisc, Comments, Github, VipOne} from '@icon-park/vue';
 export default {
   name: 'UserPanel',
   components: {
@@ -168,7 +216,8 @@ export default {
     SettingTwo,
     RecordDisc,
     Comments,
-    Github
+    Github,
+    VipOne
   },
   props: {
     columnsCount: {
@@ -214,6 +263,16 @@ export default {
       selectAll: false,
       isDarkMode: true,
       isMobile: false,
+      showSubscribe: false,
+      subscribeTab: 'subscribe',
+      subscribeLoading: false,
+      subscribeForm: {
+        email: ''
+      },
+      unsubscribeForm: {
+        email: '',
+        uuid: ''
+      },
     }
   },
   watch: {
@@ -381,6 +440,48 @@ export default {
     },
     goToGitHub() {
       window.open('https://github.com/datehoer/hot-rank-web', '_blank');
+    },
+    openSubscribe() {
+      this.showSubscribe = true;
+    },
+    closeSubscribe() {
+      this.showSubscribe = false;
+      this.$refs.subscribeForm?.resetFields();
+      this.$refs.unsubscribeForm?.resetFields();
+      this.subscribeTab = 'subscribe';
+    },
+    handleSubscribe() {
+      const formRef = this.subscribeTab === 'subscribe' ? 'subscribeForm' : 'unsubscribeForm';
+      const form = this.subscribeTab === 'subscribe' ? this.subscribeForm : this.unsubscribeForm;
+      
+      this.$refs[formRef].validate(async (valid) => {
+        if (!valid) {
+          return false;
+        }
+        
+        this.subscribeLoading = true;
+        try {
+          // 根据实际 API 调用修改这里
+          if (this.subscribeTab == 'subscribe') {
+            await subscribe(form);
+          } else {
+            await unsubscribe(form);
+          }
+          this.$message({
+            type: 'success',
+            message: this.subscribeTab === 'subscribe' ? '订阅成功！请查看邮箱记录你的uuid' : '取消订阅成功！'
+          });
+          
+          this.closeSubscribe();
+        } catch (error) {
+          this.$message({
+            type: 'error',
+            message: error.message || '操作失败，请稍后重试'
+          });
+        } finally {
+          this.subscribeLoading = false;
+        }
+      });
     }
   }
 }
@@ -860,5 +961,45 @@ export default {
     line-height: 1.4;
   }
 }
+:deep(.subscribe-dialog) {
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
 
+:deep(.subscribe-dialog .el-dialog__body) {
+  padding: 20px;
+}
+
+:deep(.subscribe-dialog .el-form-item__label) {
+  color: var(--text-color);
+}
+
+:deep(.subscribe-dialog .el-input__inner) {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+@media screen and (max-width: 768px) {
+  :deep(.subscribe-dialog) {
+    width: 90% !important;
+    margin-top: 5vh !important;
+  }
+  
+  :deep(.subscribe-dialog .el-form-item) {
+    margin-bottom: 15px;
+  }
+  
+  :deep(.subscribe-dialog .el-form-item__label) {
+    padding: 0 0 8px;
+    text-align: left;
+    float: none;
+    display: block;
+  }
+  
+  :deep(.subscribe-dialog .el-form-item__content) {
+    margin-left: 0 !important;
+  }
+}
 </style>

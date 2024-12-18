@@ -76,3 +76,18 @@ export function getHolidays(){
     method: 'get'
   })
 }
+
+export function subscribe(data) {
+  return request({
+    url: '/subscribe',
+    method: 'post',
+    data
+  })
+}
+export function unsubscribe(data) {
+  return request({
+    url: '/unsubscribe',
+    method: 'post',
+    data
+  })
+}
