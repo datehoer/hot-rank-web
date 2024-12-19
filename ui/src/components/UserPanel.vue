@@ -31,6 +31,29 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="基础设置" name="basic">
           <div class="settings-item">
+            <span>布局方式：</span>
+            <div class="layout-selector" role="radiogroup" aria-label="布局方式选择">
+              <label class="custom-radio">
+                <input
+                  type="radio"
+                  v-model="localLayoutMode"
+                  value="grid"
+                  name="layoutMode"
+                >
+                <span class="radio-label">栅格布局</span>
+              </label>
+              <label class="custom-radio">
+                <input
+                  type="radio"
+                  v-model="localLayoutMode"
+                  value="tabs"
+                  name="layoutMode"
+                >
+                <span class="radio-label">标签页布局</span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-item">
             <span>设置列数：{{localColumnsCount}}</span>
             <el-slider
               v-model="localColumnsCount"
@@ -38,6 +61,7 @@
               :max="4"
               :step="1"
               show-stops
+              :disabled="localLayoutMode === 'tabs'"
             ></el-slider>
           </div>
           <div class="settings-item">
@@ -75,27 +99,29 @@
                 :disabled="localShowAllSites"
               ></el-switch>
             </div>
-            <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
-              <draggable 
-                v-model="availableSites"
-                :disabled="!dragEnabled || localShowAllSites"
-                handle=".drag-handle"
-                @end="handleDragEnd"
-              >
-                <div v-for="site in availableSites" 
-                    :key="site.name" 
-                    class="site-item"
+            <div class="sites-container">
+              <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
+                <draggable 
+                  v-model="availableSites"
+                  :disabled="!dragEnabled || localShowAllSites"
+                  handle=".drag-handle"
+                  @end="handleDragEnd"
                 >
-                  <i class="el-icon-rank drag-handle"></i>
-                  <el-checkbox
-                    v-model="selectedSites"
-                    :label="site.name"
-                    :disabled="localShowAllSites"
+                  <div v-for="site in availableSites" 
+                      :key="site.name" 
+                      class="site-item"
                   >
-                    {{ site.name }}
-                  </el-checkbox>
-                </div>
-              </draggable>
+                    <i class="el-icon-rank drag-handle"></i>
+                    <el-checkbox
+                      v-model="selectedSites"
+                      :label="site.name"
+                      :disabled="localShowAllSites"
+                    >
+                      {{ site.name }}
+                    </el-checkbox>
+                  </div>
+                </draggable>
+              </div>
             </div>
           </div>
         </el-tab-pane>
@@ -157,7 +183,7 @@
     >
       <el-tabs v-model="subscribeTab">
         <el-tab-pane label="订阅" name="subscribe">
-          <el-form :model="subscribeForm" :rules="subscribeRules" ref="subscribeForm">
+          <el-form :model="subscribeForm" ref="subscribeForm">
             <el-form-item label="邮箱" prop="email">
               <el-input 
                 v-model="subscribeForm.email" 
@@ -168,7 +194,7 @@
         </el-tab-pane>
         
         <el-tab-pane label="取消订阅" name="unsubscribe">
-          <el-form :model="unsubscribeForm" :rules="unsubscribeRules" ref="unsubscribeForm">
+          <el-form :model="unsubscribeForm" ref="unsubscribeForm">
             <el-form-item label="邮箱" prop="email">
               <el-input 
                 v-model="unsubscribeForm.email" 
@@ -227,6 +253,10 @@ export default {
     showAllSites: {
       type: Boolean,
       default: true
+    },
+    layoutMode: {
+      type: String,
+      default: 'grid'
     }
   },
   data() {
@@ -273,6 +303,9 @@ export default {
         email: '',
         uuid: ''
       },
+      localLayoutMode: this.layoutMode,
+      localColumnsCount: this.columnsCount,
+      localWrapText: true,
     }
   },
   watch: {
@@ -288,7 +321,13 @@ export default {
         this.selectAll = newVal.length === this.availableSites.length;
       },
       deep: true
-    }
+    },
+    layoutMode: {
+      immediate: true,
+      handler(newVal) {
+        this.localLayoutMode = newVal;
+      }
+    },
   },
   computed: {
     transformStyle() {
@@ -319,6 +358,7 @@ export default {
     this.applyTheme(this.isDarkMode);
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
+    this.localLayoutMode = this.$localStorage.get('layoutMode', 'grid');
   },
   beforeDestroy() {
     // 清除定时器
@@ -411,7 +451,11 @@ export default {
       this.$emit('update-wrap-text', this.localWrapText);
       this.$emit('update-selected-sites', this.selectedSites);
       this.$emit('update-show-all-sites', this.localShowAllSites);
+      this.$emit('update-layout-mode', this.localLayoutMode);
+
       this.$localStorage.set('selectedSites', this.selectedSites);
+      this.$localStorage.set('layoutMode', this.localLayoutMode);
+
       this.handleDragEnd();
       this.closeSettings();
     },
@@ -1000,6 +1044,149 @@ export default {
   
   :deep(.subscribe-dialog .el-form-item__content) {
     margin-left: 0 !important;
+  }
+}
+.layout-selector {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+}
+
+.custom-radio {
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-color);
+  margin-right: 16px;
+}
+.custom-radio input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-radio input:checked + .radio-label::before {
+  border-color: #409EFF;
+}
+
+.custom-radio input:checked + .radio-label::after {
+  transform: scale(1);
+}
+
+.radio-label {
+  position: relative;
+  padding-left: 4px;
+}
+
+.radio-label::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  transition: all 0.3s ease;
+}
+
+.radio-label::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #409EFF;
+  transition: transform 0.2s ease;
+}
+
+.custom-radio:hover .radio-label::before {
+  border-color: #409EFF;
+}
+
+/* Focus styles for keyboard navigation */
+.custom-radio input:focus + .radio-label::before {
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
+}
+
+/* Dark mode specific styles */
+[data-theme='dark'] .custom-radio input:checked + .radio-label::before {
+  border-color: #409EFF;
+}
+
+[data-theme='dark'] .custom-radio:hover .radio-label::before {
+  border-color: #409EFF;
+}
+/* 新增的滚动容器样式 */
+.sites-container {
+  height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+/* 修改checkbox组的样式以适应滚动容器 */
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-right: 4px; /* 为滚动条留出空间 */
+}
+
+/* 站点项样式调整 */
+.site-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.site-item:hover {
+  background: var(--hover-bg);
+}
+
+/* 自定义滚动条样式 */
+.sites-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sites-container::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-radius: 3px;
+}
+
+.sites-container::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 3px;
+  transition: background-color 0.3s;
+}
+
+.sites-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--secondary-text);
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .checkbox-group {
+    grid-template-columns: 1fr; /* 在移动端改为单列显示 */
+  }
+  
+  .sites-container {
+    height: 250px; /* 在移动端稍微减小高度 */
   }
 }
 </style>

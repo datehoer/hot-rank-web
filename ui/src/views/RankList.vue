@@ -44,24 +44,56 @@
     </div>
     <!-- 主要内容区域 -->
     <div class="main-content">
-      <el-row :gutter="16">
-        <el-col
-          v-for="section in filteredNewsSections"
-          :key="section.id"
-          :span="24 / columnsCount"
-        >
-          <news-section
-            :title="section.name"
-            :subtitle="section.subtitle"
-            :type="section.type"
-            :news-items="section.data"
-            :wrap-text="wrapText"
-            @update="handleUpdate"
-          />
-        </el-col>
-      </el-row>
+      <!-- 栅格布局 -->
+      <template v-if="layoutMode === 'grid'">
+        <el-row :gutter="16">
+          <el-col
+            v-for="section in filteredNewsSections"
+            :key="section.id"
+            :span="24 / columnsCount"
+          >
+            <news-section
+              :title="section.name"
+              :subtitle="section.subtitle"
+              :type="section.type"
+              :news-items="section.data"
+              :wrap-text="wrapText"
+              @update="handleUpdate"
+            />
+          </el-col>
+        </el-row>
+      </template>
+
+      <!-- 标签页布局 -->
+      <template v-else>
+        <el-tabs v-model="activeTab" class="news-tabs">
+          <el-tab-pane
+            v-for="section in filteredNewsSections"
+            :key="section.id"
+            :label="section.name"
+            :name="section.name"
+          >
+            <div class="tab-header">
+              <span class="tab-subtitle">{{ section.subtitle }}</span>
+              <el-tag :type="section.type" size="small" effect="plain">
+                {{ section.type === 'primary' ? '最新' : section.type === 'danger' ? '热门' : '常规' }}
+              </el-tag>
+            </div>
+            <news-section
+              :title="section.name"
+              :subtitle="section.subtitle"
+              :type="section.type"
+              :news-items="section.data"
+              :wrap-text="wrapText"
+              @update="handleUpdate"
+              class="tab-news-section"
+            />
+          </el-tab-pane>
+        </el-tabs>
+      </template>
     </div>
 
+    
     <!-- 右侧用户面板 -->
     <el-button
       v-if="isMobile"
@@ -76,7 +108,12 @@
       @update-columns-count="updateColumnsCount"
       @update-wrap-text="updateWrapText"
       @update-selected-sites="updateSelectedSites"
+      @update-layout-mode="updateLayoutMode"
+      @update-sites-order="updateSitesOrder"
+      @update-show-all-sites="updateShowAllSites"
       :columns-count="columnsCount"
+      :layout-mode="layoutMode"
+      :show-all-sites="showAllSites"
     />
     <el-drawer
       :visible.sync="showMobilePanel"
@@ -202,6 +239,9 @@ export default {
       activeIndex: 0,
       observer: null,
       isLoading: false,
+      isTabLayout: false,
+      layoutMode: 'grid',
+      activeTab: '',
     };
   },
   computed: {
@@ -235,6 +275,11 @@ export default {
     } else {
       this.list();
     }
+    this.layoutMode = this.$localStorage.get('layoutMode', 'grid');
+    // 初始化激活的标签页
+    if (this.filteredNewsSections.length > 0) {
+      this.activeTab = this.filteredNewsSections[0].name;
+    }
   },
   destroyed() {
     window.removeEventListener("resize", this.checkMobile);
@@ -242,6 +287,26 @@ export default {
   beforeDestroy() {
     if (this.observer) {
       this.observer.disconnect();
+    }
+  },
+  watch: {
+    // 监听 filteredNewsSections 的变化
+    filteredNewsSections: {
+      immediate: true,
+      handler(newSections) {
+        if (newSections.length > 0 && !this.activeTab) {
+          this.activeTab = newSections[0].name;
+        }
+      }
+    },
+    // 监听布局模式变化
+    layoutMode: {
+      immediate: true,
+      handler(newMode) {
+        if (newMode === 'tabs' && this.filteredNewsSections.length > 0) {
+          this.activeTab = this.filteredNewsSections[0].name;
+        }
+      }
     }
   },
   methods: {
@@ -280,6 +345,18 @@ export default {
       const element = document.getElementById(`news-${index}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+    updateLayout(value) {
+      this.isTabLayout = value;
+      this.$localStorage.set('isTabLayout', value);
+    },
+    updateLayoutMode(mode) {
+      this.layoutMode = mode;
+      this.$localStorage.set('layoutMode', mode);
+      // 如果切换到标签页布局，确保有一个激活的标签
+      if (mode === 'tabs' && this.filteredNewsSections.length > 0) {
+        this.activeTab = this.filteredNewsSections[0].name;
       }
     },
     setupIntersectionObserver() {
@@ -398,6 +475,9 @@ export default {
         this.$localStorage.set("selectedSites", this.selectedSites);
         this.$localStorage.set("showAllSites", this.showAllSites);
         this.loading = false;
+        if (this.layoutMode === 'tabs' && this.filteredNewsSections.length > 0) {
+          this.activeTab = this.filteredNewsSections[0].name;
+        }
       });
     },
     updateShowAllSites(value) {
@@ -630,11 +710,11 @@ body {
 }
 
 .mobile-drawer {
-  background-color: var(--card-bg);
+  background-color: var(--card-bg) !important;
 }
 
 .mobile-drawer :deep(.el-drawer__container) {
-  background-color: var(--card-bg);
+  background-color: var(--card-bg) !important;
 }
 
 .el-drawer .user-panel {
@@ -863,5 +943,67 @@ body {
       background-color: rgba(255, 255, 255, 0.03);
     }
   }
+}
+.news-tabs {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tab-subtitle {
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+
+.tab-news-section {
+  height: auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+:deep(.el-tabs__header) {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+:deep(.el-tabs__item) {
+  color: var(--text-color);
+  height: 40px;
+  line-height: 40px;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #409EFF;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #409EFF;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--border-color);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .news-tabs {
+    padding: 12px;
+  }
+
+  :deep(.el-tabs__item) {
+    font-size: 14px;
+    padding: 0 12px;
+  }
+}
+.tab-news-section {
+  transition: opacity 0.3s ease;
 }
 </style>

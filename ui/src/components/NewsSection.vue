@@ -1,6 +1,6 @@
 <template>
-  <div class="news-section">
-    <div class="section-header">
+  <div class="news-section" :class="{ 'tab-layout': isTabLayout }">
+    <div v-if="!isTabLayout" class="section-header">
       <div class="title">
         <span :class="['dot', `dot-${type}`]"></span>
         <span class="title-text">{{ title }}</span>
@@ -8,7 +8,41 @@
       </div>
       <el-button class="refresh-btn" type="text" icon="el-icon-refresh" @click="handleRefreshClick" title="刷新"></el-button>
     </div>
-    <div class="news-list">
+    
+    <template v-if="isTabLayout">
+      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+        <el-tab-pane 
+          v-for="section in allSections" 
+          :key="section.name"
+          :label="section.name" 
+          :name="section.name"
+        >
+          <div class="tab-header">
+            <span class="subtitle">{{ section.subtitle }}</span>
+            <el-button class="refresh-btn" type="text" icon="el-icon-refresh" @click="handleRefreshClick" title="刷新"></el-button>
+          </div>
+          <div class="news-list">
+            <div
+              v-for="(item, idx) in section.data"
+              :key="idx"
+              class="news-item"
+            >
+              <span class="index" :class="{'hot-index': idx < 3}">{{ idx + 1 }}</span>
+              <a v-if="item.hot_url" :href="item.hot_url" target="_blank" class="news-content">
+                <span class="news-title" :title="item.hot_label">{{ item.hot_label }}</span>
+                <span class="count">🔥 {{ item.hot_value }}</span>
+              </a>
+              <span v-else class="news-content">
+                <span class="news-title" :title="item.hot_label">{{ item.hot_label }}</span>
+                <span class="count">🔥 {{ item.hot_value }}</span>
+              </span>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </template>
+
+    <div v-else class="news-list">
       <div
         v-for="(item, index) in newsItems"
         :key="index"
@@ -53,6 +87,24 @@ export default {
     wrapText: {
       type: Boolean,
       default: true
+    },
+    isTabLayout: {
+      type: Boolean,
+      default: false
+    },
+    allSections: {
+      type: Array,
+      default: () => []
+    },
+  },
+  data() {
+    return {
+      activeTab: ''
+    }
+  },
+  created() {
+    if (this.isTabLayout && this.allSections.length > 0) {
+      this.activeTab = this.allSections[0].name
     }
   },
   watch: {
@@ -75,18 +127,8 @@ export default {
       }, 600);
       this.refreshNews();
     },
-    refreshNews() {
-      console.log("something happened");
-    }
-  },
-  methods: {
-    handleRefreshClick() {
-      const button = this.$el.querySelector('.refresh-btn');
-      button.classList.add('spin');
-      setTimeout(() => {
-        button.classList.remove('spin');
-      }, 600);
-      this.refreshNews();
+    handleTabClick(tab) {
+      this.$emit('tab-change', tab.name);
     },
     refreshNews() {
       refresh().then((response) => {
@@ -113,6 +155,38 @@ export default {
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.news-section.tab-layout {
+  height: 600px;
+}
+
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+/* Override element-ui tab styles */
+:deep(.el-tabs__header) {
+  margin-bottom: 16px;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--border-color);
+}
+
+:deep(.el-tabs__item) {
+  color: var(--text-color);
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #409EFF;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #409EFF;
 }
 
 .section-header {
