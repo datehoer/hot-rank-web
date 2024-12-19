@@ -1,45 +1,96 @@
+/* 增加基础排版变量，提升可读性 */
+:root {
+  --font-size-base: 14px;
+  --line-height-base: 1.5;
+  --font-family-base: "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 深色模式 - 优化后的配色 */
 :root[data-theme="dark"] {
-  --bg-color: #1a1a1a;
-  --text-color: #E5EAF3;
-  --header-bg: #242424;
-  --border-color: #333333;
-  --card-bg: #242424;
-  --hover-bg: #2c2c2c;
-  --secondary-text: #909399;
-  --modal-bg: #242424;
-  --modal-border: #333333;
-  --slider-bg: #4c4c4c;
-  --switch-off-bg: #4c4c4c;
-  --item-hover-bg: #2c2c2c;
-  --checkbox-bg: #242424;
-  --tab-hover-bg: #2c2c2c;
-  --scrollbar-thumb: #4c4c4c;
-  --scrollbar-track: #242424;
+  /* 主要背景色 - 稍亮一点的深色，减少极黑场景 */
+  --bg-color: #161616;
+  /* 文字颜色 - 稍降低亮度，减少光刺 */
+  --text-color: #DCE0E6;
+  /* 头部背景 - 比主背景略深，保持层次感 */
+  --header-bg: #1B1B1B;
+  /* 边框颜色 - 加微弱对比 */
+  --border-color: #404040;
+  /* 卡片背景 */
+  --card-bg: #1E1E1E;
+  /* 悬停背景 - 稍微浅一点 */
+  --hover-bg: #2A2A2A;
+  /* 次要文本 - 更中性的浅灰 */
+  --secondary-text: #9CA3AF;
+  /* 模态框背景 */
+  --modal-bg: #1E1E1E;
+  /* 模态框边框 */
+  --modal-border: #404040;
+  /* 滑块背景 */
+  --slider-bg: #474747;
+  /* 开关关闭状态背景 */
+  --switch-off-bg: #474747;
+  /* 项目悬停背景 */
+  --item-hover-bg: #2A2A2A;
+  /* 复选框背景 */
+  --checkbox-bg: #1E1E1E;
+  /* 标签页悬停背景 */
+  --tab-hover-bg: #2A2A2A;
+  /* 滚动条滑块 */
+  --scrollbar-thumb: #4E4E4E;
+  /* 滚动条轨道 */
+  --scrollbar-track: #1E1E1E;
 }
 
+/* 浅色模式 - 优化后的配色 */
 :root[data-theme="light"] {
-  --bg-color: #ffffff;
-  --text-color: #303133;
-  --header-bg: #ffffff;
-  --border-color: #e4e7ed;
-  --card-bg: #ffffff;
-  --hover-bg: #f5f7fa;
-  --secondary-text: #606266;
-  --modal-bg: #ffffff;
-  --modal-border: #dcdfe6;
-  --slider-bg: #e4e7ed;
-  --switch-off-bg: #dcdfe6;
-  --item-hover-bg: #f5f7fa;
-  --checkbox-bg: #ffffff;
-  --tab-hover-bg: #f5f7fa;
-  --scrollbar-thumb: #c0c4cc;
-  --scrollbar-track: #f4f4f5;
+  /* 主要背景色 - 稍微更柔和的白色 */
+  --bg-color: #F7F8FA;
+  /* 文字颜色 - 柔和深灰 */
+  --text-color: #2E3A44;
+  /* 头部背景 - 保持纯白 */
+  --header-bg: #FFFFFF;
+  /* 边框颜色 - 略微柔和的分割线 */
+  --border-color: #E4E9EF;
+  /* 卡片背景 */
+  --card-bg: #FFFFFF;
+  /* 悬停背景 - 柔和灰色 */
+  --hover-bg: #F2F4F7;
+  /* 次要文本 - 中等灰 */
+  --secondary-text: #5F6E7C;
+  /* 模态框背景 */
+  --modal-bg: #FFFFFF;
+  /* 模态框边框 */
+  --modal-border: #E4E9EF;
+  /* 滑块背景 */
+  --slider-bg: #E2E5EC;
+  /* 开关关闭状态 */
+  --switch-off-bg: #D0D4DA;
+  /* 项目悬停背景 */
+  --item-hover-bg: #F2F4F7;
+  /* 复选框背景 */
+  --checkbox-bg: #FFFFFF;
+  /* 标签页悬停背景 */
+  --tab-hover-bg: #F2F4F7;
+  /* 滚动条滑块 */
+  --scrollbar-thumb: #C7CCD4;
+  /* 滚动条轨道 */
+  --scrollbar-track: #F2F4F7;
 }
 
-/* 深色模式下的Element UI组件样式覆盖 */
+/* 通用样式优化 */
+html, body {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-family: var(--font-family-base);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Element UI深色模式组件样式优化 */
 [data-theme="dark"] .el-dialog {
   background-color: var(--modal-bg);
   border: 1px solid var(--modal-border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .el-tabs__nav-wrap::after {
@@ -48,6 +99,7 @@
 
 [data-theme="dark"] .el-tabs__item {
   color: var(--secondary-text);
+  transition: color 0.3s, background-color 0.3s;
 }
 
 [data-theme="dark"] .el-tabs__item.is-active {
@@ -65,28 +117,30 @@
 
 [data-theme="dark"] .el-switch__core {
   background-color: var(--switch-off-bg) !important;
+  border-color: transparent;
 }
 
 [data-theme="dark"] .el-checkbox__inner {
   background-color: var(--checkbox-bg);
   border-color: var(--border-color);
+  transition: border-color 0.3s, background-color 0.3s;
 }
 
 [data-theme="dark"] .el-dialog__body {
   color: var(--text-color);
 }
 
-/* 浅色模式下的Element UI组件样式覆盖 */
+/* Element UI浅色模式组件样式优化 */
 [data-theme="light"] .el-dialog {
   background-color: var(--modal-bg);
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light"] .el-tabs__item:hover {
   color: #409EFF;
 }
 
-/* 滚动条样式 */
+/* 优化的滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -95,6 +149,7 @@
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 3px;
+  transition: background-color 0.3s;
 }
 
 ::-webkit-scrollbar-track {
@@ -102,12 +157,22 @@
   border-radius: 3px;
 }
 
-/* 通用过渡效果 */
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--secondary-text);
+}
+
+/* 平滑过渡效果 */
 .el-dialog,
 .el-tabs__item,
 .el-switch,
 .el-checkbox,
 .el-slider__runway,
 .el-slider__bar {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 焦点状态优化: 输入框获得焦点时强调但不刺眼 */
+.el-input:focus-within,
+.el-textarea:focus-within {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }

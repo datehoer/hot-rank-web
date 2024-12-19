@@ -4,7 +4,6 @@
     v-loading="loading"
     element-loading-text="拼命加载中"
     element-loading-spinner="el-icon-loading"
-    element-loading-background="rgba(0, 0, 0, 0.8)"
   >
     <!-- 顶部搜索栏 -->
     <div class="header">
@@ -153,7 +152,6 @@
         v-loading="isLoading"
         element-loading-text="星链查询中"
         element-loading-spinner="el-icon-loading"
-        element-loading-background="rgba(0, 0, 0, 0.8)"
       >
         <div class="news-container" ref="newsContainer">
           <div
@@ -215,6 +213,7 @@ import UserPanel from "@/components/UserPanel.vue";
 import { getRankList, getAiSummarizes } from "@/api/rank.js";
 import moment from "moment";
 import { Robot } from "@icon-park/vue";
+import { set } from 'vue';
 export default {
   name: "App",
   components: {
@@ -590,6 +589,24 @@ body {
   position: relative;
 }
 
+.dialog-content :deep(.el-loading-mask) {
+  background-color: var(--modal-bg);
+  opacity: 0.95;
+}
+
+.dialog-content :deep(.el-loading-spinner) {
+  color: var(--text-color);
+}
+
+.dialog-content :deep(.el-loading-text) {
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+[class*="el-loading-parent"] {
+  position: relative;
+}
+
 .news-container {
   flex: 1;
   max-height: 65vh;
@@ -741,13 +758,13 @@ body {
   padding: 10px 20px !important;
 }
 
-:deep(.el-loading-mask) {
-  background-color: var(--bg-color);
-  opacity: 0.9;
+:deep(.el-loading-spinner) {
+  color: var(--text-color);
 }
 
 :deep(.el-loading-text) {
   color: var(--text-color);
+  font-size: 14px;
 }
 
 :deep(.el-button--small) {
