@@ -129,6 +129,7 @@ table = [
     {"name": "纽约时报", "tablename": "nytimes"},
     {"name": "华尔街日报", "tablename": "wsj"},
     {"name": "彭博新闻", "tablename": "bloomberg"},
+    {"name": "金融时报", "tablename": "ft"},
     {"name": "微博热搜", "tablename": "weibo_hot_search"},
     {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
     {"name": "虎扑社区热帖", "tablename": "hupu"},
