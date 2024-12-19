@@ -24,3 +24,11 @@ api_headers = {
     "Accept": "application/json",
     "Content-Type": "application/json"
 }
+news_sites = [
+    "澎湃新闻",
+    "36氪",
+    "虎嗅热文",
+    "IT之家热榜",
+    "少数派热榜",
+    "华尔街见闻"
+]
