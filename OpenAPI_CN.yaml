@@ -1,0 +1,235 @@
+openapi: 3.0.0
+info:
+  title: 热榜网站 API
+  description: 热榜网站项目的 API 文档
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: 本地开发服务器
+
+components:
+  schemas:
+    Feedback:
+      type: object
+      properties:
+        subject:
+          type: string
+          description: 反馈主题
+        content:
+          type: string
+          description: 反馈内容
+        username:
+          type: string
+          description: 反馈者用户名
+      required:
+        - subject
+        - content
+        - username
+
+    SubscriberRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: 订阅者邮箱地址
+      required:
+        - email
+
+    UnsubscribeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: 需要取消订阅的邮箱地址
+        uuid:
+          type: string
+          description: 订阅关联的 UUID
+      required:
+        - email
+        - uuid
+
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 响应代码（200 表示成功，其他表示错误）
+        msg:
+          type: string
+          description: 响应消息
+        data:
+          type: object
+          description: 响应数据载荷
+
+paths:
+  /subscribe:
+    post:
+      summary: 订阅新闻通讯
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberRequest'
+      responses:
+        '200':
+          description: 订阅成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /unsubscribe:
+    post:
+      summary: 取消订阅新闻通讯
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+      responses:
+        '200':
+          description: 取消订阅成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /rankCopyWriting:
+    get:
+      summary: 获取随机文案内容
+      responses:
+        '200':
+          description: 成功获取文案
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /yellowCalendar:
+    get:
+      summary: 获取黄历数据
+      responses:
+        '200':
+          description: 成功获取黄历数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /music:
+    get:
+      summary: 获取音乐数据
+      responses:
+        '200':
+          description: 成功获取音乐数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /avatar:
+    get:
+      summary: 获取随机头像
+      responses:
+        '200':
+          description: 成功获取头像
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /username:
+    get:
+      summary: 获取随机用户名
+      responses:
+        '200':
+          description: 成功获取用户名
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /feedback:
+    post:
+      summary: 提交反馈
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+      responses:
+        '200':
+          description: 成功提交反馈
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /get_cards:
+    get:
+      summary: 获取卡片数据
+      responses:
+        '200':
+          description: 成功获取卡片数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /holiday:
+    get:
+      summary: 获取节假日信息
+      responses:
+        '200':
+          description: 成功获取节假日数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /refresh:
+    get:
+      summary: 刷新数据
+      responses:
+        '200':
+          description: 成功刷新数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /todayTopNews:
+    get:
+      summary: 获取今日头条新闻
+      responses:
+        '200':
+          description: 成功获取今日头条新闻
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /rank/{item_id}:
+    get:
+      summary: 获取指定项目的排名数据
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [hot]
+          description: 要获取排名的项目 ID（目前仅支持 'hot'）
+      responses:
+        '200':
+          description: 成功获取排名数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'

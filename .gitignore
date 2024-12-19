@@ -5,6 +5,7 @@ __pycache__
 # local env files
 .env.local
 .env.*.local
+backend/.env
 
 # Log files
 npm-debug.log*
@@ -20,7 +21,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
-config.py
 
 *.tar
 *.zip

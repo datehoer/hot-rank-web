@@ -1,0 +1,235 @@
+openapi: 3.0.0
+info:
+  title: Hot Rank Web API
+  description: API documentation for the Hot Rank Web project
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+components:
+  schemas:
+    Feedback:
+      type: object
+      properties:
+        subject:
+          type: string
+          description: The subject of the feedback
+        content:
+          type: string
+          description: The content of the feedback
+        username:
+          type: string
+          description: The username of the person providing feedback
+      required:
+        - subject
+        - content
+        - username
+
+    SubscriberRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the subscriber
+      required:
+        - email
+
+    UnsubscribeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to unsubscribe
+        uuid:
+          type: string
+          description: UUID associated with the subscription
+      required:
+        - email
+        - uuid
+
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Response code (200 for success, other for errors)
+        msg:
+          type: string
+          description: Response message
+        data:
+          type: object
+          description: Response data payload
+
+paths:
+  /subscribe:
+    post:
+      summary: Subscribe to the newsletter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberRequest'
+      responses:
+        '200':
+          description: Successful subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /unsubscribe:
+    post:
+      summary: Unsubscribe from the newsletter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+      responses:
+        '200':
+          description: Successful unsubscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /rankCopyWriting:
+    get:
+      summary: Get random copywriting content
+      responses:
+        '200':
+          description: Successfully retrieved copywriting
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /yellowCalendar:
+    get:
+      summary: Get yellow calendar data
+      responses:
+        '200':
+          description: Successfully retrieved calendar data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /music:
+    get:
+      summary: Get music data
+      responses:
+        '200':
+          description: Successfully retrieved music data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /avatar:
+    get:
+      summary: Get random avatar
+      responses:
+        '200':
+          description: Successfully retrieved avatar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /username:
+    get:
+      summary: Get random username
+      responses:
+        '200':
+          description: Successfully retrieved username
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /feedback:
+    post:
+      summary: Submit feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+      responses:
+        '200':
+          description: Successfully submitted feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /get_cards:
+    get:
+      summary: Get cards data
+      responses:
+        '200':
+          description: Successfully retrieved cards data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /holiday:
+    get:
+      summary: Get holiday information
+      responses:
+        '200':
+          description: Successfully retrieved holiday data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /refresh:
+    get:
+      summary: Refresh data
+      responses:
+        '200':
+          description: Successfully refreshed data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /todayTopNews:
+    get:
+      summary: Get today's top news
+      responses:
+        '200':
+          description: Successfully retrieved top news
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /rank/{item_id}:
+    get:
+      summary: Get ranking data by item ID
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [hot]
+          description: Item ID to get ranking for (currently only supports 'hot')
+      responses:
+        '200':
+          description: Successfully retrieved ranking data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'

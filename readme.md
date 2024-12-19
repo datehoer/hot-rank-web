@@ -93,3 +93,86 @@ npm build后将文件复制到nginx文件夹即可
 ![效果图4](https://oss.datehoer.com/blog/imgs/2024120523090999-20241205230909.png)
 
 ![效果图5](https://oss.datehoer.com/blog/imgs/2024120523185650-20241205231856.png)
+
+## 部署指南 (Deployment Guide)
+
+### 环境要求 (Requirements)
+- Docker
+- Docker Compose
+
+### 项目结构 (Project Structure)
+```
+hot-rank-web/
+├── ui/                 # 前端项目 (Frontend)
+├── tools/             # 后端工具和服务 (Backend tools and services)
+│   ├── app-docker/    # API 服务 Docker 配置
+│   └── push-docker/   # 数据推送服务 Docker 配置
+├── docker-compose.yml # Docker 编排配置
+└── config.py.example  # 配置文件示例
+```
+
+### 配置准备 (Configuration)
+1. 复制环境变量示例文件 (Copy environment variable example file)
+```bash
+cp .env.example .env
+```
+
+2. 编辑 `.env` 文件，配置以下信息 (Edit `.env` file with the following configurations):
+- MongoDB 连接信息 (MongoDB connection)
+- Redis 连接信息 (Redis connection)
+- 邮件服务配置 (Email service)
+- OpenAI API 配置 (OpenAI API)
+
+### 部署步骤 (Deployment Steps)
+1. 启动所有服务 (Start all services)
+```bash
+docker-compose up -d
+```
+
+2. 检查服务状态 (Check service status)
+```bash
+docker-compose ps
+```
+
+3. 查看服务日志 (View service logs)
+```bash
+# API 服务日志 (API service logs)
+docker-compose logs -f api
+
+# 推送服务日志 (Push service logs)
+docker-compose logs -f push
+
+# 前端服务日志 (Frontend service logs)
+docker-compose logs -f ui
+```
+
+### 服务说明 (Service Description)
+- API 服务 (API Service): http://localhost:7545
+- 前端服务 (Frontend): http://localhost
+- MongoDB: localhost:27017
+- Redis: localhost:6379
+
+### 维护命令 (Maintenance Commands)
+```bash
+# 重启单个服务 (Restart single service)
+docker-compose restart api    # 重启 API 服务 (Restart API service)
+docker-compose restart push   # 重启推送服务 (Restart push service)
+docker-compose restart ui     # 重启前端服务 (Restart frontend service)
+
+# 停止所有服务 (Stop all services)
+docker-compose down
+
+# 重新构建并启动服务 - 代码更新后 (Rebuild and start services - after code update)
+docker-compose up -d --build
+```
+
+### 注意事项 (Notes)
+1. 确保在启动服务前已正确配置所有环境变量 (Ensure all environment variables are properly configured before starting services)
+2. 生产环境中应该使用更安全的密码 (Use more secure passwords in production environment)
+3. 建议使用 SSL 证书保护 API 和前端服务 (SSL certificates are recommended for API and frontend services)
+4. MongoDB 和 Redis 的数据会持久化存储在 Docker volumes 中 (MongoDB and Redis data are persistently stored in Docker volumes)
+
+### 故障排查 (Troubleshooting)
+- 如果 API 服务启动失败，检查 MongoDB 和 Redis 连接配置 (If API service fails to start, check MongoDB and Redis connection configurations)
+- 如果推送服务报错，检查 OpenAI API 配置 (If push service reports errors, check OpenAI API configuration)
+- 如果前端无法访问 API，检查环境变量中的 API 地址配置 (If frontend cannot access API, check API address configuration in environment variables)
