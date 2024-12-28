@@ -24,7 +24,7 @@
     <el-dialog
       title="设置"
       :visible.sync="showSettings"
-      width="400px"
+      width="470px"
       custom-class="settings-dialog"
       :modal="false"
     >
@@ -106,6 +106,7 @@
                   :disabled="!dragEnabled || localShowAllSites"
                   handle=".drag-handle"
                   @end="handleDragEnd"
+                  class="draggable-container"
                 >
                   <div v-for="site in availableSites" 
                       :key="site.name" 
@@ -673,21 +674,6 @@ export default {
   pointer-events: none;
 }
 
-/* 站点项样式 */
-.site-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.site-item:hover {
-  background: var(--hover-bg);
-}
-
 .drag-handle {
   cursor: move;
   color: var(--secondary-text);
@@ -938,16 +924,12 @@ export default {
   :deep(.music-player-close-dialog) {
     width: 90% !important;
   }
-}
-/* 移动端适配反馈弹窗 */
-@media screen and (max-width: 768px) {
-  /* 反馈弹窗容器 */
+ 
   :deep(.feedback .el-dialog) {
     width: 90% !important;
     margin-top: 5vh !important;
   }
 
-  /* 反馈表单样式调整 */
   :deep(.feedback .el-form-item) {
     margin-bottom: 15px;
   }
@@ -963,7 +945,6 @@ export default {
     line-height: 1.2;
   }
 
-  /* 输入框样式调整 */
   :deep(.feedback .el-input__inner) {
     height: 36px;
     line-height: 36px;
@@ -973,7 +954,6 @@ export default {
     min-height: 100px;
   }
 
-  /* 按钮样式调整 */
   :deep(.feedback .dialog-footer) {
     display: flex;
     justify-content: space-between;
@@ -986,7 +966,6 @@ export default {
     padding: 10px 0;
   }
 
-  /* 弹窗内边距调整 */
   :deep(.feedback .el-dialog__body) {
     padding: 15px;
   }
@@ -999,10 +978,17 @@ export default {
     padding: 10px 15px;
   }
 
-  /* 标题样式调整 */
   :deep(.feedback .el-dialog__title) {
     font-size: 16px;
     line-height: 1.4;
+  }
+  
+  .draggable-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .sites-container {
+    height: 250px;
   }
 }
 :deep(.subscribe-dialog) {
@@ -1136,15 +1122,13 @@ export default {
   padding: 8px;
 }
 
-/* 修改checkbox组的样式以适应滚动容器 */
 .checkbox-group {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  padding-right: 4px; /* 为滚动条留出空间 */
+  padding-right: 4px;
 }
 
-/* 站点项样式调整 */
 .site-item {
   display: flex;
   align-items: center;
@@ -1188,5 +1172,21 @@ export default {
   .sites-container {
     height: 250px; /* 在移动端稍微减小高度 */
   }
+}
+
+.sites-container {
+  height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.draggable-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  grid-auto-flow: row;
 }
 </style>

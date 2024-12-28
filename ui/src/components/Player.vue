@@ -388,7 +388,6 @@ export default {
   transform-origin: top center;
 }
 
-/* 控制按钮 */
 .controls {
   margin-top: 20px;
   display: flex;
@@ -417,7 +416,6 @@ export default {
   min-width: 35px;
 }
 
-/* 播放列表 */
 .track-list {
   padding: 20px;
   color: var(--text-color);
@@ -432,8 +430,30 @@ export default {
   height: 80px;
   width: 80px;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   margin: 0 auto;
+  perspective: 1000px;
+}
+
+.album-container.active .album-disc {
+  opacity: 1;
+  transform: translateX(50%);
+}
+
+.album-container.active .album-cover-wrapper {
+  transform: translateX(20px);
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.album-container.active .album-disc {
+  animation: rotate 8s linear infinite;
 }
 
 .album-cover-wrapper {
@@ -448,24 +468,52 @@ export default {
   transition: transform 0.3s ease;
 }
 
+.album-disc {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 50%;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  z-index: 1;
+  opacity: 0;
+}
+
+.disc-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.disc-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .track-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* 移动端适配 */
 @media screen and (max-width: 768px) {
-  /* 隐藏PC端特有元素 */
   .vinyl-player,
   .vinyl,
   .tonearm-wrapper,
-  .album-disc,
   .player-card {
     display: none;
   }
 
-  /* 移动端布局 */
   .music-player {
     padding: 12px;
     min-height: 100vh;
@@ -475,7 +523,6 @@ export default {
     padding: 10px;
   }
 
-  /* 移动端列表样式 */
   .track-item {
     margin-bottom: 12px;
   }
@@ -490,8 +537,14 @@ export default {
     height: auto;
     width: auto;
     transition: background-color 0.3s;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative;
   }
-
+  .album-container.active .album-cover-wrapper {
+    transform: none;
+  }
   .album-container.active {
     background: #404040;
   }
@@ -511,7 +564,6 @@ export default {
     object-fit: cover;
   }
 
-  /* 移动端音乐信息样式 */
   .track-info {
     flex: 1;
     margin-left: 12px;
@@ -532,25 +584,19 @@ export default {
     font-size: 13px;
   }
 
-  /* 移动端播放控制栏 */
   .mobile-controls {
-    display: none;
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    padding: 12px 16px;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 100;
   }
 
-  @media screen and (max-width: 768px) {
-    .mobile-controls {
-      display: flex;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1a1a1a;
-      padding: 12px 16px;
-      align-items: center;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-      z-index: 100;
-    }
-  }
 
   .current-track-info {
     flex: 1;
@@ -566,14 +612,9 @@ export default {
     margin-left: 8px;
   }
 
-  /* 移动端隐藏音量控制 */
   .volume-control {
     display: none;
   }
-}
-
-@media screen and (max-width: 768px) {
-  /* 覆盖 Element UI 对话框样式 */
   :deep(.el-dialog) {
     width: 100% !important;
     margin: 0 !important;
@@ -588,18 +629,16 @@ export default {
   }
 
   :deep(.el-dialog__body) {
-    height: calc(100vh - 108px); /* 减去header和footer的高度 */
+    height: calc(100vh - 108px);
     padding: 0 !important;
     overflow-y: auto;
   }
 
-  /* 音乐播放器容器 */
   .music-player {
     padding: 0;
     height: 100%;
   }
 
-  /* 移动端列表样式 */
   .mobile-track-list {
     padding: 12px;
   }
@@ -607,16 +646,9 @@ export default {
   .track-item {
     margin-bottom: 12px;
   }
-
-  .album-container {
-    width: 100%;
-    box-sizing: border-box;
-  }
 }
 
-/* 超小屏幕额外优化 */
 @media screen and (max-width: 480px) {
-  /* 保持弹窗全屏 */
   :deep(.el-dialog) {
     width: 100% !important;
   }

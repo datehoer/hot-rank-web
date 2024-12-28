@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 from fastapi import FastAPI, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 import redis.asyncio as redis
@@ -28,12 +27,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# MongoDB 设置
 mongo_client = AsyncIOMotorClient(MONGODB_URI)
 mongo_db = mongo_client[MONGODB_DB_NAME]
 backoff = ExponentialBackoff(cap=2, base=2)
 retry = Retry(backoff=backoff, retries=10)
-# 创建连接池
 redis_pool = ConnectionPool(
     host=REDIS_HOST,
     port=REDIS_PORT,
@@ -47,21 +44,26 @@ redis_pool = ConnectionPool(
     health_check_interval=60,
     max_connections=10
 )
-# 使用连接池创建客户端
+
 redis_client = redis.Redis(connection_pool=redis_pool)
+
 class Feedback(BaseModel):
     subject: str
     content: str
     username: str
+
 class SubscriberRequest(BaseModel):
     email: EmailStr
+
 class UnsubscribeRequest(BaseModel):
     email: EmailStr
     uuid: str
+
 def generate_uuid() -> str:
     timestamp = int(time.time())
     random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
     return f"{timestamp}{random_str}"
+
 @app.post("/subscribe")
 async def subscribe(subscriber: SubscriberRequest):
     email = subscriber.email
@@ -75,6 +77,7 @@ async def subscribe(subscriber: SubscriberRequest):
         "uuid": uuid,
         "email": email
     }}
+
 @app.post('/unsubscribe')
 async def unsubscribe(unsubscribe: UnsubscribeRequest):
     email = unsubscribe.email
@@ -87,34 +90,42 @@ async def unsubscribe(unsubscribe: UnsubscribeRequest):
         return {"code": 200, "msg": "success", "data": []}
     else:
         return {"code": 500, "msg": "error, maybe the email not in my database", "data": []}
+    
 @app.get("/rankCopyWriting")
 async def get_copywriting():
     data = await redis_client.srandmember("copywriting")
     return {"code": 200, "msg": "success", "data": data}
+
 @app.get("/yellowCalendar")
 async def get_copywriting():
     data = await redis_client.get("yellowCalendar")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+
 @app.get("/music")
 async def get_music():
     data = await redis_client.get("music")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+
 @app.get("/avatar")
 async def get_avatar():
     data = await redis_client.srandmember("avatar")
     return {"code": 200, "msg": "success", "data": data}
+
 @app.get("/username")
 async def get_username():
     data = await redis_client.srandmember("username")
     return {"code": 200, "msg": "success", "data": data}
+
 @app.post("/feedback")
 async def post_feedback(feedback: Feedback):
     send_email(feedback.subject, feedback.content, ["datehoer@gmail.com"])
     return {"code": 200, "msg": "success"}
+
 @app.get("/get_cards")
 async def get_cards():
     data = await redis_client.get("card_table")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
+
 async def chatWithModel(messages, check_list=True):
     err = 10
     while err > 0:
@@ -167,10 +178,12 @@ async def chatWithModel(messages, check_list=True):
                 print("fetch ai error: " + str(e) + traceback.format_exc())
                 err -= 1
     return ""
+
 @app.get("/holiday")
 async def getHoliday():
     holidays = await redis_client.get("holidays")
     return {"code": 200, "msg": "success", "data": json.loads(holidays)}
+
 @app.get("/refresh")
 async def refresh():
     ttl_time_second = await redis_client.ttl("rank")
@@ -188,6 +201,19 @@ async def refresh():
             await redis_client.delete("rank")
             await redis_client.delete("todayTopNews")
             message['msg'] = "已通知星链重新链接中"
+        else:
+            rank_data = await redis_client.get("rank")
+            if rank_data:
+                rank_json = json.loads(rank_data)
+                time_status = [
+                    task_time for task_time in rank_json 
+                    if datetime.strptime(task_time['insert_time'], '%Y-%m-%d %H:%M:%S') < nearest_hour
+                ]
+                
+                if time_status:
+                    await redis_client.delete("rank")
+                    await redis_client.delete("todayTopNews")
+                    message['msg'] = "已通知星链重新链接中"
     return message
 
 @app.get("/todayTopNews")
@@ -196,6 +222,11 @@ async def getTodayTopNews():
     if todayTopNewsData:
         return {"code": 200, "msg": "success", "data": json.loads(todayTopNewsData)}
     else:
+        get_today_top_news_status = await redis_client.get("today_top_news_task")
+        if get_today_top_news_status:
+            return {"code": 200, "msg": "success", "data": []}
+        else:
+            await redis_client.set("today_top_news_task", "1", 3600)
         mongoData = await get_data("hot")
         data = mongoData['data']
         filtered_sites = [site for site in data if site["name"] in news_sites]
@@ -272,22 +303,26 @@ async def getTodayTopNews():
                     fg.rss_file('/app/rss_feed_today_top_news.xml')
                 except Exception as e:
                     print("generate todayTopNewsWithAI rss feed error")
+                await redis_client.delete("today_top_news_task")
                 return {"code": 200, "msg": "success", "data": summarizes}
                 
             except httpx.RequestError as e:
                 print(f"API request failed: {str(e)}")
                 error -= 1
                 if error == 0:
+                    await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
             except json.JSONDecodeError as e:
                 print(f"Failed to parse API response: {str(e)}")
                 error -= 1
                 if error == 0:
+                    await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
             except Exception as e:
                 print(f"some error happen: {str(e)}")
                 error -= 1
                 if error == 0:
+                    await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
             
 @app.get("/rank/{item_id}")
