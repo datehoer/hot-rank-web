@@ -354,4 +354,18 @@ a:hover:after {
 .refresh-btn.spin {
   animation: spin 0.6s linear;
 }
+@media screen and (max-width: 1024px) {
+  .count {
+    display: none;
+  }
+  
+  .news-title {
+    flex: 1;
+    padding-right: 0;
+  }
+  
+  .news-content {
+    justify-content: flex-start;
+  }
+}
 </style>
