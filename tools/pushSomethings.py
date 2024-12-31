@@ -137,7 +137,7 @@ table = [
     {"name": "华尔街见闻", "tablename": "wallstreetcn"},
     {"name": "要知", "tablename": "needknow"},
     {"name": "v2ex热门", "tablename": "v2ex"},
-    {"name": "nodeseed", "tablename": "nodeseed"},
+    {"name": "nodeseek", "tablename": "nodeseek"},
     {"name": "hostloc", "tablename": "hostloc"},
     {"name": "linuxdo", "tablename": "linuxdo"},
     {"name": "微信阅读排行榜", "tablename": "wx_read_rank"},
