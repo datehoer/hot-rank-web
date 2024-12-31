@@ -151,6 +151,7 @@ table = [
     {"name": "Mumsnet", "tablename": "mumsnet"},
     {"name": "News.com.au", "tablename": "newsau"},
     {"name": "5Channel", "tablename": "fivech"},
+    {"name": "Дзен", "tablename": "dzenru"},
     {"name": "36氪", "tablename": "36kr"},
     {"name": "52破解热榜", "tablename": "52pj"},
     {"name": "AcFun热榜", "tablename": "acfun"},
