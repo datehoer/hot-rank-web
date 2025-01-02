@@ -11,7 +11,7 @@
     </div>
     
     <div class="info-row">
-      <span class="info-label">距离2025年：</span>
+      <span class="info-label">距离{{ nextYear }}年：</span>
       <span class="info-value">{{ nextYearCountdown }}</span>
     </div>
   </div>
@@ -34,6 +34,9 @@ export default {
     }
   },
   computed: {
+    nextYear() {
+      return moment().year() + 1
+    },
     nextHolidayText() {
       const today = moment()
       let nextHoliday = null
