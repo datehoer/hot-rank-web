@@ -6,6 +6,7 @@ from config import REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_PASSWORD, api_headers
 from curl_cffi import requests
 from pyquery import PyQuery as pq
 import json_repair
+from datetime import datetime, timedelta
 
 
 # 初始化 Redis 客户端
@@ -99,12 +100,8 @@ def chat_get_calendar():
         res = requests.post(api_url, headers=api_headers, json={
             "messages": [
                 {
-                  "role": "system",
-                  "content": "你是一个黄历助手，熟悉黄历计算，现在阳历日期是"+time.strftime("%Y-%m-%d", time.localtime())
-                },
-                {
                     "role": "user",
-                    "content": "给我今天的黄历信息,lunar_calendar需要是天干地支纪年法 农历月日 生肖，需要包含以以下格式返回给我，返回一个json格式的数据："+json.dumps({"gregorian_calendar": "", "lunar_calendar": "", "good_actions": [], "bad_actions": []})
+                    "content": "你是一个黄历助手，熟悉黄历计算，今天阳历日期是"+today + "给我今天的黄历信息,lunar_calendar需要是天干地支纪年法 农历月日 生肖，需要包含以以下格式返回给我，返回一个json格式的数据："+json.dumps({"gregorian_calendar": "", "lunar_calendar": "", "good_actions": [], "bad_actions": []})
                 }
             ],
             "model": "deepseek-chat",
@@ -124,7 +121,11 @@ def chat_get_calendar():
                             text += chunk
         data = json.loads(json_repair.repair_json(text))
         json_result = json.dumps(data, ensure_ascii=False, indent=4)
-        redis_client.set("yellowCalendar", json_result)
+        now = datetime.now()
+        tomorrow = now + timedelta(days=1)
+        tomorrow_midnight = datetime(year=tomorrow.year, month=tomorrow.month, day=tomorrow.day)
+        seconds_until_midnight = int((tomorrow_midnight - now).total_seconds())
+        redis_client.set("yellowCalendar", json_result, ex=seconds_until_midnight)
 
 
 def scrape_datehoer():
