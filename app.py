@@ -353,10 +353,16 @@ async def get_data(item_id: str):
 
     try:
         data = []
+        try:
+            blog_data = await redis_client.get("myblog")
+            if blog_data:
+                data.append(json.loads(blog_data))
+        except Exception as e:
+            print(f"Redis get error: {e}")
         table_dict = json.loads(await redis_client.get("card_table"))
         for item in table_dict:
+            collection_name = item["tablename"]
             try:
-                collection_name = item["tablename"]
                 collection = mongo_db[collection_name]
                 # 查询最新的记录（按 insert_time 降序排序，限制结果为1条）
                 cursor = collection.find({"insert_time": {"$ne": None}}).sort("insert_time", -1).limit(1)
@@ -443,12 +449,6 @@ async def get_data(item_id: str):
             except Exception as e:
                 print(f"Error parsing {collection_name}: {e}")
                 print(traceback.format_exc())
-        try:
-            blog_data = await redis_client.get("myblog")
-            if blog_data:
-                data.append(json.loads(blog_data))
-        except Exception as e:
-            print(f"Redis get error: {e}")
         try:
             # 将数据缓存到 Redis，有效期 60 分钟
             await redis_client.setex(cache_key, 3600, json.dumps(data))
