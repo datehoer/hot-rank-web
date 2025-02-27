@@ -165,7 +165,7 @@ table = [
     {"name": "豆瓣电影排行", "tablename": "douban_movie"},
     {"name": "FreeBuf咨询", "tablename": "freebuf"},
     {"name": "GitHub Trending", "tablename": "github"},
-    {"name": "Google 热搜", "tablename": "google_search"},
+    # {"name": "Google 热搜", "tablename": "google_search"},
     {"name": "虎嗅热文", "tablename": "huxiu"},
     {"name": "3DM", "tablename": "3dm"},
     {"name": "IT之家热榜", "tablename": "ithome"},
