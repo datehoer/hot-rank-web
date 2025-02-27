@@ -41,7 +41,7 @@ def parse_bilibili_hot(data):
     return result
 
 def parse_juejin_hot(data):
-    data = data["data"]
+    data = data["data"]['data']
     result = []
     for item in data:
         hot_value = int(item['content_counter']['hot_rank'])
@@ -73,7 +73,7 @@ def parse_shaoshupai_hot(data):
     return result
 
 def parse_tieba_topic(data):
-    data = data["data"]['bang_topic']['topic_list']
+    data = data["data"]["data"]['bang_topic']['topic_list']
     result = []
     for item in data:
         hot_value = int(item["discuss_num"])
@@ -88,7 +88,7 @@ def parse_tieba_topic(data):
     return result
 
 def parse_toutiao_hot(data):
-    data = data["data"]
+    data = data["data"]["data"]
     result = []
     for item in data:
         hot_value = int(item["HotValue"])
@@ -103,7 +103,7 @@ def parse_toutiao_hot(data):
     return result
 
 def parse_weibo_hot_search(data):
-    data = data["data"]['cards'][0]['card_group']
+    data = data["data"]["data"]['cards'][0]['card_group']
     result = []
     for item in data:
         hot_url = item["scheme"]
@@ -116,7 +116,7 @@ def parse_weibo_hot_search(data):
     return result
 
 def parse_wx_read_rank(data):
-    data = data["books"]
+    data = data["data"]["books"]
     result = []
     for item in data:
         hot_label = item["bookInfo"]["title"]
@@ -130,7 +130,7 @@ def parse_wx_read_rank(data):
     return result
 
 def parse_zhihu_hot_list(data):
-    data = data["data"]
+    data = data["data"]["data"]
     result = []
     for item in data:
         hot_value = 0
@@ -185,7 +185,7 @@ def parse_anquanke(data):
     return result
 
 def parse_acfun(data):
-    data = data['rankList']
+    data = data['data']
     result = []
     for item in data:
         result.append({
@@ -215,7 +215,7 @@ def parse_douban(data):
 
 def parse_openeye(data):
     result = []
-    items = data.get("result", [])
+    items = data.get("data", [])
     for item in items.get("card_list", []):
         metro_list = item['card_data']['body'].get('metro_list', [])
         for metro in metro_list:
@@ -247,7 +247,7 @@ def parse_pmcaff(data):
     return result
 
 def parse_woshipm(data):
-    results = data.get('RESULT', [])
+    results = data.get('data', [])
     result = []
     for res in results:
         result_data = res['data']
@@ -323,7 +323,7 @@ def parse_youxiputao(data):
 
 def parse_zhanku(data):
     result = []
-    results = data['datas']
+    results = data['data']
     for res in results:
         title = res['rankingTitle']
         link = res['pageUrl']
@@ -337,7 +337,7 @@ def parse_zhanku(data):
 
 def parse_zongheng(data):
     result = []
-    for item in data.get("result", {}).get("resultList", []):
+    for item in data.get("data", {}).get("resultList", []):
         result.append({
             "hot_label": item.get("bookName"),
             "hot_url": "https://www.zongheng.com/detail/{}".format(item.get("bookId")),
@@ -346,7 +346,7 @@ def parse_zongheng(data):
     return result
 
 def parse_tencent_news(data):
-    data = data['idlist'][0]['newslist']
+    data = data['data'][0]['newslist']
     result = []
     for item in data:
         if not item.get('url'):

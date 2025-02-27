@@ -32,3 +32,9 @@ news_sites = [
     "少数派热榜",
     "华尔街见闻"
 ]
+
+PG_HOST = 'localhost'
+PG_PORT = '5432'
+PG_USER = 'admin'
+PG_PASSWORD = 'securepassword'
+PG_DB = 'postgres'

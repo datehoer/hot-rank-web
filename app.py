@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from motor.motor_asyncio import AsyncIOMotorClient
+import asyncpg
 import redis.asyncio as redis
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -8,6 +8,7 @@ import json
 import traceback
 import httpx
 from config import *
+from contextlib import asynccontextmanager
 import time
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,9 +23,18 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import random
 import string
-
+ml_models = {}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Application is starting up...")
+    app.state.pg_pool = await init_pg_pool()
+    try:
+        yield
+    finally:
+        print("Application is shutting down...")
+        await app.state.pg_pool.close()
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,8 +44,6 @@ app.add_middleware(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-mongo_client = AsyncIOMotorClient(MONGODB_URI)
-mongo_db = mongo_client[MONGODB_DB_NAME]
 backoff = ExponentialBackoff(cap=2, base=2)
 retry = Retry(backoff=backoff, retries=10)
 redis_pool = ConnectionPool(
@@ -65,6 +73,16 @@ class SubscriberRequest(BaseModel):
 class UnsubscribeRequest(BaseModel):
     email: EmailStr
     uuid: str
+
+async def init_pg_pool():
+    return await asyncpg.create_pool(
+        host=PG_HOST,
+        port=PG_PORT,
+        user=PG_USER,
+        password=PG_PASSWORD,
+        database=PG_DB
+    )
+
 
 def generate_uuid() -> str:
     timestamp = int(time.time())
@@ -360,95 +378,94 @@ async def get_data(item_id: str):
         except Exception as e:
             print(f"Redis get error: {e}")
         table_dict = json.loads(await redis_client.get("card_table"))
-        for item in table_dict:
-            collection_name = item["tablename"]
-            try:
-                collection = mongo_db[collection_name]
-                # 查询最新的记录（按 insert_time 降序排序，限制结果为1条）
-                cursor = collection.find({"insert_time": {"$ne": None}}).sort("insert_time", -1).limit(1)
-                latest_record = await cursor.to_list(length=1)
-                latest_record = latest_record[0] if latest_record else None
-                if not latest_record:
-                    continue
-                insert_time = latest_record["insert_time"]
-                if collection_name == "zhihu_hot_list":
-                    latest_record = parse_zhihu_hot_list(latest_record)
-                elif collection_name == "weibo_hot_search":
-                    latest_record = parse_weibo_hot_search(latest_record)
-                elif collection_name == "bilibili_hot":
-                    latest_record = parse_bilibili_hot(latest_record)
-                elif collection_name == "douyin_hot":
-                    latest_record = parse_douyin_hot(latest_record)
-                elif collection_name == "juejin_hot":
-                    latest_record = parse_juejin_hot(latest_record)
-                elif collection_name == "shaoshupai_hot":
-                    latest_record = parse_shaoshupai_hot(latest_record)
-                elif collection_name == "tieba_topic":
-                    latest_record = parse_tieba_topic(latest_record)
-                elif collection_name == "toutiao_hot":
-                    latest_record = parse_toutiao_hot(latest_record)
-                elif collection_name == "wx_read_rank":
-                    latest_record = parse_wx_read_rank(latest_record)
-                elif collection_name == "acfun":
-                    latest_record = parse_acfun(latest_record)
-                elif collection_name == "anquanke":
-                    latest_record = parse_anquanke(latest_record)
-                elif collection_name == "csdn":
-                    latest_record = parse_csdn(latest_record)
-                elif collection_name == "openeye":
-                    latest_record = parse_openeye(latest_record)
-                elif collection_name == "pmcaff":
-                    latest_record = parse_pmcaff(latest_record)
-                elif collection_name == "tencent_news":
-                    latest_record = parse_tencent_news(latest_record)
-                elif collection_name == "woshipm":
-                    latest_record = parse_woshipm(latest_record)
-                elif collection_name == "xueqiu":
-                    latest_record = parse_xueqiu(latest_record)
-                elif collection_name == "yiche":
-                    latest_record = parse_yiche(latest_record)
-                elif collection_name == "youshedubao":
-                    latest_record = parse_youshedubao(latest_record)
-                elif collection_name == "youxiputao":
-                    latest_record = parse_youxiputao(latest_record)
-                elif collection_name == "zhanku":
-                    latest_record = parse_zhanku(latest_record)
-                elif collection_name == "zongheng":
-                    latest_record = parse_zongheng(latest_record)
-                elif collection_name == "hupu":
-                    latest_record = parse_hupu(latest_record)
-                elif collection_name == "wallstreetcn":
-                    latest_record = parse_wallstreetcn(latest_record)
-                elif collection_name == "coolan":
-                    latest_record = parse_coolan(latest_record)
-                elif collection_name == "pengpai":
-                    latest_record = parse_pengpai(latest_record)
-                elif collection_name == "linuxdo":
-                    latest_record = parse_linuxdo(latest_record)
-                elif collection_name not in ['douban_movie']:
-                    latest_record = parse_common(latest_record)
-                local_time = time.localtime(insert_time)
-                if collection_name != "douban_movie":
-                    data.append({
-                        "name": item["name"],
-                        "data": latest_record,
-                        "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
-                    })
-                else:
-                    koubei, beimei = parse_douban(latest_record)
-                    data.append({
-                        "name": "豆瓣电影一周口碑榜",
-                        "data": koubei,
-                        "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
-                    })
-                    data.append({
-                        "name": "豆瓣电影北美票房榜",
-                        "data": beimei,
-                        "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
-                    })
-            except Exception as e:
-                print(f"Error parsing {collection_name}: {e}")
-                print(traceback.format_exc())
+        async with app.state.pg_pool.acquire() as conn:
+            for item in table_dict:
+                collection_name = item["tablename"]
+                try:
+                    query = f'SELECT * FROM "{collection_name}" WHERE insert_time IS NOT NULL ORDER BY insert_time DESC LIMIT 1'
+                    latest_record = await conn.fetchrow(query)
+                    if not latest_record:
+                        continue
+                    insert_time = latest_record["insert_time"]
+                    latest_record = {"data": json.loads(dict(latest_record)['data'])}
+                    if collection_name == "zhihu_hot_list":
+                        latest_record = parse_zhihu_hot_list(latest_record)
+                    elif collection_name == "weibo_hot_search":
+                        latest_record = parse_weibo_hot_search(latest_record)
+                    elif collection_name == "bilibili_hot":
+                        latest_record = parse_bilibili_hot(latest_record)
+                    elif collection_name == "douyin_hot":
+                        latest_record = parse_douyin_hot(latest_record)
+                    elif collection_name == "juejin_hot":
+                        latest_record = parse_juejin_hot(latest_record)
+                    elif collection_name == "shaoshupai_hot":
+                        latest_record = parse_shaoshupai_hot(latest_record)
+                    elif collection_name == "tieba_topic":
+                        latest_record = parse_tieba_topic(latest_record)
+                    elif collection_name == "toutiao_hot":
+                        latest_record = parse_toutiao_hot(latest_record)
+                    elif collection_name == "wx_read_rank":
+                        latest_record = parse_wx_read_rank(latest_record)
+                    elif collection_name == "acfun":
+                        latest_record = parse_acfun(latest_record)
+                    elif collection_name == "anquanke":
+                        latest_record = parse_anquanke(latest_record)
+                    elif collection_name == "csdn":
+                        latest_record = parse_csdn(latest_record)
+                    elif collection_name == "openeye":
+                        latest_record = parse_openeye(latest_record)
+                    elif collection_name == "pmcaff":
+                        latest_record = parse_pmcaff(latest_record)
+                    elif collection_name == "tencent_news":
+                        latest_record = parse_tencent_news(latest_record)
+                    elif collection_name == "woshipm":
+                        latest_record = parse_woshipm(latest_record)
+                    elif collection_name == "xueqiu":
+                        latest_record = parse_xueqiu(latest_record)
+                    elif collection_name == "yiche":
+                        latest_record = parse_yiche(latest_record)
+                    elif collection_name == "youshedubao":
+                        latest_record = parse_youshedubao(latest_record)
+                    elif collection_name == "youxiputao":
+                        latest_record = parse_youxiputao(latest_record)
+                    elif collection_name == "zhanku":
+                        latest_record = parse_zhanku(latest_record)
+                    elif collection_name == "zongheng":
+                        latest_record = parse_zongheng(latest_record)
+                    elif collection_name == "hupu":
+                        latest_record = parse_hupu(latest_record)
+                    elif collection_name == "wallstreetcn":
+                        latest_record = parse_wallstreetcn(latest_record)
+                    elif collection_name == "coolan":
+                        latest_record = parse_coolan(latest_record)
+                    elif collection_name == "pengpai":
+                        latest_record = parse_pengpai(latest_record)
+                    elif collection_name == "linuxdo":
+                        latest_record = parse_linuxdo(latest_record)
+                    elif collection_name not in ['douban_movie']:
+                        latest_record = parse_common(latest_record)
+                    local_time = time.localtime(insert_time)
+                    if collection_name != "douban_movie":
+                        data.append({
+                            "name": item["name"],
+                            "data": latest_record,
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+                        })
+                    else:
+                        koubei, beimei = parse_douban(latest_record)
+                        data.append({
+                            "name": "豆瓣电影一周口碑榜",
+                            "data": koubei,
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+                        })
+                        data.append({
+                            "name": "豆瓣电影北美票房榜",
+                            "data": beimei,
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+                        })
+                except Exception as e:
+                    print(f"Error parsing {collection_name}: {e}")
+                    print(traceback.format_exc())
         try:
             # 将数据缓存到 Redis，有效期 60 分钟
             await redis_client.setex(cache_key, 3600, json.dumps(data))
@@ -467,7 +484,7 @@ async def get_data(item_id: str):
                         fe.title(item.get('title', item['hot_label']))
                         fe.link(href=item.get('url', item['hot_url']))
             fg.rss_file('/app/rss_feed.xml')
-        except Exception as e:
+        except:
             print("generate today news rss feed error")
         return {
             "code": 200,

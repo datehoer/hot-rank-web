@@ -183,7 +183,7 @@ table = [
     {"name": "TapTap热门", "tablename": "taptap"},
     {"name": "腾讯新闻热点榜", "tablename": "tencent_news"},
     {"name": "人人都是产品经理热门", "tablename": "woshipm"},
-    {"name": "雪球热门", "tablename": "xueqiu"},
+    # {"name": "雪球热门", "tablename": "xueqiu"},
     {"name": "易车热门", "tablename": "yiche"},
     {"name": "优设读报", "tablename": "youshedubao"},
     {"name": "游戏葡萄文章推荐", "tablename": "youxiputao"},
