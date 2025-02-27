@@ -17,8 +17,13 @@ from pydantic import BaseModel, EmailStr
 from json_repair import repair_json
 from parse_detail import parse_detail
 from feedgen.feed import FeedGenerator
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import random
 import string
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 mongo_client = AsyncIOMotorClient(MONGODB_URI)
 mongo_db = mongo_client[MONGODB_DB_NAME]
 backoff = ExponentialBackoff(cap=2, base=2)

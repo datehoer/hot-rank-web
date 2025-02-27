@@ -25,7 +25,8 @@ RUN pip install \
     pycryptodome \
     beautifulsoup4 \
     markdownify \
-    pydantic[email]
+    pydantic[email] \
+    slowapi
 
 EXPOSE 7545
 
