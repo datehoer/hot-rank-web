@@ -2,22 +2,16 @@ import pymongo
 import psycopg2
 import json
 from tqdm import tqdm
+from config import *
 # 连接到 MongoDB
-mongo_client = pymongo.MongoClient("mongodb://root:JIwb158.@localhost:27017/")
-mongo_db = mongo_client["hotday"]
-mongo_collection = mongo_db["your_collection"]
+mongo_client = pymongo.MongoClient(MONGODB_URI)
+mongo_db = mongo_client[MONGODB_DB_NAME]
 
 # 连接到 PostgreSQL
-pg_conn = psycopg2.connect("dbname=postgres user=admin password=securepassword")
+pg_conn = psycopg2.connect(f"host={PG_HOST} port={PG_PORT} dbname={PG_DB} user={PG_USER} password={PG_PASSWORD}")
 pg_cursor = pg_conn.cursor()
-collection_names = [
-    "acfun",
-    "openeye",
-    "tencent_news",
-    "woshipm",
-    "wx_read_rank",
-    "zongheng",
-]
+
+collection_names = mongo_db.list_collection_names()
 # 从 MongoDB 中读取数据
 for collection_name in tqdm(collection_names):
     mongo_collection = mongo_db[collection_name]
@@ -46,6 +40,10 @@ for collection_name in tqdm(collection_names):
             data = document['books']
         elif collection_name == "zongheng":
             data = document['result']
+        else:
+            if "data" not in document:
+                continue
+            data = document['data']
         insert_time = document['insert_time']
 
         # 将数据插入到 PostgreSQL
