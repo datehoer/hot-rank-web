@@ -16,6 +16,11 @@ docker编译镜像后使用下方命令启动docker容器，之后更新代码�
 
 After building the Docker image, use the command below to start the Docker container. Afterward, updating the code only requires restarting the container (as long as you are not adding new files or libraries).
 
+2025.3.3 更新：
+- 修改了数据库改为了postgresql，原本的mongodb占用内存太大进行了替换
+- 增加了整体的速率限制
+
+
 ~~~bash
 docker run -itd --name hotrank -v /var/www/hotday.uk/feed:/app/rss_feed.xml -v /var/www/hotday.uk/feed_with_ai:/app/rss_feed_today_top_news.xml -v /opt/hot-rank-web/app.py:/app/app.py -v /opt/hot-rank-web/parse_detail.py:/app/parse_detail.py -v /opt/hot-rank-web/common.py:/app/common.py -v /opt/hot-rank-web/config.py:/app/config.py -p 127.0.0.1:7545:7545 hotrank:v0.1
 ~~~

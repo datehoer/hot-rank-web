@@ -711,29 +711,6 @@ export default {
   margin-top: 8px;
 }
 
-.checkbox-group {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.checkbox-group.disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.drag-handle {
-  cursor: move;
-  color: var(--secondary-text);
-  margin-right: 12px;
-  font-size: 16px;
-}
-
-.drag-handle:hover {
-  color: var(--text-color);
-}
-
 /* 拖拽状态 */
 .sortable-ghost {
   opacity: 0.5;
@@ -878,21 +855,87 @@ export default {
   }
 }
 
-@media screen and (max-width: 768px) {
-  :deep(.music-player-dialog) {
-    width: 100% !important;
-    height: 100vh !important;
-    padding: 0;
-  }
-  
-  :deep(.music-player-dialog .el-dialog__header) {
-    padding: 10px;
-  }
-  
-  :deep(.music-player-dialog .el-dialog__body) {
-    height: calc(100vh - 96px); /* 减去header和footer的高度 */
-    overflow-y: auto;
-  }
+/* 站点管理相关样式 */
+.sites-container {
+  height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.checkbox-group.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.draggable-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  grid-auto-flow: row;
+}
+
+.drag-handle {
+  cursor: move;
+  color: var(--secondary-text);
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+.drag-handle:hover {
+  color: var(--text-color);
+}
+
+.site-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.site-item:hover {
+  background: var(--hover-bg);
+}
+
+.site-order-input {
+  margin-right: 8px;
+  width: 70px;
+}
+
+.sorting-controls {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.site-index {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* 音乐播放器对话框样式 */
+:deep(.music-player-dialog) {
+  width: 100% !important;
 }
 
 :deep(.music-player-dialog .el-dialog__header) {
@@ -900,7 +943,6 @@ export default {
   position: relative;
 }
 
-/* 关闭按钮样式 */
 :deep(.music-player-dialog .el-dialog__headerbtn) {
   position: absolute;
   right: 10px;
@@ -924,7 +966,7 @@ export default {
   background: rgba(0, 0, 0, 0.5);
 }
 
-/* 确认关闭对话框样式 */
+/* 关闭确认对话框样式 */
 :deep(.music-player-close-dialog) {
   background: var(--card-bg);
   border-radius: 8px;
@@ -955,16 +997,136 @@ export default {
   font-size: 13px;
   padding: 8px 16px;
 }
+
+/* 订阅对话框样式 */
+:deep(.subscribe-dialog) {
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+:deep(.subscribe-dialog .el-dialog__body) {
+  padding: 20px;
+}
+
+/* 自定义单选按钮样式 */
+.layout-selector {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+}
+
+.custom-radio {
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-color);
+  margin-right: 16px;
+}
+
+.custom-radio input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-radio input:checked + .radio-label::before {
+  border-color: #409EFF;
+}
+
+.custom-radio input:checked + .radio-label::after {
+  transform: scale(1);
+}
+
+.radio-label {
+  position: relative;
+  padding-left: 4px;
+}
+
+.radio-label::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  transition: all 0.3s ease;
+}
+
+.radio-label::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #409EFF;
+  transition: transform 0.2s ease;
+}
+
+.custom-radio:hover .radio-label::before {
+  border-color: #409EFF;
+}
+
+/* Focus styles for keyboard navigation */
+.custom-radio input:focus + .radio-label::before {
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
+}
+
+/* Element UI 输入数字相关样式 */
+:deep(.el-input-number) {
+  width: 70px;
+  line-height: 1;
+}
+
+:deep(.el-input-number.is-controls-right .el-input__inner) {
+  padding-left: 5px;
+  padding-right: 25px;
+  text-align: center;
+}
+
+:deep(.el-input-number--mini) {
+  width: 70px;
+  line-height: 24px;
+}
+
+/* 响应式适配样式 */
 @media (max-width: 1700px) {
   .user-panel {
-    position: fixed;
     right: 20px;
     top: 80px;
     width: 300px;
   }
 }
+
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
+  /* 音乐播放器移动端样式 */
+  :deep(.music-player-dialog) {
+    width: 100% !important;
+    height: 100vh !important;
+    padding: 0;
+  }
+  
+  :deep(.music-player-dialog .el-dialog__header) {
+    padding: 10px;
+  }
+  
+  :deep(.music-player-dialog .el-dialog__body) {
+    height: calc(100vh - 96px); /* 减去header和footer的高度 */
+    overflow-y: auto;
+  }
+  
   :deep(.music-player-dialog .el-dialog__headerbtn) {
     right: 15px;
     top: 15px;
@@ -973,7 +1135,8 @@ export default {
   :deep(.music-player-close-dialog) {
     width: 90% !important;
   }
- 
+  
+  /* 反馈表单移动端样式 */
   :deep(.feedback .el-dialog) {
     width: 90% !important;
     margin-top: 5vh !important;
@@ -1032,35 +1195,7 @@ export default {
     line-height: 1.4;
   }
   
-  .draggable-container {
-    grid-template-columns: 1fr;
-  }
-  
-  .sites-container {
-    height: 250px;
-  }
-}
-:deep(.subscribe-dialog) {
-  background: var(--card-bg);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-:deep(.subscribe-dialog .el-dialog__body) {
-  padding: 20px;
-}
-
-:deep(.subscribe-dialog .el-form-item__label) {
-  color: var(--text-color);
-}
-
-:deep(.subscribe-dialog .el-input__inner) {
-  background-color: var(--card-bg);
-  border-color: var(--border-color);
-  color: var(--text-color);
-}
-
-@media screen and (max-width: 768px) {
+  /* 订阅对话框移动端样式 */
   :deep(.subscribe-dialog) {
     width: 90% !important;
     margin-top: 5vh !important;
@@ -1080,211 +1215,15 @@ export default {
   :deep(.subscribe-dialog .el-form-item__content) {
     margin-left: 0 !important;
   }
-}
-.layout-selector {
-  margin-top: 8px;
-  display: flex;
-  gap: 16px;
-}
-
-.custom-radio {
-  position: relative;
-  padding-left: 28px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  color: var(--text-color);
-  margin-right: 16px;
-}
-.custom-radio input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-.custom-radio input:checked + .radio-label::before {
-  border-color: #409EFF;
-}
-
-.custom-radio input:checked + .radio-label::after {
-  transform: scale(1);
-}
-
-.radio-label {
-  position: relative;
-  padding-left: 4px;
-}
-
-.radio-label::before {
-  content: '';
-  position: absolute;
-  left: -24px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border-color);
-  border-radius: 50%;
-  background-color: var(--card-bg);
-  transition: all 0.3s ease;
-}
-
-.radio-label::after {
-  content: '';
-  position: absolute;
-  left: -20px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #409EFF;
-  transition: transform 0.2s ease;
-}
-
-.custom-radio:hover .radio-label::before {
-  border-color: #409EFF;
-}
-
-/* Focus styles for keyboard navigation */
-.custom-radio input:focus + .radio-label::before {
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
-}
-.site-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-.site-order-input {
-  margin-right: 8px;
-  width: 70px;
-}
-.sorting-controls {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-:deep(.el-input-number) {
-  width: 70px;
-  line-height: 1;
-}
-
-:deep(.el-input-number.is-controls-right .el-input__inner) {
-  padding-left: 5px;
-  padding-right: 25px;
-  text-align: center;
-}
-
-:deep(.el-input-number--mini) {
-  width: 70px;
-  line-height: 24px;
-}
-.site-index {
-  min-width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: var(--border-color);
-  color: var(--text-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  margin-right: 8px;
-  font-weight: bold;
-}
-
-.site-item:hover {
-  background: var(--hover-bg);
-}
-/* Dark mode specific styles */
-[data-theme='dark'] .custom-radio input:checked + .radio-label::before {
-  border-color: #409EFF;
-}
-
-[data-theme='dark'] .custom-radio:hover .radio-label::before {
-  border-color: #409EFF;
-}
-/* 新增的滚动容器样式 */
-.sites-container {
-  height: 300px;
-  overflow-y: auto;
-  margin-top: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 8px;
-}
-
-.checkbox-group {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding-right: 4px;
-}
-
-.site-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.site-item:hover {
-  background: var(--hover-bg);
-}
-
-/* 自定义滚动条样式 */
-.sites-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sites-container::-webkit-scrollbar-track {
-  background: var(--bg-color);
-  border-radius: 3px;
-}
-
-.sites-container::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb);
-  border-radius: 3px;
-  transition: background-color 0.3s;
-}
-
-.sites-container::-webkit-scrollbar-thumb:hover {
-  background-color: var(--secondary-text);
-}
-
-/* 移动端适配 */
-@media screen and (max-width: 768px) {
+  
+  /* 站点列表移动端样式 */
+  .draggable-container,
   .checkbox-group {
-    grid-template-columns: 1fr; /* 在移动端改为单列显示 */
+    grid-template-columns: 1fr;
   }
   
   .sites-container {
-    height: 250px; /* 在移动端稍微减小高度 */
+    height: 250px;
   }
-}
-
-.sites-container {
-  height: 300px;
-  overflow-y: auto;
-  margin-top: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 8px;
-}
-
-.draggable-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  grid-auto-flow: row;
 }
 </style>
