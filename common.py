@@ -41,7 +41,7 @@ def parse_bilibili_hot(data):
     return result
 
 def parse_juejin_hot(data):
-    data = data["data"]['data']
+    data = data["data"]
     result = []
     for item in data:
         hot_value = int(item['content_counter']['hot_rank'])
@@ -73,7 +73,7 @@ def parse_shaoshupai_hot(data):
     return result
 
 def parse_tieba_topic(data):
-    data = data["data"]["data"]['bang_topic']['topic_list']
+    data = data["data"]['bang_topic']['topic_list']
     result = []
     for item in data:
         hot_value = int(item["discuss_num"])
@@ -88,7 +88,7 @@ def parse_tieba_topic(data):
     return result
 
 def parse_toutiao_hot(data):
-    data = data["data"]["data"]
+    data = data["data"]
     result = []
     for item in data:
         hot_value = int(item["HotValue"])
@@ -103,7 +103,7 @@ def parse_toutiao_hot(data):
     return result
 
 def parse_weibo_hot_search(data):
-    data = data["data"]["data"]['cards'][0]['card_group']
+    data = data["data"]['cards'][0]['card_group']
     result = []
     for item in data:
         hot_url = item["scheme"]
@@ -130,7 +130,7 @@ def parse_wx_read_rank(data):
     return result
 
 def parse_zhihu_hot_list(data):
-    data = data["data"]["data"]
+    data = data["data"]
     result = []
     for item in data:
         hot_value = 0
