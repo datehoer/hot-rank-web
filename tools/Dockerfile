@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TZ=Asia/Shanghai
 
 WORKDIR /app
-COPY . /app
+COPY pushSomethingTask.py /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -13,21 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install \
-    fastapi \
-    uvicorn[standard] \
-    motor \
-    redis \
-    pydantic \
+    curl_cffi \
     pyquery \
-    httpx \
-    feedgen \
-    json-repair \
-    pycryptodome \
-    beautifulsoup4 \
-    markdownify \
-    pydantic[email] \
-    slowapi
+    redis
 
 EXPOSE 7545
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7545"]
+CMD ["python", "pushSomethingTask.py"]
