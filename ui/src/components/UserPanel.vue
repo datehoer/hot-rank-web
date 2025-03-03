@@ -24,7 +24,7 @@
     <el-dialog
       title="设置"
       :visible.sync="showSettings"
-      width="470px"
+      width="620px"
       custom-class="settings-dialog"
       :modal="false"
     >
@@ -100,6 +100,11 @@
               ></el-switch>
             </div>
             <div class="sites-container">
+              <div class="sorting-controls">
+                <el-button size="small" type="primary" @click="sortBySiteOrder" :disabled="localShowAllSites">
+                  按序号排序
+                </el-button>
+              </div>
               <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
                 <draggable 
                   v-model="availableSites"
@@ -108,10 +113,18 @@
                   @end="handleDragEnd"
                   class="draggable-container"
                 >
-                  <div v-for="site in availableSites" 
-                      :key="site.name" 
-                      class="site-item"
-                  >
+                  <div v-for="site in availableSites" :key="site.name" class="site-item">
+                    <div class="site-order-input">
+                      <el-input-number 
+                        v-model="site.order" 
+                        :min="1" 
+                        :max="availableSites.length"
+                        size="mini"
+                        controls-position="right"
+                        :disabled="localShowAllSites"
+                        @change="updateSiteOrder(site, $event)"
+                      ></el-input-number>
+                    </div>
                     <i class="el-icon-rank drag-handle"></i>
                     <el-checkbox
                       v-model="selectedSites"
@@ -307,6 +320,7 @@ export default {
       localLayoutMode: this.layoutMode,
       localColumnsCount: this.columnsCount,
       localWrapText: true,
+      siteOrder: [],
     }
   },
   watch: {
@@ -360,6 +374,7 @@ export default {
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
     this.localLayoutMode = this.$localStorage.get('layoutMode', 'grid');
+    this.siteOrder = this.$localStorage.get('sitesOrder', []);
   },
   beforeDestroy() {
     // 清除定时器
@@ -380,6 +395,9 @@ export default {
       }
     },
     handleDragEnd() {
+      this.availableSites.forEach((site, index) => {
+        site.order = index + 1;
+      });
       const orderedSites = this.availableSites.map(site => {
         if (this.selectedSites.includes(site.name)) {
           return site.name;
@@ -415,7 +433,38 @@ export default {
     },
     fetchCards() {
       getCards().then(response => {
-        this.availableSites = response.data;
+        this.availableSites = response.data.map((site, index) => ({
+          ...site,
+          order: site.id
+        }));
+        if (this.siteOrder.length) {
+          this.availableSites = this.availableSites.map(site => {
+            const order = this.siteOrder.indexOf(site.name);
+            if (order !== -1) {
+              site.order = order + 1;
+            }
+            return site;
+          });
+          this.availableSites.sort((a, b) => a.order - b.order);
+        }
+      });
+    },
+    updateSiteOrder(site, newOrder) {
+      // 更新序号但不立即排序
+      site.order = newOrder;
+    },
+    sortBySiteOrder() {
+      const sortedSites = [...this.availableSites];
+      sortedSites.sort((a, b) => a.order - b.order);
+      this.availableSites = sortedSites;
+      
+      // 触发排序后的更新
+      this.handleDragEnd();
+      
+      // 显示排序成功消息
+      this.$message({
+        type: 'success',
+        message: '已按序号排序完成'
       });
     },
     handleClose(done) {
@@ -1103,7 +1152,56 @@ export default {
 .custom-radio input:focus + .radio-label::before {
   box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
 }
+.site-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+.site-order-input {
+  margin-right: 8px;
+  width: 70px;
+}
+.sorting-controls {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+:deep(.el-input-number) {
+  width: 70px;
+  line-height: 1;
+}
 
+:deep(.el-input-number.is-controls-right .el-input__inner) {
+  padding-left: 5px;
+  padding-right: 25px;
+  text-align: center;
+}
+
+:deep(.el-input-number--mini) {
+  width: 70px;
+  line-height: 24px;
+}
+.site-index {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.site-item:hover {
+  background: var(--hover-bg);
+}
 /* Dark mode specific styles */
 [data-theme='dark'] .custom-radio input:checked + .radio-label::before {
   border-color: #409EFF;

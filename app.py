@@ -57,7 +57,7 @@ redis_pool = ConnectionPool(
     socket_connect_timeout=60,
     socket_keepalive=True,
     health_check_interval=60,
-    max_connections=10
+    max_connections=100
 )
 
 redis_client = redis.Redis(connection_pool=redis_pool)
