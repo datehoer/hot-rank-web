@@ -293,7 +293,7 @@ async def getTodayTopNews():
                                 },
                                 {
                                     "role": "user",
-                                    "content": "对下方数据的content进行最多300字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                    "content": "对下方数据的content进行最多100字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
                                 }
                             ], False)
                             summarize = json.loads(repair_json(summarize))
