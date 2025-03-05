@@ -1,5 +1,7 @@
 import math
 from urllib.parse import urljoin
+
+
 def parse_douyin_hot(data):
     data = data["data"]['word_list']
     result = []
@@ -14,6 +16,7 @@ def parse_douyin_hot(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
 
 def parse_bilibili_hot(data):
     data = data["data"]['list']
@@ -40,8 +43,11 @@ def parse_bilibili_hot(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_juejin_hot(data):
     data = data["data"]
+    if "data" in data:
+        data = data["data"]
     result = []
     for item in data:
         hot_value = int(item['content_counter']['hot_rank'])
@@ -54,6 +60,7 @@ def parse_juejin_hot(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
 
 def parse_shaoshupai_hot(data):
     data = data["data"]
@@ -72,8 +79,13 @@ def parse_shaoshupai_hot(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_tieba_topic(data):
-    data = data["data"]['bang_topic']['topic_list']
+    data = data["data"]
+    if "data" in data:
+        data = data['data']
+    if "bang_topic" in data:
+        data = data['bang_topic']['topic_list']
     result = []
     for item in data:
         hot_value = int(item["discuss_num"])
@@ -87,8 +99,11 @@ def parse_tieba_topic(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_toutiao_hot(data):
     data = data["data"]
+    if "data" in data:
+        data = data['data']
     result = []
     for item in data:
         hot_value = int(item["HotValue"])
@@ -102,8 +117,13 @@ def parse_toutiao_hot(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_weibo_hot_search(data):
-    data = data["data"]['cards'][0]['card_group']
+    data = data["data"]
+    if "data" in data:
+        data = data['data']
+    if "cards" in data:
+        data = data['cards'][0]['card_group']
     result = []
     for item in data:
         hot_url = item["scheme"]
@@ -114,6 +134,7 @@ def parse_weibo_hot_search(data):
             "hot_label": hot_label
         })
     return result
+
 
 def parse_wx_read_rank(data):
     data = data["data"]["books"]
@@ -129,8 +150,11 @@ def parse_wx_read_rank(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_zhihu_hot_list(data):
     data = data["data"]
+    if "data" in data:
+        data = data['data']
     result = []
     for item in data:
         hot_value = 0
@@ -150,6 +174,7 @@ def parse_zhihu_hot_list(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
 
 def parse_common(data):
     result = []
@@ -173,6 +198,7 @@ def parse_common(data):
         result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_anquanke(data):
     result = []
     data = data['data']['list']
@@ -184,6 +210,7 @@ def parse_anquanke(data):
         })
     return result
 
+
 def parse_acfun(data):
     data = data['data']
     result = []
@@ -194,6 +221,7 @@ def parse_acfun(data):
             "hot_label": item['title']
         })
     return result
+
 
 def parse_csdn(data):
     data = data['data']
@@ -207,11 +235,13 @@ def parse_csdn(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_douban(data):
     data = data['data']
     koubei = parse_common(data[0])
     beimei = parse_common(data[1])
     return koubei, beimei
+
 
 def parse_openeye(data):
     result = []
@@ -231,6 +261,7 @@ def parse_openeye(data):
             })
     return result
 
+
 def parse_pmcaff(data):
     result = []
     results = data['data']
@@ -245,6 +276,7 @@ def parse_pmcaff(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
 
 def parse_woshipm(data):
     results = data.get('data', [])
@@ -261,6 +293,7 @@ def parse_woshipm(data):
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
+
 
 def parse_xueqiu(data):
     import pyquery
@@ -280,6 +313,7 @@ def parse_xueqiu(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_yiche(data):
     article_res_json = data['data']
     result = []
@@ -295,6 +329,7 @@ def parse_yiche(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_youshedubao(data):
     uisdc_news = data['data'][0]['dubao']
     result = []
@@ -306,6 +341,7 @@ def parse_youshedubao(data):
             "hot_value": 0
         })
     return result
+
 
 def parse_youxiputao(data):
     res_json = data['data']
@@ -321,19 +357,22 @@ def parse_youxiputao(data):
         })
     return result
 
+
 def parse_zhanku(data):
     result = []
     results = data['data']
-    for res in results:
-        title = res['rankingTitle']
-        link = res['pageUrl']
-        hotScore = res['rankScore']
-        result.append({
-            "hot_label": title,
-            "hot_url": link,
-            "hot_value": hotScore
-        })
+    if results:
+        for res in results:
+            title = res['rankingTitle']
+            link = res['pageUrl']
+            hotScore = res['rankScore']
+            result.append({
+                "hot_label": title,
+                "hot_url": link,
+                "hot_value": hotScore
+            })
     return result
+
 
 def parse_zongheng(data):
     result = []
@@ -344,6 +383,7 @@ def parse_zongheng(data):
             "hot_value": 0
         })
     return result
+
 
 def parse_tencent_news(data):
     data = data['data'][0]['newslist']
@@ -380,6 +420,7 @@ def parse_hupu(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_coolan(data):
     data = data['data']
     result = []
@@ -397,6 +438,7 @@ def parse_coolan(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_wallstreetcn(data):
     data = data['data']['day_items']
     result = []
@@ -412,6 +454,7 @@ def parse_wallstreetcn(data):
     result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
+
 def parse_pengpai(data):
     data = data['data']['hotNews']
     result = []
@@ -422,6 +465,7 @@ def parse_pengpai(data):
             "hot_value": 0
         })
     return result
+
 
 def parse_linuxdo(data):
     data = data['data']

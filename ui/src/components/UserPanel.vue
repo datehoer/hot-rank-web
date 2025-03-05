@@ -24,7 +24,7 @@
     <el-dialog
       title="设置"
       :visible.sync="showSettings"
-      width="620px"
+      :width="settingsDialogWidth+'px'"
       custom-class="settings-dialog"
       :modal="false"
     >
@@ -51,6 +51,14 @@
                 >
                 <span class="radio-label">标签页布局</span>
               </label>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="switch-wrapper">
+              <span>设置弹窗宽度：</span>
+              <el-input v-model="settingsDialogWidth" style="width: 50%;">
+                <template slot="append">px</template>
+              </el-input>
             </div>
           </div>
           <div class="settings-item">
@@ -100,11 +108,6 @@
               ></el-switch>
             </div>
             <div class="sites-container">
-              <div class="sorting-controls">
-                <el-button size="small" type="primary" @click="sortBySiteOrder" :disabled="localShowAllSites">
-                  按序号排序
-                </el-button>
-              </div>
               <div class="checkbox-group" :class="{ 'disabled': localShowAllSites }">
                 <draggable 
                   v-model="availableSites"
@@ -112,6 +115,7 @@
                   handle=".drag-handle"
                   @end="handleDragEnd"
                   class="draggable-container"
+                  :style="gridStyle()"
                 >
                   <div v-for="site in availableSites" :key="site.name" class="site-item">
                     <div class="site-order-input">
@@ -132,6 +136,10 @@
                       :disabled="localShowAllSites"
                     >
                       {{ site.name }}
+                      <!-- <i 
+                        class="el-icon-delete" 
+                        style="text-align:right; cursor: pointer;"
+                      ></i> -->
                     </el-checkbox>
                   </div>
                 </draggable>
@@ -281,8 +289,9 @@ export default {
       activeTab: 'basic',
       availableSites: [],
       selectedSites: [],
-      tip: "今天也要加油哦！",
+      tip: "今天也要加油鸭！",
       quoteContent: '',
+      settingsDialogWidth: 620,
       avatar: '',
       username: '',
       // 状态控制
@@ -360,7 +369,7 @@ export default {
     });
     getUsername().then(response => {
       this.username = response.data;
-      this.settings.username = response.data; // 初始化设中的用户名
+      this.settings.username = response.data;
     });
     this.selectedSites = this.$localStorage.get('selectedSites', []);
     this.fetchCards();
@@ -375,6 +384,7 @@ export default {
     window.addEventListener('resize', this.checkMobile);
     this.localLayoutMode = this.$localStorage.get('layoutMode', 'grid');
     this.siteOrder = this.$localStorage.get('sitesOrder', []);
+    this.settingsDialogWidth = this.$localStorage.get("settingsDialogWidth", 620);
   },
   beforeDestroy() {
     // 清除定时器
@@ -450,7 +460,6 @@ export default {
       });
     },
     updateSiteOrder(site, newOrder) {
-      // 更新序号但不立即排序
       site.order = newOrder;
     },
     sortBySiteOrder() {
@@ -458,10 +467,8 @@ export default {
       sortedSites.sort((a, b) => a.order - b.order);
       this.availableSites = sortedSites;
       
-      // 触发排序后的更新
       this.handleDragEnd();
       
-      // 显示排序成功消息
       this.$message({
         type: 'success',
         message: '已按序号排序完成'
@@ -478,6 +485,11 @@ export default {
       }).then(() => {
         done();
       }).catch(() => {});
+    },
+    gridStyle(){
+      return {
+        'grid-template-columns': `repeat(${this.localColumnsCount}, 1fr)`
+      }
     },
     openSettings() {
       this.showSettings = true;
@@ -497,12 +509,16 @@ export default {
       }
     },
     saveSettings() {
+      if (!this.localShowAllSites) {
+        console.log(1)
+        this.sortBySiteOrder();
+      }
       this.$emit('update-columns-count', this.localColumnsCount);
       this.$emit('update-wrap-text', this.localWrapText);
       this.$emit('update-selected-sites', this.selectedSites);
       this.$emit('update-show-all-sites', this.localShowAllSites);
       this.$emit('update-layout-mode', this.localLayoutMode);
-
+      this.$localStorage.set("settingsDialogWidth", this.settingsDialogWidth);
       this.$localStorage.set('selectedSites', this.selectedSites);
       this.$localStorage.set('layoutMode', this.localLayoutMode);
 
@@ -864,13 +880,6 @@ export default {
   border-radius: 4px;
   padding: 8px;
 }
-
-.checkbox-group {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
 .checkbox-group.disabled {
   opacity: 0.6;
   pointer-events: none;

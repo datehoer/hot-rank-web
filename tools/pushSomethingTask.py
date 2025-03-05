@@ -120,7 +120,7 @@ def scrape_datehoer():
         })
 
     result = {
-        "name": "Datehoer最新发文",
+        "name": "Datehoer's Blog",
         "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
         "data": blog_list
     }
