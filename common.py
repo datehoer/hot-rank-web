@@ -1,6 +1,7 @@
 import math
 from urllib.parse import urljoin
-
+def parse_mcpmarket(data):
+    pass
 
 def parse_douyin_hot(data):
     data = data["data"]['word_list']

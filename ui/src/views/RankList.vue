@@ -239,7 +239,7 @@ export default {
       observer: null,
       isLoading: false,
       isTabLayout: false,
-      layoutMode: 'grid',
+      layoutMode: 'tabs',
       activeTab: '',
     };
   },
@@ -274,7 +274,7 @@ export default {
     } else {
       this.list();
     }
-    this.layoutMode = this.$localStorage.get('layoutMode', 'grid');
+    this.layoutMode = this.$localStorage.get('layoutMode', 'tabs');
     // 初始化激活的标签页
     if (this.filteredNewsSections.length > 0) {
       this.activeTab = this.filteredNewsSections[0].name;

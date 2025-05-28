@@ -382,7 +382,7 @@ export default {
     this.applyTheme(this.isDarkMode);
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
-    this.localLayoutMode = this.$localStorage.get('layoutMode', 'grid');
+    this.localLayoutMode = this.$localStorage.get('layoutMode', 'tabs');
     this.siteOrder = this.$localStorage.get('sitesOrder', []);
     this.settingsDialogWidth = this.$localStorage.get("settingsDialogWidth", 620);
   },

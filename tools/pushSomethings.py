@@ -127,12 +127,12 @@ table = [
     {"name": "加密货币", "tablename": "crypto_coin"},
     {"name": "贴吧热议", "tablename": "tieba_topic"},
     {"name": "头条热榜", "tablename": "toutiao_hot"},
-    {"name": "纽约时报", "tablename": "nytimes"},
+    # {"name": "纽约时报", "tablename": "nytimes"},
     {"name": "华尔街日报", "tablename": "wsj"},
     {"name": "彭博新闻", "tablename": "bloomberg"},
     {"name": "金融时报", "tablename": "ft"},
     {"name": "微博热搜", "tablename": "weibo_hot_search"},
-    {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
+    # {"name": "知乎热榜", "tablename": "zhihu_hot_list"},
     {"name": "虎扑社区热帖", "tablename": "hupu"},
     {"name": "历史上的今天", "tablename": "historytoday"},
     {"name": "华尔街见闻", "tablename": "wallstreetcn"},
@@ -176,7 +176,8 @@ table = [
     {"name": "起点榜单", "tablename": "qidian"},
     {"name": "水木社区热门话题", "tablename": "shuimu"},
     {"name": "新浪热门", "tablename": "sina"},
-    {"name": "新浪体育热门", "tablename": "sina_sport"},
+    {"name": "MCP-MARKET", "tablename": "mcpmarket"},
+    # {"name": "新浪体育热门", "tablename": "sina_sport"},
     {"name": "新浪新闻热门", "tablename": "sina_news"},
     {"name": "太平洋汽车热门", "tablename": "taipingyang"},
     {"name": "TapTap热门", "tablename": "taptap"},
@@ -194,6 +195,7 @@ table = [
     # {"name": "雪球热门", "tablename": "xueqiu"},
     # {"name": "Google 热搜", "tablename": "google_search"},
 ]
+redis_client.delete("card_table")
 for index, item in enumerate(table):
     item['id'] = index + 1
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="news-section" :class="{ 'tab-layout': isTabLayout }">
+  <div v-if="hasData" class="news-section" :class="{ 'tab-layout': isTabLayout }">
     <div v-if="!isTabLayout" class="section-header">
       <div class="title">
         <span :class="['dot', `dot-${type}`]"></span>
@@ -100,6 +100,19 @@ export default {
   data() {
     return {
       activeTab: ''
+    }
+  },
+  computed: {
+    hasData() {
+      if (this.isTabLayout) {
+        return (
+          this.allSections &&
+          this.allSections.length > 0 &&
+          this.allSections.some(section => section.data && section.data.length > 0)
+        );
+      } else {
+        return this.newsItems && this.newsItems.length > 0;
+      }
     }
   },
   created() {
