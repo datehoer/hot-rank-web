@@ -407,7 +407,7 @@ async def get_data(item_id: str):
                     latest_record = await conn.fetchrow(query)
                     if not latest_record:
                         continue
-                    insert_time_dt = latest_record["insert_time"]
+                    insert_time = latest_record["insert_time"]
                     latest_record = {"data": json.loads(dict(latest_record)['data'])}
                     if collection_name == "zhihu_hot_list":
                         latest_record = parse_zhihu_hot_list(latest_record)
@@ -468,26 +468,25 @@ async def get_data(item_id: str):
                     elif collection_name not in ['douban_movie']:
                         latest_record = parse_common(latest_record)
                     
-                    formatted_insert_time = insert_time_dt.strftime("%Y-%m-%d %H:%M:%S")
-
+                    local_time = time.localtime(insert_time)
                     if collection_name != "douban_movie":
                         data.append({
                             "name": item["name"],
                             "data": latest_record,
-                            "insert_time": formatted_insert_time
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
                         })
                     else:
                         koubei, beimei = parse_douban(latest_record)
                         data.append({
                             "name": "豆瓣电影一周口碑榜",
                             "data": koubei,
-                            "insert_time": formatted_insert_time,
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time),
                             "id": 998
                         })
                         data.append({
                             "name": "豆瓣电影北美票房榜",
                             "data": beimei,
-                            "insert_time": formatted_insert_time,
+                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time),
                             "id": 999
                         })
                 except Exception as e:
