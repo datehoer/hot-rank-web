@@ -1,4 +1,4 @@
-import httpx
+import aiohttp
 import json
 import asyncio
 from Crypto.Cipher import AES
@@ -33,9 +33,10 @@ async def parse_detail(needKnowList):
 
 
 async def fetch(url):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        return response.text
+    timeout = aiohttp.ClientTimeout(total=360.0)
+    async with aiohttp.ClientSession(timeout=timeout) as client:
+        async with client.get(url) as response:
+            return await response.text()
 
 
 async def parse_pengpai(needKnow):

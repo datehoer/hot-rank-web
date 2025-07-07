@@ -6,7 +6,7 @@ from redis.backoff import ExponentialBackoff
 from redis.asyncio import ConnectionPool
 import json
 import traceback
-import httpx
+import aiohttp
 from config import *
 from contextlib import asynccontextmanager
 import time
@@ -23,6 +23,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import random
 import string
+import asyncio
 ml_models = {}
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
 backoff = ExponentialBackoff(cap=2, base=2)
@@ -48,6 +49,7 @@ redis_client = redis.Redis(connection_pool=redis_pool)
 async def lifespan(app: FastAPI):
     print("Application is starting up...")
     app.state.pg_pool = await init_pg_pool()
+    await redis_client.delete("today_top_news_task")
     try:
         yield
     finally:
@@ -167,13 +169,14 @@ async def get_cards():
     return {"code": 200, "msg": "success", "data": json.loads(data)}
 
 
-async def chatWithModel(messages, check_list=True):
+async def chatWithModel(messages, response_format):
     err = 10
     while err > 0:
         model = await redis_client.get("model")
-        async with httpx.AsyncClient(timeout=httpx.Timeout(360.0)) as client:
+        timeout = aiohttp.ClientTimeout(total=360.0)
+        async with aiohttp.ClientSession(timeout=timeout) as client:
             try:
-                response = await client.post(
+                async with client.post(
                     api_url,
                     headers=api_headers,
                     json={
@@ -181,40 +184,35 @@ async def chatWithModel(messages, check_list=True):
                         "messages": messages,
                         "stream": True,
                         "temperature": 0,
-                        "response_format": {"type": "json_object"}
+                        "max_tokens": 4096,
+                        "top_p": 0.8,
+                        "response_format": response_format
                     }
-                )
-                text = ""
-                try:
-                    async for line in response.aiter_lines():
-                        if line and line.startswith("data: ") and not line.endswith("[DONE]"):
-                            data = json.loads(line[len("data: "):])
-                            if "choices" in data:
-                                if data["choices"] and len(data["choices"]) > 0 and "delta" in data["choices"][0]:
-                                    chunk = data["choices"][0]["delta"].get("content", "")
-                                    text += chunk
-                except httpx.ReadTimeout:
-                    print("Stream reading timed out, using partial response")
-                    err -= 1
-                    continue
-                if not text:
-                    if response.status_code == 504:
-                        print("time out")
-                    elif response.status_code == 401:
-                        print("no token")
-                    else:
-                        print("not text, code:"+str(response.status_code))
-                    err -= 1
-                    continue
-                if check_list and "hot_value" not in text:
-                    print('no hot value')
-                    err -= 1
-                    continue
-                if not check_list and "hot_tag" not in text:
-                    print('no hot tag')
-                    err -= 1
-                    continue
-                return text
+                ) as response:
+                    text = ""
+                    try:
+                        async for line in response.content:
+                            line = line.decode('utf-8').strip()
+                            if line and line.startswith("data: ") and not line.endswith("[DONE]"):
+                                data = json.loads(line[len("data: "):])
+                                if "choices" in data:
+                                    if data["choices"] and len(data["choices"]) > 0 and "delta" in data["choices"][0]:
+                                        chunk = data["choices"][0]["delta"].get("content", "")
+                                        text += chunk
+                    except (aiohttp.ServerTimeoutError, asyncio.TimeoutError):
+                        print("Stream reading timed out, using partial response")
+                        err -= 1
+                        continue
+                    if not text:
+                        if response.status == 504:
+                            print("time out")
+                        elif response.status == 401:
+                            print("no token")
+                        else:
+                            print("not text, code:"+str(response.status))
+                        err -= 1
+                        continue
+                    return text
             except Exception as e:
                 print("fetch ai error: " + str(e) + traceback.format_exc())
                 err -= 1
@@ -274,6 +272,15 @@ async def getTodayTopNews():
         mongoData = await get_data("hot")
         data = mongoData['data']
         filtered_sites = [site for site in data if "name" in site and site["name"] in news_sites]
+        true_sites_data = [
+            {
+                "hot_label": item["hot_label"],
+                "hot_url":  item["hot_url"],
+                "hot_value": item["hot_value"]
+            }
+            for site in filtered_sites
+            for item in site["data"]
+        ]
         error = 3
         while error > 0:
             try:
@@ -284,25 +291,16 @@ async def getTodayTopNews():
                         },
                         {
                             "role": "user",
-                            "content": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(filtered_sites)
+                            "content": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(true_sites_data)
                         }
-                    ])
+                    ], RESPONSE_FORMAT)
                 todayTopNewsData = json.loads(repair_json(text))
-                if "messages" in todayTopNewsData:
-                    messages = todayTopNewsData["messages"]
-                    if messages and len(messages) == 1:
-                        todayTopNewsData = messages[0]
-                        if "content" in todayTopNewsData:
-                            todayTopNewsData = todayTopNewsData['content']
-                if "hot_topics" in todayTopNewsData:
-                    todayTopNewsData = todayTopNewsData['hot_topics']
-                if not isinstance(todayTopNewsData, list):
-                    error -= 1
-                    continue
-                needKnows = await parse_detail(todayTopNewsData)
+                needKnows = await parse_detail(todayTopNewsData.get("hot_topics", []))
                 summarizes = []
                 for needKnow in needKnows:
                     err = 3
+                    if "hot_url" not in needKnow:
+                        continue
                     while err > 0:
                         try:
                             summarize = await chatWithModel([
@@ -312,20 +310,10 @@ async def getTodayTopNews():
                                 },
                                 {
                                     "role": "user",
-                                    "content": "对下方数据的content进行最多200字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                    "content": "对下方数据的content进行最多100字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
                                 }
-                            ], False)
+                            ], TOP_NEWS_RESPONSE_FORMAT)
                             summarize = json.loads(repair_json(summarize))
-                            if "messages" in summarize:
-                                summarize = summarize["messages"]
-                                if summarize and len(summarize) == 1:
-                                    summarize = summarize[0]
-                                    if "content" in summarize:
-                                        summarize = summarize['content']
-                            if "content" in needKnow:
-                                del needKnow['content']
-                            if "hot_label" not in summarize:
-                                continue
                             needKnow['hot_content'] = summarize['hot_content']
                             needKnow['hot_tag'] = summarize['hot_tag']
                             summarizes.append(needKnow)
@@ -350,7 +338,7 @@ async def getTodayTopNews():
                 await redis_client.delete("today_top_news_task")
                 return {"code": 200, "msg": "success", "data": summarizes}
                 
-            except httpx.RequestError as e:
+            except aiohttp.ClientError as e:
                 print(f"API request failed: {str(e)}")
                 error -= 1
                 if error == 0:

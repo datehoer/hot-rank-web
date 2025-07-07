@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@icon-park/vue':
+        specifier: ^1.4.2
+        version: 1.4.2(vue@2.7.16)
       axios:
         specifier: ^1.7.7
         version: 1.7.7
@@ -23,9 +26,15 @@ importers:
       vue:
         specifier: ^2.6.14
         version: 2.7.16
+      vue-meta:
+        specifier: ^2.4.0
+        version: 2.4.0
       vue-router:
         specifier: ^3.5.1
         version: 3.6.5(vue@2.7.16)
+      vuedraggable:
+        specifier: ^2.24.3
+        version: 2.24.3
       vuex:
         specifier: ^3.6.2
         version: 3.6.2(vue@2.7.16)
@@ -53,7 +62,7 @@ importers:
         version: 5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3)
       '@vue/eslint-config-standard':
         specifier: ^6.1.0
-        version: 6.1.0(@vue/cli-service@5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3))(eslint-plugin-import@2.31.0(eslint@7.32.0))(eslint-plugin-node@11.1.0(eslint@7.32.0))(eslint-plugin-promise@5.2.0(eslint@7.32.0))(eslint-plugin-vue@8.7.1(eslint@7.32.0))(eslint@7.32.0)(webpack@5.95.0)
+        version: 6.1.0(@vue/cli-service@5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3))(eslint-plugin-import@2.31.0(eslint@7.32.0))(eslint-plugin-node@11.1.0(eslint@7.32.0))(eslint-plugin-promise@5.2.0(eslint@7.32.0))(eslint-plugin-vue@7.20.0(eslint@7.32.0))(eslint@7.32.0)(webpack@5.95.0)
       eslint:
         specifier: ^7.32.0
         version: 7.32.0
@@ -67,8 +76,8 @@ importers:
         specifier: ^5.1.0
         version: 5.2.0(eslint@7.32.0)
       eslint-plugin-vue:
-        specifier: ^8.0.3
-        version: 8.7.1(eslint@7.32.0)
+        specifier: ^7.0.3
+        version: 7.20.0(eslint@7.32.0)
       less:
         specifier: ^4.0.0
         version: 4.2.0
@@ -654,6 +663,12 @@ packages:
   '@humanwhocodes/object-schema@1.2.1':
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
     deprecated: Use @eslint/object-schema instead
+
+  '@icon-park/vue@1.4.2':
+    resolution: {integrity: sha512-YXXC53R0hjM76B2M4ANRI0m2bQB1cifUW+YXxQfGofITP6gr+pSMafBz/vzECYSkW3zZklm2mVuqQj4RAZGR2Q==}
+    engines: {node: '>= 8.0.0', npm: '>= 5.0.0'}
+    peerDependencies:
+      vue: 2.x
 
   '@jridgewell/gen-mapping@0.3.5':
     resolution: {integrity: sha512-IzL8ZoEDIBRWEzlCcRhOaCupYyN5gdIK+Q6fbFdPDg6HqX6jpkItn7DFIpW9LQzXG6Df9sA7+OKnq0qlz/GaQg==}
@@ -1765,6 +1780,10 @@ packages:
     resolution: {integrity: sha512-95k0GDqvBjZavkuvzx/YqVLv/6YYa17fz6ILMSf7neqQITCPbnfEnQvEgMPNjH4kgobe7+WIL0yJEHku+H3qtQ==}
     engines: {node: '>=0.10.0'}
 
+  deepmerge@4.3.1:
+    resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
+    engines: {node: '>=0.10.0'}
+
   default-gateway@6.0.3:
     resolution: {integrity: sha512-fwSOJsbbNzZ/CUFpqFBqYfYNLj1NbMPm8MMCIzHjC83iSJRBEGmDUxU+WP661BaBQImeC2yHwXtz+P/O9o+XEg==}
     engines: {node: '>= 10'}
@@ -2022,9 +2041,9 @@ packages:
     peerDependencies:
       eslint: ^7.0.0
 
-  eslint-plugin-vue@8.7.1:
-    resolution: {integrity: sha512-28sbtm4l4cOzoO1LtzQPxfxhQABararUb1JtqusQqObJpWX2e/gmVyeYVfepizPFne0Q5cILkYGiBoV36L12Wg==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+  eslint-plugin-vue@7.20.0:
+    resolution: {integrity: sha512-oVNDqzBC9h3GO+NTgWeLMhhGigy6/bQaQbHS+0z7C4YEu/qK/yxHvca/2PTZtGNPsCrHwOTgKMrwu02A9iPBmw==}
+    engines: {node: '>=8.10'}
     peerDependencies:
       eslint: ^6.2.0 || ^7.0.0 || ^8.0.0
 
@@ -2032,19 +2051,9 @@ packages:
     resolution: {integrity: sha512-2NxwbF/hZ0KpepYN0cNbo+FN6XoK7GaHlQhgx/hIZl6Va0bF45RQOOwhLIy8lQDbuCiadSLCBnH2CFYquit5bw==}
     engines: {node: '>=8.0.0'}
 
-  eslint-scope@7.2.2:
-    resolution: {integrity: sha512-dOt21O7lTMhDM+X9mB4GX+DZrZtCUJPL/wlcTqxyrx5IvO0IYtILdtrQGQp+8n5S0gwSVmOf9NQrjMOgfQZlIg==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-
   eslint-utils@2.1.0:
     resolution: {integrity: sha512-w94dQYoauyvlDc43XnGB8lU3Zt713vNChgt4EWwhXAP2XkBvndfxF0AgIqKOOasjPIPzj9JqgwkwbCYD0/V3Zg==}
     engines: {node: '>=6'}
-
-  eslint-utils@3.0.0:
-    resolution: {integrity: sha512-uuQC43IGctw68pJA1RgbQS8/NP7rch6Cwd4j3ZBtgo4/8Flj4eGE7ZYSZRN3iq5pVUv6GPdW5Z1RFleo84uLDA==}
-    engines: {node: ^10.0.0 || ^12.0.0 || >= 14.0.0}
-    peerDependencies:
-      eslint: '>=5'
 
   eslint-visitor-keys@1.3.0:
     resolution: {integrity: sha512-6J72N8UNa462wa/KFODt/PJ3IU60SDpC3QXC1Hjc1BXXpfL2C9R5+AU7jhe0F6GREqVMh4Juu+NY7xn+6dipUQ==}
@@ -2053,10 +2062,6 @@ packages:
   eslint-visitor-keys@2.1.0:
     resolution: {integrity: sha512-0rSmRBzXgDzIsD6mGdJgevzgezI534Cer5L/vyMX0kHzT/jiB43jRhd9YUlMGYLQy2zprNmoT8qasCGtY+QaKw==}
     engines: {node: '>=10'}
-
-  eslint-visitor-keys@3.4.3:
-    resolution: {integrity: sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   eslint-webpack-plugin@3.2.0:
     resolution: {integrity: sha512-avrKcGncpPbPSUHX6B3stNGzkKFto3eL+DKM4+VyMrVnhPc3vRczVlCq3uhuFOdRvDHTVXuzwk1ZKUrqDQHQ9w==}
@@ -2071,13 +2076,13 @@ packages:
     deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
 
+  espree@6.2.1:
+    resolution: {integrity: sha512-ysCxRQY3WaXJz9tdbWOwuWr5Y/XrPTGX9Kiz3yoUXwW0VZ4w30HTkQLaGx/+ttFjF8i+ACbArnB4ce68a9m5hw==}
+    engines: {node: '>=6.0.0'}
+
   espree@7.3.1:
     resolution: {integrity: sha512-v3JCNCE64umkFpmkFGqzVKsOT0tN1Zr+ueqLZfpV1Ob8e+CEgPWa+OxCoGH3tnhimMKIaBm4m/vaRpJ/krRz2g==}
     engines: {node: ^10.12.0 || >=12.0.0}
-
-  espree@9.6.1:
-    resolution: {integrity: sha512-oruZaFkjorTpF32kDSI5/75ViwGeZginGGy2NoOSg3Q9bnwlnmDm4HLnkl0RE3n+njDXR037aY1+x58Z/zFdwQ==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   esprima@4.0.1:
     resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
@@ -3677,6 +3682,9 @@ packages:
   sockjs@0.3.24:
     resolution: {integrity: sha512-GJgLTZ7vYb/JtPSSZ10hsOYIvEYsjbNU+zPdIHcUaWVNUEPivzxku31865sSSud0Da0W4lEeOPlmw93zLQchuQ==}
 
+  sortablejs@1.10.2:
+    resolution: {integrity: sha512-YkPGufevysvfwn5rfdlGyrGjt7/CRHwvRPogD/lC+TnvcN29jDpCifKP+rBqf+LRldfXSTh+0CGLcSg0VIxq3A==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -3988,11 +3996,11 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vue-eslint-parser@8.3.0:
-    resolution: {integrity: sha512-dzHGG3+sYwSf6zFBa0Gi9ZDshD7+ad14DGOdTLjruRVgZXe2J+DcZ9iUhyR48z5g1PqRa20yt3Njna/veLJL/g==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+  vue-eslint-parser@7.11.0:
+    resolution: {integrity: sha512-qh3VhDLeh773wjgNTl7ss0VejY9bMMa0GoDG2fQVyDzRFdiU3L7fw74tWZDHNQXdZqxO3EveQroa9ct39D2nqg==}
+    engines: {node: '>=8.10'}
     peerDependencies:
-      eslint: '>=6.0.0'
+      eslint: '>=5.0.0'
 
   vue-hot-reload-api@2.3.4:
     resolution: {integrity: sha512-BXq3jwIagosjgNVae6tkHzzIk6a8MHFtzAdwhnV5VlvPTFxDCvIttgSiHWjdGoTJvXtmRu5HacExfdarRcFhog==}
@@ -4028,6 +4036,9 @@ packages:
       vue:
         optional: true
 
+  vue-meta@2.4.0:
+    resolution: {integrity: sha512-XEeZUmlVeODclAjCNpWDnjgw+t3WA6gdzs6ENoIAgwO1J1d5p1tezDhtteLUFwcaQaTtayRrsx7GL6oXp/m2Jw==}
+
   vue-router@3.6.5:
     resolution: {integrity: sha512-VYXZQLtjuvKxxcshuRAwjHnciqZVoXAjTjcqBTz4rKc8qih9g9pI3hbDjmqXaHdgL3v8pV6P8Z335XvHzESxLQ==}
     peerDependencies:
@@ -4045,6 +4056,9 @@ packages:
   vue@2.7.16:
     resolution: {integrity: sha512-4gCtFXaAA3zYZdTp5s4Hl2sozuySsgz4jy1EnpBHNfpMa9dK1ZCG7viqBPCwXtmgc8nHqUsAu3G4gtmXkkY3Sw==}
     deprecated: Vue 2 has reached EOL and is no longer actively maintained. See https://v2.vuejs.org/eol/ for more details.
+
+  vuedraggable@2.24.3:
+    resolution: {integrity: sha512-6/HDXi92GzB+Hcs9fC6PAAozK1RLt1ewPTLjK0anTYguXLAeySDmcnqE8IC0xa7shvSzRjQXq3/+dsZ7ETGF3g==}
 
   vuex@3.6.2:
     resolution: {integrity: sha512-ETW44IqCgBpVomy520DT5jf8n0zoCac+sxWnn+hMe/CzaSejb/eVw2YToiXYX+Ex/AuHHia28vWTq4goAexFbw==}
@@ -4980,6 +4994,12 @@ snapshots:
 
   '@humanwhocodes/object-schema@1.2.1': {}
 
+  '@icon-park/vue@1.4.2(vue@2.7.16)':
+    dependencies:
+      '@vue/babel-helper-vue-jsx-merge-props': 1.4.0
+      csstype: 3.1.3
+      vue: 2.7.16
+
   '@jridgewell/gen-mapping@0.3.5':
     dependencies:
       '@jridgewell/set-array': 1.2.1
@@ -5576,7 +5596,7 @@ snapshots:
       - walrus
       - whiskers
 
-  '@vue/eslint-config-standard@6.1.0(@vue/cli-service@5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3))(eslint-plugin-import@2.31.0(eslint@7.32.0))(eslint-plugin-node@11.1.0(eslint@7.32.0))(eslint-plugin-promise@5.2.0(eslint@7.32.0))(eslint-plugin-vue@8.7.1(eslint@7.32.0))(eslint@7.32.0)(webpack@5.95.0)':
+  '@vue/eslint-config-standard@6.1.0(@vue/cli-service@5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3))(eslint-plugin-import@2.31.0(eslint@7.32.0))(eslint-plugin-node@11.1.0(eslint@7.32.0))(eslint-plugin-promise@5.2.0(eslint@7.32.0))(eslint-plugin-vue@7.20.0(eslint@7.32.0))(eslint@7.32.0)(webpack@5.95.0)':
     dependencies:
       eslint: 7.32.0
       eslint-config-standard: 16.0.3(eslint-plugin-import@2.31.0(eslint@7.32.0))(eslint-plugin-node@11.1.0(eslint@7.32.0))(eslint-plugin-promise@5.2.0(eslint@7.32.0))(eslint@7.32.0)
@@ -5585,7 +5605,7 @@ snapshots:
       eslint-plugin-import: 2.31.0(eslint@7.32.0)
       eslint-plugin-node: 11.1.0(eslint@7.32.0)
       eslint-plugin-promise: 5.2.0(eslint@7.32.0)
-      eslint-plugin-vue: 8.7.1(eslint@7.32.0)
+      eslint-plugin-vue: 7.20.0(eslint@7.32.0)
     optionalDependencies:
       '@vue/cli-service': 5.0.8(@vue/compiler-sfc@3.5.12)(less-loader@8.1.1(less@4.2.0)(webpack@5.95.0))(lodash@4.17.21)(vue-template-compiler@2.7.16)(vue@2.7.16)(webpack-sources@3.2.3)
     transitivePeerDependencies:
@@ -5688,10 +5708,6 @@ snapshots:
   acorn-jsx@5.3.2(acorn@7.4.1):
     dependencies:
       acorn: 7.4.1
-
-  acorn-jsx@5.3.2(acorn@8.14.0):
-    dependencies:
-      acorn: 8.14.0
 
   acorn-walk@8.3.4:
     dependencies:
@@ -6315,6 +6331,8 @@ snapshots:
 
   deepmerge@1.5.2: {}
 
+  deepmerge@4.3.1: {}
+
   default-gateway@6.0.3:
     dependencies:
       execa: 5.1.1
@@ -6630,15 +6648,13 @@ snapshots:
     dependencies:
       eslint: 7.32.0
 
-  eslint-plugin-vue@8.7.1(eslint@7.32.0):
+  eslint-plugin-vue@7.20.0(eslint@7.32.0):
     dependencies:
       eslint: 7.32.0
-      eslint-utils: 3.0.0(eslint@7.32.0)
+      eslint-utils: 2.1.0
       natural-compare: 1.4.0
-      nth-check: 2.1.1
-      postcss-selector-parser: 6.1.2
-      semver: 7.6.3
-      vue-eslint-parser: 8.3.0(eslint@7.32.0)
+      semver: 6.3.1
+      vue-eslint-parser: 7.11.0(eslint@7.32.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -6647,25 +6663,13 @@ snapshots:
       esrecurse: 4.3.0
       estraverse: 4.3.0
 
-  eslint-scope@7.2.2:
-    dependencies:
-      esrecurse: 4.3.0
-      estraverse: 5.3.0
-
   eslint-utils@2.1.0:
     dependencies:
       eslint-visitor-keys: 1.3.0
 
-  eslint-utils@3.0.0(eslint@7.32.0):
-    dependencies:
-      eslint: 7.32.0
-      eslint-visitor-keys: 2.1.0
-
   eslint-visitor-keys@1.3.0: {}
 
   eslint-visitor-keys@2.1.0: {}
-
-  eslint-visitor-keys@3.4.3: {}
 
   eslint-webpack-plugin@3.2.0(eslint@7.32.0)(webpack@5.95.0):
     dependencies:
@@ -6722,17 +6726,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  espree@7.3.1:
+  espree@6.2.1:
     dependencies:
       acorn: 7.4.1
       acorn-jsx: 5.3.2(acorn@7.4.1)
       eslint-visitor-keys: 1.3.0
 
-  espree@9.6.1:
+  espree@7.3.1:
     dependencies:
-      acorn: 8.14.0
-      acorn-jsx: 5.3.2(acorn@8.14.0)
-      eslint-visitor-keys: 3.4.3
+      acorn: 7.4.1
+      acorn-jsx: 5.3.2(acorn@7.4.1)
+      eslint-visitor-keys: 1.3.0
 
   esprima@4.0.1: {}
 
@@ -8337,6 +8341,8 @@ snapshots:
       uuid: 8.3.2
       websocket-driver: 0.7.4
 
+  sortablejs@1.10.2: {}
+
   source-map-js@1.2.1: {}
 
   source-map-support@0.5.21:
@@ -8651,16 +8657,16 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vue-eslint-parser@8.3.0(eslint@7.32.0):
+  vue-eslint-parser@7.11.0(eslint@7.32.0):
     dependencies:
       debug: 4.3.7
       eslint: 7.32.0
-      eslint-scope: 7.2.2
-      eslint-visitor-keys: 3.4.3
-      espree: 9.6.1
+      eslint-scope: 5.1.1
+      eslint-visitor-keys: 1.3.0
+      espree: 6.2.1
       esquery: 1.6.0
       lodash: 4.17.21
-      semver: 7.6.3
+      semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
 
@@ -8743,6 +8749,10 @@ snapshots:
       '@vue/compiler-sfc': 3.5.12
       vue: 2.7.16
 
+  vue-meta@2.4.0:
+    dependencies:
+      deepmerge: 4.3.1
+
   vue-router@3.6.5(vue@2.7.16):
     dependencies:
       vue: 2.7.16
@@ -8763,6 +8773,10 @@ snapshots:
     dependencies:
       '@vue/compiler-sfc': 2.7.16
       csstype: 3.1.3
+
+  vuedraggable@2.24.3:
+    dependencies:
+      sortablejs: 1.10.2
 
   vuex@3.6.2(vue@2.7.16):
     dependencies:
