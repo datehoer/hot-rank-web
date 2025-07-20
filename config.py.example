@@ -38,3 +38,9 @@ PG_PORT = '5432'
 PG_USER = 'admin'
 PG_PASSWORD = 'securepassword'
 PG_DB = 'postgres'
+
+RESPONSE_FORMAT = {'type': 'json_schema', 'json_schema': {'schema': {'$defs': {'HotTopic': {'additionalProperties': False, 'properties': {'hot_label': {'description': '热点标题 / 标签', 'title': 'Hot Label', 'type': 'string'}, 'hot_url': {'description': '热点链接，http/https 开头', 'title': 'Hot Url', 'type': 'string'}, 'hot_value': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'default': 0, 'description': '可选：热度值 / 指数，没有就留空', 'title': 'Hot Value'}}, 'required': ['hot_label', 'hot_url', 'hot_value'], 'title': 'HotTopic', 'type': 'object'}}, 'additionalProperties': False, 'properties': {'hot_topics': {'description': '热点列表', 'items': {'$ref': '#/$defs/HotTopic'}, 'title': 'Hot Topics', 'type': 'array'}}, 'required': ['hot_topics'], 'title': 'HotTopics', 'type': 'object'}, 'name': 'HotTopics', 'strict': True}}
+
+
+
+TOP_NEWS_RESPONSE_FORMAT = {'type': 'json_schema', 'json_schema': {'name': 'hot_topic', 'strict': True, 'schema': {'additionalProperties': False, 'description': '单条热点信息', 'properties': {'hot_label': {'description': '热点标题', 'type': 'string'}, 'hot_url': {'description': "热点链接，使用 str 避免 format:'uri'", 'type': 'string'}, 'hot_value': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'description': '可选：热度值 / 指数'}, 'hot_content': {'description': '≤100 字的内容摘要，不带年份', 'type': 'string'}, 'hot_tag': {'description': '4 字类型标签', 'type': 'string'}}, 'required': ['hot_label', 'hot_url', 'hot_value', 'hot_content', 'hot_tag'], 'type': 'object'}}}
