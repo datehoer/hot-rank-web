@@ -17,11 +17,24 @@ import {
 } from '@heroicons/vue/16/solid'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
+import { useHead } from '@vueuse/head';
+
 
 const itemColumns = ref(1)
 const { t, tm, locale } = useI18n()
 const md = new MarkdownIt();
-
+useHead({
+  script: [
+    {
+      src: 'https://cloud.umami.is/script.js',
+      defer: true,
+      'data-website-id': '24595aed-c7d3-4407-9ce1-e3d54b58bf00',
+    }
+  ],
+  meta: [
+    { name: 'description', content: t('app.description') }
+  ]
+});
 // 弹窗状态
 const showSortModal = ref(false)
 const showCalendarModal = ref(false)

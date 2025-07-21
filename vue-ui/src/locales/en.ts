@@ -47,5 +47,6 @@ export default {
     expandFullText: 'Expand',
     collapseFullText: 'Collapse',
     noTodayNews: 'No news today',
+    description: 'All-in-one news aggregator, updated every hour',
   },
 }

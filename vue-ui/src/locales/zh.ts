@@ -47,5 +47,6 @@ export default {
     expandFullText: '展开全文',
     collapseFullText: '收起全文',
     noTodayNews: '暂无要闻',
+    description: '全网热门信息聚合，每小时自动更新',
   },
 }
