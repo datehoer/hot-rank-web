@@ -81,3 +81,8 @@ export const getMusic = (): Promise<MusicResponse> => {
 export const getTodayTopNews = (): Promise<TodayTopNewsResponse> => {
   return get<TodayTopNewsResponse>('/todayTopNews')
 }
+
+// 刷新接口
+export const refresh = () => {
+  return get('/refresh')
+}

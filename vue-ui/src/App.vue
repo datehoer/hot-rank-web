@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getHotRank, getYellowCalendar, getTodayTopNews } from '@/api/hotRank'
+import { getHotRank, getYellowCalendar, getTodayTopNews, refresh } from '@/api/hotRank'
 import MusicPlayer from '@/components/MusicPlayer.vue'
 import {
   AdjustmentsHorizontalIcon,
@@ -13,6 +13,7 @@ import {
   ChatBubbleOvalLeftEllipsisIcon,
   LanguageIcon,
   MusicalNoteIcon,
+  RocketLaunchIcon
 } from '@heroicons/vue/16/solid'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
@@ -219,6 +220,15 @@ const goToToday = () => {
 // 跳转到GitHub
 const goToGitHub = () => {
   window.open('https://github.com/datehoer/hot-rank-web', '_blank')
+}
+
+// 刷新按钮点击
+const onRefresh = async () => {
+  try {
+    await refresh()
+  } catch (e) {
+    console.error('Failed to refresh data:', e)
+  }
 }
 
 // 获取黄历数据
@@ -441,6 +451,10 @@ onMounted(() => {
       <language-icon
         class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer"
         @click="toggleLang"
+      />
+      <rocket-launch-icon
+        class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer"
+        @click="onRefresh"
       />
     </div>
 
