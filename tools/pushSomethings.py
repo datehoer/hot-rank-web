@@ -128,7 +128,7 @@ table = [
     {"name": "贴吧热议", "tablename": "tieba_topic"},
     {"name": "头条热榜", "tablename": "toutiao_hot"},
     # {"name": "纽约时报", "tablename": "nytimes"},
-    {"name": "华尔街日报", "tablename": "wsj"},
+    # {"name": "华尔街日报", "tablename": "wsj"},
     {"name": "彭博新闻", "tablename": "bloomberg"},
     {"name": "金融时报", "tablename": "ft"},
     {"name": "微博热搜", "tablename": "weibo_hot_search"},
