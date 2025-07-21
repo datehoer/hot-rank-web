@@ -175,7 +175,6 @@ async function fetchTracks() {
   loading.value = true
   try {
     const response = await getMusic()
-    console.log('API Response:', response) // Debug log
 
     if (!response || !response.data || !Array.isArray(response.data)) {
       console.error('Invalid API response:', response)
