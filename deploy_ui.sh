@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 设置路径变量 （Setting env）
-UI_DIR="/opt/hot-rank-web/ui"
-DIST_DIR="/opt/hot-rank-web/ui/dist"
+UI_DIR="/opt/hot-rank-web/vue-ui"
+DIST_DIR="/opt/hot-rank-web/vue-ui/dist"
 WWW_DIR="/var/www/hotday.uk"
 
 echo "开始部署流程..."
