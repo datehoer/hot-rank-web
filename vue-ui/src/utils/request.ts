@@ -5,7 +5,6 @@ import type {
   InternalAxiosRequestConfig,
 } from 'axios'
 const baseURL = import.meta.env.VITE_API_BASE_URL
-console.log(baseURL)
 // 创建axios实例
 const request: AxiosInstance = axios.create({
   baseURL,
