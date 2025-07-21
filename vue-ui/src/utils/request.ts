@@ -1,14 +1,14 @@
 import axios from 'axios'
 import type {
   AxiosInstance,
-  AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios'
-
+const baseURL = import.meta.env.VITE_API_BASE_URL
+console.log(baseURL)
 // 创建axios实例
 const request: AxiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
+  baseURL,
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ const request: AxiosInstance = axios.create({
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 可以在这里添加token等认证信息
-    console.log('Request:', config.url)
+    // console.log('Request:', config.url)
     return config
   },
   (error) => {
@@ -31,7 +31,7 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('Response:', response.data)
+    // console.log('Response:', response.data)
     return response.data
   },
   (error) => {

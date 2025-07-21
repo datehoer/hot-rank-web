@@ -46,6 +46,22 @@ export interface MusicResponse {
   data: MusicData[]
 }
 
+// 今日要闻类型定义
+export interface TodayNewsItem {
+  hot_label: string
+  hot_url: string
+  hot_value: number | null
+  content: string
+  hot_content: string
+  hot_tag: string
+}
+
+export interface TodayTopNewsResponse {
+  code: number
+  msg: string
+  data: TodayNewsItem[]
+}
+
 // 获取热门排行榜数据
 export const getHotRank = (): Promise<HotRankResponse> => {
   return get<HotRankResponse>('/rank/hot')
@@ -59,4 +75,9 @@ export const getYellowCalendar = (): Promise<YellowCalendarResponse> => {
 // 获取音乐数据
 export const getMusic = (): Promise<MusicResponse> => {
   return get<MusicResponse>('/music')
+}
+
+// 获取今日要闻
+export const getTodayTopNews = (): Promise<TodayTopNewsResponse> => {
+  return get<TodayTopNewsResponse>('/todayTopNews')
 }

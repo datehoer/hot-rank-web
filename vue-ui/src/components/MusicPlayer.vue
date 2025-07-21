@@ -11,15 +11,20 @@
     <!-- ===== Desktop Player ===== -->
     <div v-if="currentTrack && !isMobile" class="mb-10 flex justify-center">
       <div
-        class="w-96 bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 p-6"
+        class="w-96 bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 relative"
       >
         <div class="vinyl-player flex flex-col items-center pb-6">
           <!-- Tone‑arm -->
-          <div class="tonearm-wrapper" :class="{ 'pointer-playing': isPlaying }">
+          <div class="tonearm-wrapper">
             <div class="tonearm-base"></div>
-            <div class="tonearm"></div>
+            <div class="tonearm" :class="{ 'is-playing': isPlaying }">
+              <div class="tonearm-body">
+                <div class="tonearm-head">
+                  <div class="tonearm-needle"></div>
+                </div>
+              </div>
+            </div>
           </div>
-
           <!-- Vinyl -->
           <div class="vinyl" :class="{ 'animate-spin-slow': isPlaying }">
             <img :src="currentTrack.cover" alt="cover" class="album-cover" />
@@ -275,57 +280,90 @@ function handleTrackEnd() {
 }
 
 /* Tonearm (improved positioning and animation) */
+/* 唱臂样式 */
 .tonearm-wrapper {
   position: absolute;
-  top: 1rem;
-  right: 35%;
-  width: 8rem;
-  height: 8rem;
-  transform-origin: 85% 15%;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  top: 10px;
+  right: 60px;
+  width: 120px;
+  height: 120px;
   z-index: 10;
-}
-
-.pointer-playing {
-  transform: rotate(35deg);
 }
 
 .tonearm-base {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 2rem;
-  height: 2rem;
-  background: radial-gradient(circle, #666, #333);
+  top: -7px;
+  right: 50%;
+  width: 30px;
+  height: 30px;
+  background: #444;
   border-radius: 50%;
-  border: 0.25rem solid #888;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 4px solid #666;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateX(50%);
+  z-index: 1;
+}
+
+.tonearm-base::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: #444;
+  border-radius: 50%;
+  border: 2px solid #666;
 }
 
 .tonearm {
   position: absolute;
-  top: 1.5rem;
-  right: 1rem;
-  width: 0.3rem;
-  height: 6rem;
-  background: linear-gradient(180deg, #555, #333, #444);
-  border-radius: 0.15rem;
+  top: 10px;
+  right: 50%;
+  width: 6px;
+  height: 100px;
   transform-origin: top center;
-  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+  transform: translateX(50%) rotate(-45deg);
+  transition: transform 0.5s ease;
+  z-index: 2;
 }
 
-.tonearm::after {
-  content: '';
-  position: absolute;
-  bottom: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0.8rem;
-  height: 0.8rem;
-  background: #222;
-  border-radius: 50%;
-  border: 0.1rem solid #555;
+.tonearm.is-playing {
+  transform: translateX(50%) rotate(-10deg);
 }
+
+.tonearm-body {
+  position: relative;
+  width: 6px;
+  height: 80px;
+  background: linear-gradient(90deg, #333, #666);
+  border-radius: 3px;
+  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tonearm-head {
+  position: absolute;
+  bottom: -15px;
+  left: -7px;
+  width: 20px;
+  height: 15px;
+  background: #333;
+  border-radius: 4px;
+  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tonearm-needle {
+  position: absolute;
+  bottom: -8px;
+  left: 9px;
+  width: 2px;
+  height: 15px;
+  background: #666;
+  transform: rotate(30deg);
+  transform-origin: top center;
+}
+
 
 /* Desktop album hover */
 .album-container.active .track-cover {

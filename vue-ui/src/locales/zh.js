@@ -43,5 +43,9 @@ export default {
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
     year: '年',
     musicPlayer: '音乐播放器',
+    todayNews: '今日要闻',
+    expandFullText: '展开全文',
+    collapseFullText: '收起全文',
+    noTodayNews: '暂无要闻',
   },
 }

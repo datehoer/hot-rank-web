@@ -43,5 +43,9 @@ export default {
     weekDays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     year: '',
     musicPlayer: 'Music Player',
+    todayNews: 'Today News',
+    expandFullText: 'Expand',
+    collapseFullText: 'Collapse',
+    noTodayNews: 'No news today',
   },
 }

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getHotRank, getYellowCalendar } from '@/api/hotRank'
+import { getHotRank, getYellowCalendar, getTodayTopNews } from '@/api/hotRank'
 import MusicPlayer from '@/components/MusicPlayer.vue'
 import {
   AdjustmentsHorizontalIcon,
@@ -15,14 +15,20 @@ import {
   MusicalNoteIcon,
 } from '@heroicons/vue/16/solid'
 import { useI18n } from 'vue-i18n'
+import MarkdownIt from 'markdown-it'
 
 const itemColumns = ref(1)
 const { t, tm, locale } = useI18n()
+const md = new MarkdownIt();
 
 // 弹窗状态
 const showSortModal = ref(false)
 const showCalendarModal = ref(false)
 const showMusicPlayer = ref(false)
+const showNewsModal = ref(false)
+const newsLoading = ref(false)
+const newsError = ref(null)
+const todayNews = ref([])
 
 // 日历相关状态
 const currentDate = ref(new Date())
@@ -146,6 +152,40 @@ const openMusicPlayer = () => {
 // 关闭音乐播放器
 const closeMusicPlayer = () => {
   showMusicPlayer.value = false
+}
+
+// 打开今日要闻弹窗
+const openNewsModal = async () => {
+  showNewsModal.value = true
+  newsLoading.value = true
+  newsError.value = null
+  try {
+    const res = await getTodayTopNews()
+    if (res.code === 200 && Array.isArray(res.data)) {
+      todayNews.value = res.data
+      todayNews.value.forEach(item => {
+        item.content = md.render(item.content)
+      })
+    } else {
+      newsError.value = res.msg || '加载失败'
+    }
+  } catch (e) {
+    newsError.value = '网络错误'
+  } finally {
+    newsLoading.value = false
+  }
+}
+const closeNewsModal = () => {
+  showNewsModal.value = false
+}
+
+const expandedNews = ref([])
+const toggleNewsContent = (idx) => {
+  if (expandedNews.value.includes(idx)) {
+    expandedNews.value = expandedNews.value.filter(i => i !== idx)
+  } else {
+    expandedNews.value.push(idx)
+  }
 }
 
 // 切换月份
@@ -381,7 +421,7 @@ onMounted(() => {
       <button @click="itemColumns = 1" class="px-2 py-1 text-sm hover:bg-gray-100">|</button>
       <button @click="itemColumns = 2" class="px-2 py-1 text-sm hover:bg-gray-100">||</button>
       <button @click="itemColumns = 3" class="px-2 py-1 text-sm hover:bg-gray-100">|||</button>
-      <bell-icon class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer" />
+      <bell-icon class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer" @click="openNewsModal" />
       <musical-note-icon
         @click="openMusicPlayer"
         class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer"
@@ -650,6 +690,54 @@ onMounted(() => {
         </div>
 
         <MusicPlayer />
+      </div>
+    </div>
+
+    <!-- 今日要闻弹窗 -->
+    <div v-if="showNewsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeNewsModal">
+      <div class="bg-white p-6 rounded-lg max-w-3xl w-full mx-4 font-mono max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold">> {{ t('app.todayNews') }}</h3>
+          <button @click="closeNewsModal" class="hover:bg-gray-100 p-1 rounded">
+            <x-mark-icon class="h-5 w-5" />
+          </button>
+        </div>
+        <div v-if="newsLoading" class="text-center py-8 text-gray-600">{{ t('app.loading') }}</div>
+        <div v-else-if="newsError" class="text-center py-8">
+          <div class="text-red-600 text-sm mb-2">{{ newsError }}</div>
+          <button @click="openNewsModal" class="border px-3 py-1 text-sm hover:bg-gray-100">{{ t('app.retryLoad') }}</button>
+        </div>
+        <div v-else-if="todayNews.length > 0" class="space-y-6">
+          <div v-for="(news, idx) in todayNews" :key="news.hot_label" class="border-b pb-4">
+            <div class="flex items-center gap-2 mb-1 whitespace-nowrap overflow-hidden justify-between">
+              <a
+                :href="news.hot_url"
+                target="_blank"
+                rel="noopener"
+                class="font-bold text-base hover:underline truncate"
+                :title="news.hot_label"
+              >
+                {{ news.hot_label }}
+              </a>
+              <span
+                v-if="news.hot_tag"
+                class="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded"
+              >
+                {{ news.hot_tag }}
+              </span>
+            </div>
+            <div class="text-sm text-gray-700 mb-2">{{ news.hot_content }}</div>
+            <div>
+              <button @click="toggleNewsContent(idx)" class="text-xs text-blue-600 hover:underline">
+                {{ expandedNews.includes(idx) ? t('app.collapseFullText') : t('app.expandFullText') }}
+              </button>
+            </div>
+            <div v-if="expandedNews.includes(idx)" class="mt-2 whitespace-pre-line text-xs text-gray-800 bg-gray-50 p-2 rounded">
+              <div v-html="news.content"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-center py-8 text-gray-500">{{ t('app.noTodayNews') }}</div>
       </div>
     </div>
 
