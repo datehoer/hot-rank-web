@@ -226,6 +226,7 @@ const goToGitHub = () => {
 const onRefresh = async () => {
   try {
     await refresh()
+    fetchHotRank()
   } catch (e) {
     console.error('Failed to refresh data:', e)
   }
