@@ -565,7 +565,7 @@ async def get_data(item_id: str):
             fg.link(href='https://www.hotday.uk')
             fg.description('Today news')
             for items in data:
-                for item in items['data']:
+                for item in items.get('data', []):
                     if item and "hot_label" in item:
                         fe = fg.add_entry()
                         fe.title(item.get('title', item.get('hot_label')))

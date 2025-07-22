@@ -1,7 +1,19 @@
 import math
 from urllib.parse import urljoin
 def parse_mcpmarket(data):
-    pass
+    data = data['data']
+    result = []
+    for item in data:
+        hot_value = int(item['stars'])
+        hot_url = item['url']
+        hot_label = item['name']
+        result.append({
+            "hot_value": hot_value,
+            "hot_url": hot_url,
+            "hot_label": hot_label
+        })
+    result.sort(key=lambda x: x["hot_value"], reverse=True)
+    return result
 
 def parse_douyin_hot(data):
     data = data["data"]['word_list']
