@@ -168,6 +168,15 @@ const closeMusicPlayer = () => {
   showMusicPlayer.value = false
 }
 
+function decodeUnicode(str) {
+  if (typeof str !== 'string') return str
+  try {
+    return JSON.parse('"' + str + '"')
+  } catch {
+    return str
+  }
+}
+
 // 打开今日要闻弹窗
 const openNewsModal = async () => {
   showNewsModal.value = true
@@ -176,9 +185,20 @@ const openNewsModal = async () => {
   try {
     const res = await getTodayTopNews()
     if (res.code === 200 && Array.isArray(res.data)) {
-      todayNews.value = res.data
-      todayNews.value.forEach(item => {
-        item.content = md.render(item.content)
+      todayNews.value = res.data.map(item => {
+        const newItem = {}
+        for (const key in item) {
+          const val = item[key]
+          if (key === 'content' && typeof val === 'string') {
+            newItem[key] = md.render(decodeUnicode(val))
+          } else if (typeof val === 'string') {
+            newItem[key] = decodeUnicode(val)
+          } else {
+            newItem[key] = val
+          }
+          
+        }
+        return newItem
       })
     } else {
       newsError.value = res.msg || '加载失败'
