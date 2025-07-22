@@ -48,5 +48,8 @@ export default {
     collapseFullText: '收起全文',
     noTodayNews: '暂无要闻',
     description: '全网热门信息聚合，每小时自动更新',
+    daysUntilWeekend: '距离周末还有',
+    todayIsWeekend: '今天就是周末',
+    days: '天',
   },
 }

@@ -48,5 +48,8 @@ export default {
     collapseFullText: 'Collapse',
     noTodayNews: 'No news today',
     description: 'All-in-one news aggregator, updated every hour',
+    daysUntilWeekend: 'Days until weekend',
+    todayIsWeekend: 'Today is weekend',
+    days: 'days',
   },
 }

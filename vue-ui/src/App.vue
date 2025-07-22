@@ -20,7 +20,6 @@ import MarkdownIt from 'markdown-it'
 import { useHead } from '@vueuse/head';
 
 
-const itemColumns = ref(1)
 const { t, tm, locale } = useI18n()
 const md = new MarkdownIt();
 useHead({
@@ -51,6 +50,9 @@ const selectedMonth = ref(new Date())
 // 手动排序的板块顺序
 const manualSectionOrder = ref([])
 
+// 布局相关状态
+const layout = ref('layoutOneCol')
+
 // 响应式数据
 const data = ref([])
 const loading = ref(false)
@@ -61,8 +63,17 @@ const yellowCalendarData = ref(null)
 const yellowCalendarLoading = ref(false)
 const yellowCalendarError = ref(null)
 
+// 日历
+const daysUntilWeekend = computed(() => {
+  const today = new Date()
+  const day = today.getDay()
+  const daysToSaturday = (6 - day) % 7
+  return daysToSaturday - 1
+})
+
 // 本地存储的键名
 const STORAGE_KEY = 'hotrank-section-order'
+const STORAGE_KEY_LAYOUT = 'hotrank-layout-type'
 
 // 日历相关函数
 const weekDays = computed(() => {
@@ -209,6 +220,12 @@ const openNewsModal = async () => {
     newsLoading.value = false
   }
 }
+
+const layoutTypeChange = (type) => {
+  layout.value = type
+  localStorage.setItem(STORAGE_KEY_LAYOUT, layout.value)
+}
+
 const closeNewsModal = () => {
   showNewsModal.value = false
 }
@@ -453,6 +470,11 @@ const onDragLeave = (event) => {
 
 // 组件挂载时获取数据
 onMounted(() => {
+  // 读取本地存储的布局类型
+  const savedLayout = localStorage.getItem(STORAGE_KEY_LAYOUT)
+  if (savedLayout) {
+    layout.value = savedLayout
+  }
   fetchHotRank()
 })
 </script>
@@ -462,9 +484,9 @@ onMounted(() => {
     <h1 class="text-2xl font-bold mb-6">{{ t('app.title') }}</h1>
 
     <div class="mb-6 space-x-2 flex justify-end">
-      <button @click="itemColumns = 1" class="px-2 py-1 text-sm hover:bg-gray-100">|</button>
-      <button @click="itemColumns = 2" class="px-2 py-1 text-sm hover:bg-gray-100">||</button>
-      <button @click="itemColumns = 3" class="px-2 py-1 text-sm hover:bg-gray-100">|||</button>
+      <button @click="layoutTypeChange('layoutOneCol')" class="px-2 py-1 text-sm hover:bg-gray-100">|</button>
+      <button @click="layoutTypeChange('layoutTwoCol')" class="px-2 py-1 text-sm hover:bg-gray-100">||</button>
+      <button @click="layoutTypeChange('layoutThreeCol')" class="px-2 py-1 text-sm hover:bg-gray-100">|||</button>
       <bell-icon class="px-2 py-1 text-sm hover:bg-gray-100 h-8 w-8 cursor-pointer" @click="openNewsModal" />
       <musical-note-icon
         @click="openMusicPlayer"
@@ -664,12 +686,16 @@ onMounted(() => {
               <!-- 公历农历信息 -->
               <div class="space-y-2">
                 <div class="text-sm">
-                  <span class="font-medium">{{ t('app.gregorianCalendar') }}：</span
+                  <span class="font-medium">{{ t('app.gregorianCalendar') }}: </span
                   >{{ yellowCalendarData.gregorian_calendar }}
                 </div>
                 <div class="text-sm">
-                  <span class="font-medium">{{ t('app.lunarCalendar') }}：</span
+                  <span class="font-medium">{{ t('app.lunarCalendar') }}: </span
                   >{{ yellowCalendarData.lunar_calendar }}
+                </div>
+                <div class="text-sm">
+                  <span class="font-medium">{{ t('app.daysUntilWeekend') }}: </span
+                  >{{ daysUntilWeekend === -1 || daysUntilWeekend === 5 ? t('app.todayIsWeekend') : daysUntilWeekend }} {{ t('app.days') }}
                 </div>
               </div>
 
@@ -807,8 +833,8 @@ onMounted(() => {
       v-else-if="data.length > 0"
       class="grid gap-8 grid-cols-1"
       :class="{
-        'sm:grid-cols-2': itemColumns === 2,
-        'sm:grid-cols-3': itemColumns === 3,
+        'sm:grid-cols-2': layout === 'layoutTwoCol',
+        'sm:grid-cols-3': layout === 'layoutThreeCol',
       }"
     >
       <div v-for="(section, idx) in nonEmptySections" :key="section.name" class="mb-12">
