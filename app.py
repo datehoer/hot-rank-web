@@ -13,7 +13,9 @@ import time
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from sendEmail import send_email
-from common import *
+from common import (
+    parse_mcpmarket, parse_douyin_hot, parse_bilibili_hot, parse_juejin_hot, parse_shaoshupai_hot, parse_tieba_topic, parse_toutiao_hot, parse_weibo_hot_search, parse_wx_read_rank, parse_zhihu_hot_list, parse_common, parse_anquanke, parse_acfun, parse_csdn, parse_douban, parse_openeye, parse_pmcaff, parse_woshipm, parse_xueqiu, parse_yiche, parse_youshedubao, parse_youxiputao, parse_zhanku, parse_zongheng, parse_tencent_news, parse_hupu, parse_coolan, parse_wallstreetcn, parse_pengpai, parse_linuxdo
+)
 from pydantic import BaseModel, EmailStr, Field
 from json_repair import repair_json
 from parse_detail import parse_detail
@@ -24,7 +26,11 @@ from slowapi.errors import RateLimitExceeded
 import random
 import string
 import asyncio
-from typing import List, Optional, Union
+from typing import List
+import logging
+from lxml import etree
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class HotTopic(BaseModel):
     hot_label: str = Field(..., description="热点标题 / 标签")
@@ -53,7 +59,7 @@ class HotTopicDetail(BaseModel):
         extra = "forbid"
         title = "hot_topic_detail"
 
-ml_models = {}
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
 backoff = ExponentialBackoff(cap=2, base=2)
 retry = Retry(backoff=backoff, retries=10)
@@ -76,13 +82,13 @@ redis_client = redis.Redis(connection_pool=redis_pool)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application is starting up...")
+    logging.info("Application is starting up...")
     app.state.pg_pool = await init_pg_pool()
     await redis_client.delete("today_top_news_task")
     try:
         yield
     finally:
-        print("Application is shutting down...")
+        logging.info("Application is shutting down...")
         await app.state.pg_pool.close()
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -163,7 +169,7 @@ async def get_copywriting():
 
 
 @app.get("/yellowCalendar")
-async def get_copywriting():
+async def get_yellow_calendar():
     data = await redis_client.get("yellowCalendar")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
 
@@ -283,21 +289,21 @@ async def chatWithModel(messages, response_format):
                                             chunk = data["candidates"][0]["content"]['parts'][0].get("text", "")
                                             text += chunk
                     except (aiohttp.ServerTimeoutError, asyncio.TimeoutError):
-                        print("Stream reading timed out, using partial response")
+                        logging.warning("Stream reading timed out, using partial response")
                         err -= 1
                         continue
                     if not text:
                         if response.status == 504:
-                            print("time out")
+                            logging.warning("time out")
                         elif response.status == 401:
-                            print("no token")
+                            logging.warning("no token")
                         else:
-                            print("not text, code:"+str(response.status))
+                            logging.warning(f"not text, code:{response.status}")
                         err -= 1
                         continue
                     return text
             except Exception as e:
-                print("fetch ai error: " + str(e) + traceback.format_exc())
+                logging.error(f"fetch ai error: {e}\n{traceback.format_exc()}")
                 err -= 1
     return ""
 
@@ -343,17 +349,17 @@ async def refresh():
 
 @app.get("/todayTopNews")
 async def getTodayTopNews():
-    todayTopNewsData = await redis_client.get("todayTopNews")
-    if todayTopNewsData:
-        return {"code": 200, "msg": "success", "data": json.loads(todayTopNewsData)}
+    today_top_news_data = await redis_client.get("todayTopNews")
+    if today_top_news_data:
+        return {"code": 200, "msg": "success", "data": json.loads(today_top_news_data)}
     else:
         get_today_top_news_status = await redis_client.get("today_top_news_task")
         if get_today_top_news_status:
             return {"code": 200, "msg": "success", "data": []}
         else:
             await redis_client.set("today_top_news_task", "1", 1800)
-        mongoData = await get_data("hot")
-        data = mongoData['data']
+        mongo_data = await get_data("hot")
+        data = mongo_data['data']
         filtered_sites = [site for site in data if "name" in site and site["name"] in news_sites]
         true_sites_data = [
             {
@@ -373,13 +379,19 @@ async def getTodayTopNews():
                             "user": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(true_sites_data)
                         }
                     , HotTopics.model_json_schema())
-                todayTopNewsData = json.loads(repair_json(text))
-                needKnows = await parse_detail(todayTopNewsData.get("hot_topics", []))
+                today_top_news_data = json.loads(repair_json(text))
+                need_knows = await parse_detail(today_top_news_data.get("hot_topics", []))
                 summarizes = []
-                for needKnow in needKnows:
+                for needKnow in need_knows:
                     err = 3
                     if "hot_url" not in needKnow:
                         continue
+                    hot_label = needKnow['hot_label']
+                    if isinstance(hot_label, bytes):
+                        try:
+                            needKnow['hot_label'] = hot_label.decode('utf-8').encode().decode('unicode_escape')
+                        except Exception as e:
+                            logging.error(f"decode error: {e}\n{traceback.format_exc()}")
                     while err > 0:
                         try:
                             summarize = await chatWithModel(
@@ -393,7 +405,7 @@ async def getTodayTopNews():
                             summarizes.append(needKnow)
                             break
                         except Exception as e:
-                            print("parse_needknow error:" + str(e) + traceback.format_exc())
+                            logging.error(f"parse_needknow error: {e}\n{traceback.format_exc()}")
                             err -= 1
                 await redis_client.setex("todayTopNews", 3600, json.dumps(summarizes))
                 try:
@@ -406,26 +418,36 @@ async def getTodayTopNews():
                         fe.title(item.get('title', item['hot_label']))
                         fe.link(href=item.get('url', item['hot_url']))
                         fe.description(item.get('description', item['hot_content']))
-                    fg.rss_file('/app/rss_feed_today_top_news.xml')
+                    xml_bytes = fg.rss_str(pretty=True)
+                    root = etree.fromstring(xml_bytes)
+                    stylesheet_pi = etree.ProcessingInstruction("xml-stylesheet", "type='text/xsl' href='pretty-feed-v3.xsl' type='text/xsl'")
+                    root.addprevious(stylesheet_pi)
+                    tree = etree.ElementTree(root)
+                    tree.write(
+                        "/app/rss_feed_today_top_news.xml",
+                        pretty_print=True,
+                        xml_declaration=True,
+                        encoding="utf-8",
+                    )
                 except Exception:
-                    print("generate todayTopNewsWithAI rss feed error")
+                    logging.error("generate todayTopNewsWithAI rss feed error")
                 await redis_client.delete("today_top_news_task")
                 return {"code": 200, "msg": "success", "data": summarizes}
                 
             except aiohttp.ClientError as e:
-                print(f"API request failed: {str(e)}")
+                logging.error(f"API request failed: {e}")
                 error -= 1
                 if error == 0:
                     await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"API request failed: {str(e)}", "data": []}
             except json.JSONDecodeError as e:
-                print(f"Failed to parse API response: {str(e)}")
+                logging.error(f"Failed to parse API response: {e}")
                 error -= 1
                 if error == 0:
                     await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"Failed to parse API response: {str(e)}", "data": []}
             except Exception as e:
-                print(f"some error happen: {str(e)}")
+                logging.error(f"some error happen: {e}")
                 error -= 1
                 if error == 0:
                     await redis_client.delete("today_top_news_task")
@@ -449,7 +471,40 @@ async def get_data(item_id: str):
             }
     except Exception as e:
         # 记录日志或处理 Redis 错误
-        print(f"Redis error: {e}")
+        logging.error(f"Redis error: {e}")
+
+    # --- Parser registry ---
+    parser_registry = {
+        "zhihu_hot_list": parse_zhihu_hot_list,
+        "mcpmarket": parse_mcpmarket,
+        "weibo_hot_search": parse_weibo_hot_search,
+        "bilibili_hot": parse_bilibili_hot,
+        "douyin_hot": parse_douyin_hot,
+        "juejin_hot": parse_juejin_hot,
+        "shaoshupai_hot": parse_shaoshupai_hot,
+        "tieba_topic": parse_tieba_topic,
+        "toutiao_hot": parse_toutiao_hot,
+        "wx_read_rank": parse_wx_read_rank,
+        "acfun": parse_acfun,
+        "anquanke": parse_anquanke,
+        "csdn": parse_csdn,
+        "openeye": parse_openeye,
+        "pmcaff": parse_pmcaff,
+        "tencent_news": parse_tencent_news,
+        "woshipm": parse_woshipm,
+        "xueqiu": parse_xueqiu,
+        "yiche": parse_yiche,
+        "youshedubao": parse_youshedubao,
+        "youxiputao": parse_youxiputao,
+        "zhanku": parse_zhanku,
+        "zongheng": parse_zongheng,
+        "hupu": parse_hupu,
+        "wallstreetcn": parse_wallstreetcn,
+        "coolan": parse_coolan,
+        "pengpai": parse_pengpai,
+        "linuxdo": parse_linuxdo,
+    }
+
 
     try:
         data = []
@@ -458,7 +513,7 @@ async def get_data(item_id: str):
             if blog_data:
                 data.append(json.loads(blog_data))
         except Exception as e:
-            print(f"Redis get error: {e}")
+            logging.error(f"Redis get error: {e}")
         table_dict = json.loads(await redis_client.get("card_table"))
         async with app.state.pg_pool.acquire() as conn:
             for item in table_dict:
@@ -472,74 +527,9 @@ async def get_data(item_id: str):
                         continue
                     insert_time = latest_record["insert_time"]
                     latest_record = {"data": json.loads(dict(latest_record)['data'])}
-                    if collection_name == "zhihu_hot_list":
-                        latest_record = parse_zhihu_hot_list(latest_record)
-                    elif collection_name == "mcpmarket":
-                        latest_record = parse_mcpmarket(latest_record)
-                    elif collection_name == "weibo_hot_search":
-                        latest_record = parse_weibo_hot_search(latest_record)
-                    elif collection_name == "bilibili_hot":
-                        latest_record = parse_bilibili_hot(latest_record)
-                    elif collection_name == "douyin_hot":
-                        latest_record = parse_douyin_hot(latest_record)
-                    elif collection_name == "juejin_hot":
-                        latest_record = parse_juejin_hot(latest_record)
-                    elif collection_name == "shaoshupai_hot":
-                        latest_record = parse_shaoshupai_hot(latest_record)
-                    elif collection_name == "tieba_topic":
-                        latest_record = parse_tieba_topic(latest_record)
-                    elif collection_name == "toutiao_hot":
-                        latest_record = parse_toutiao_hot(latest_record)
-                    elif collection_name == "wx_read_rank":
-                        latest_record = parse_wx_read_rank(latest_record)
-                    elif collection_name == "acfun":
-                        latest_record = parse_acfun(latest_record)
-                    elif collection_name == "anquanke":
-                        latest_record = parse_anquanke(latest_record)
-                    elif collection_name == "csdn":
-                        latest_record = parse_csdn(latest_record)
-                    elif collection_name == "openeye":
-                        latest_record = parse_openeye(latest_record)
-                    elif collection_name == "pmcaff":
-                        latest_record = parse_pmcaff(latest_record)
-                    elif collection_name == "tencent_news":
-                        latest_record = parse_tencent_news(latest_record)
-                    elif collection_name == "woshipm":
-                        latest_record = parse_woshipm(latest_record)
-                    elif collection_name == "xueqiu":
-                        latest_record = parse_xueqiu(latest_record)
-                    elif collection_name == "yiche":
-                        latest_record = parse_yiche(latest_record)
-                    elif collection_name == "youshedubao":
-                        latest_record = parse_youshedubao(latest_record)
-                    elif collection_name == "youxiputao":
-                        latest_record = parse_youxiputao(latest_record)
-                    elif collection_name == "zhanku":
-                        latest_record = parse_zhanku(latest_record)
-                    elif collection_name == "zongheng":
-                        latest_record = parse_zongheng(latest_record)
-                    elif collection_name == "hupu":
-                        latest_record = parse_hupu(latest_record)
-                    elif collection_name == "wallstreetcn":
-                        latest_record = parse_wallstreetcn(latest_record)
-                    elif collection_name == "coolan":
-                        latest_record = parse_coolan(latest_record)
-                    elif collection_name == "pengpai":
-                        latest_record = parse_pengpai(latest_record)
-                    elif collection_name == "linuxdo":
-                        latest_record = parse_linuxdo(latest_record)
-                    elif collection_name not in ['douban_movie']:
-                        latest_record = parse_common(latest_record)
-                    
-                    local_time = time.localtime(insert_time)
-                    if collection_name != "douban_movie":
-                        data.append({
-                            "name": item["name"],
-                            "data": latest_record,
-                            "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
-                        })
-                    else:
+                    if collection_name == "douban_movie":
                         koubei, beimei = parse_douban(latest_record)
+                        local_time = time.localtime(insert_time)
                         data.append({
                             "name": "豆瓣电影一周口碑榜",
                             "data": koubei,
@@ -552,13 +542,23 @@ async def get_data(item_id: str):
                             "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time),
                             "id": 999
                         })
+                        continue
+                    # Use registry for parser selection
+                    parser = parser_registry.get(collection_name, parse_common)
+                    latest_record = parser(latest_record)
+                    local_time = time.localtime(insert_time)
+                    data.append({
+                        "name": item["name"],
+                        "data": latest_record,
+                        "insert_time": time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+                    })
                 except Exception as e:
-                    print(f"Error parsing {collection_name}: {e}")
-                    print(traceback.format_exc())
+                    logging.error(f"Error parsing {collection_name}: {e}")
+                    logging.error(traceback.format_exc())
         try:
             await redis_client.setex(cache_key, 3600, json.dumps(data))
         except Exception as e:
-            print(f"Redis setex error: {e}")
+            logging.error(f"Redis setex error: {e}")
         try:
             fg = FeedGenerator()
             fg.title('today news')
@@ -570,17 +570,28 @@ async def get_data(item_id: str):
                         fe = fg.add_entry()
                         fe.title(item.get('title', item.get('hot_label')))
                         fe.link(href=item.get('url', item.get('hot_url')))
-            fg.rss_file('/app/rss_feed.xml')
+            xml_bytes = fg.rss_str(pretty=True)
+            root = etree.fromstring(xml_bytes)
+            stylesheet_pi = etree.ProcessingInstruction("xml-stylesheet",
+                                                        "type='text/xsl' href='pretty-feed-v3.xsl' type='text/xsl'")
+            root.addprevious(stylesheet_pi)
+            tree = etree.ElementTree(root)
+            tree.write(
+                "/app/rss_feed.xml",
+                pretty_print=True,
+                xml_declaration=True,
+                encoding="utf-8",
+            )
         except:
-            print("generate today news rss feed error")
+            logging.error("generate today news rss feed error")
         return {
             "code": 200,
             "msg": "success",
             "data": data
         }
     except Exception as e:
-        print(f"Postgresql error: {e}")
-        print(traceback.format_exc())
+        logging.error(f"Postgresql error: {e}")
+        logging.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
