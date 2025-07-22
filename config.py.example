@@ -24,6 +24,13 @@ api_headers = {
     "Accept": "application/json",
     "Content-Type": "application/json"
 }
+
+api_gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/"
+api_gemini_headers = {
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "x-goog-api-key": "",
+}
 news_sites = [
     "澎湃新闻",
     "36氪",
