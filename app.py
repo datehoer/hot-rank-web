@@ -420,7 +420,7 @@ async def getTodayTopNews():
                         fe.description(item.get('description', item['hot_content']))
                     xml_bytes = fg.rss_str(pretty=True)
                     root = etree.fromstring(xml_bytes)
-                    stylesheet_pi = etree.ProcessingInstruction("xml-stylesheet", "type='text/xsl' href='pretty-feed-v3.xsl' type='text/xsl'")
+                    stylesheet_pi = etree.ProcessingInstruction("xml-stylesheet", "type='text/xsl' href='pretty-feed-v3.xsl'")
                     root.addprevious(stylesheet_pi)
                     tree = etree.ElementTree(root)
                     tree.write(
@@ -573,7 +573,7 @@ async def get_data(item_id: str):
             xml_bytes = fg.rss_str(pretty=True)
             root = etree.fromstring(xml_bytes)
             stylesheet_pi = etree.ProcessingInstruction("xml-stylesheet",
-                                                        "type='text/xsl' href='pretty-feed-v3.xsl' type='text/xsl'")
+                                                        "type='text/xsl' href='pretty-feed-v3.xsl'")
             root.addprevious(stylesheet_pi)
             tree = etree.ElementTree(root)
             tree.write(
