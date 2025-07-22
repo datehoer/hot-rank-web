@@ -429,8 +429,8 @@ async def getTodayTopNews():
                         xml_declaration=True,
                         encoding="utf-8",
                     )
-                except Exception:
-                    logging.error("generate todayTopNewsWithAI rss feed error")
+                except Exception as e:
+                    logging.error(f"generate todayTopNewsWithAI rss feed error, error {e}")
                 await redis_client.delete("today_top_news_task")
                 return {"code": 200, "msg": "success", "data": summarizes}
                 
@@ -582,8 +582,8 @@ async def get_data(item_id: str):
                 xml_declaration=True,
                 encoding="utf-8",
             )
-        except:
-            logging.error("generate today news rss feed error")
+        except Exception as e:
+            logging.error(f"generate today news rss feed error, {e}")
         return {
             "code": 200,
             "msg": "success",
