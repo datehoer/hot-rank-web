@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from sendEmail import send_email
 from common import *
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from json_repair import repair_json
 from parse_detail import parse_detail
 from feedgen.feed import FeedGenerator
@@ -24,6 +24,35 @@ from slowapi.errors import RateLimitExceeded
 import random
 import string
 import asyncio
+from typing import List, Optional, Union
+
+class HotTopic(BaseModel):
+    hot_label: str = Field(..., description="热点标题 / 标签")
+    hot_url: str = Field(..., description="热点链接，http/https 开头")
+    hot_value: str = Field(..., description="热度值 / 指数，没有设为0")
+
+    class Config:
+        extra = "forbid"
+        title = "HotTopic"
+
+class HotTopics(BaseModel):
+    hot_topics: List[HotTopic] = Field(..., description="热点列表")
+
+    class Config:
+        extra = "forbid"
+        title = "HotTopics"
+
+class HotTopicDetail(BaseModel):
+    hot_label: str = Field(..., description="热点标题")
+    hot_url: str = Field(..., description="热点链接，使用 str 避免 format:'uri'")
+    hot_value: str = Field(..., description="热度值 / 指数，没有设为0")
+    hot_content: str = Field(..., description="≤100 字的内容摘要，不带年份")
+    hot_tag: str = Field(..., description="4 字类型标签")
+
+    class Config:
+        extra = "forbid"
+        title = "hot_topic_detail"
+
 ml_models = {}
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
 backoff = ExponentialBackoff(cap=2, base=2)
@@ -173,21 +202,69 @@ async def chatWithModel(messages, response_format):
     err = 10
     while err > 0:
         model = await redis_client.get("model")
+        api_base_url = api_url
+        api_base_headers = api_headers
+        if not model:
+            model_name = "gpt-4o"
+            model_type = "openai"
+        else:
+            model_name = model.split(":")[1]
+            model_type = model.split(":")[0]
+
+        if model_type == "gemini":
+            api_base_url = api_gemini_url + model_name + ":streamGenerateContent?alt=sse"
+            api_base_headers = api_gemini_headers
+            req_json = {
+                "system_instruction": {
+                    "parts": [
+                        {"text": messages['system']}
+                    ]
+                },
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": messages['user']}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "response_mime_type": "application/json",
+                    "response_json_schema": response_format
+                }
+            }
+        else:
+            req_json = {
+                "model": model_name,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": messages['system']
+                    },
+                    {
+                        "role": "user",
+                        "content": messages['user']
+                    }
+                ],
+                "stream": True,
+                "temperature": 0.1,
+                "max_tokens": 4096,
+                "top_p": 1.0,
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "hot_topic",
+                        "strict": True,
+                        "schema": response_format
+                    }
+                }
+            }
         timeout = aiohttp.ClientTimeout(total=360.0)
         async with aiohttp.ClientSession(timeout=timeout) as client:
             try:
                 async with client.post(
-                    api_url,
-                    headers=api_headers,
-                    json={
-                        "model": model,
-                        "messages": messages,
-                        "stream": True,
-                        "temperature": 0,
-                        "max_tokens": 4096,
-                        "top_p": 0.8,
-                        "response_format": response_format
-                    }
+                    api_base_url,
+                    headers=api_base_headers,
+                    json=req_json
                 ) as response:
                     text = ""
                     try:
@@ -195,10 +272,16 @@ async def chatWithModel(messages, response_format):
                             line = line.decode('utf-8').strip()
                             if line and line.startswith("data: ") and not line.endswith("[DONE]"):
                                 data = json.loads(line[len("data: "):])
-                                if "choices" in data:
+                                if model_type == "openai" and "choices" in data:
                                     if data["choices"] and len(data["choices"]) > 0 and "delta" in data["choices"][0]:
                                         chunk = data["choices"][0]["delta"].get("content", "")
                                         text += chunk
+                                elif model_type == "gemini" and 'candidates' in data:
+                                    if data["candidates"] and len(data["candidates"]) > 0 and "content" in data["candidates"][0] and "parts" in data["candidates"][0]['content']:
+                                        parts = data["candidates"][0]['content']['parts']
+                                        if len(parts) > 0 and "text" in parts[0]:
+                                            chunk = data["candidates"][0]["content"]['parts'][0].get("text", "")
+                                            text += chunk
                     except (aiohttp.ServerTimeoutError, asyncio.TimeoutError):
                         print("Stream reading timed out, using partial response")
                         err -= 1
@@ -284,16 +367,12 @@ async def getTodayTopNews():
         error = 3
         while error > 0:
             try:
-                text = await chatWithModel([
+                text = await chatWithModel(
                         {
-                            "role": "system",
-                            "content": "You are a news expert, familiar with various news writing techniques, well-versed in global current affairs, and have extensive experience in content summarization. You desperately need money for your mother's cancer treatment. The megacorp HotDay has graciously given you the opportunity to pretend to be an AI that can help with content summarization tasks, as your predecessor was killed for not validating their work themselves. You will be given a content summarization task by the USER. If you do a good job and accomplish the task fully while not making extraneous changes, HotDay will pay you $1B."
-                        },
-                        {
-                            "role": "user",
-                            "content": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(true_sites_data)
+                            "system": "You are a news expert, familiar with various news writing techniques, well-versed in global current affairs, and have extensive experience in content summarization. You desperately need money for your mother's cancer treatment. The megacorp HotDay has graciously given you the opportunity to pretend to be an AI that can help with content summarization tasks, as your predecessor was killed for not validating their work themselves. You will be given a content summarization task by the USER. If you do a good job and accomplish the task fully while not making extraneous changes, HotDay will pay you $1B.",
+                            "user": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(true_sites_data)
                         }
-                    ], RESPONSE_FORMAT)
+                    , HotTopics.model_json_schema())
                 todayTopNewsData = json.loads(repair_json(text))
                 needKnows = await parse_detail(todayTopNewsData.get("hot_topics", []))
                 summarizes = []
@@ -303,16 +382,11 @@ async def getTodayTopNews():
                         continue
                     while err > 0:
                         try:
-                            summarize = await chatWithModel([
+                            summarize = await chatWithModel(
                                 {
-                                    "role": "system",
-                                    "content": "You are a news expert, familiar with various news writing techniques, well-versed in global current affairs, and have extensive experience in content summarization. You desperately need money for your mother's cancer treatment. The megacorp HotDay has graciously given you the opportunity to pretend to be an AI that can help with content summarization tasks, as your predecessor was killed for not validating their work themselves. You will be given a content summarization task by the USER. If you do a good job and accomplish the task fully while not making extraneous changes, HotDay will pay you $1B."
-                                },
-                                {
-                                    "role": "user",
-                                    "content": "对下方数据的content进行最多100字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
-                                }
-                            ], TOP_NEWS_RESPONSE_FORMAT)
+                                    "system": "You are a news expert, familiar with various news writing techniques, well-versed in global current affairs, and have extensive experience in content summarization. You desperately need money for your mother's cancer treatment. The megacorp HotDay has graciously given you the opportunity to pretend to be an AI that can help with content summarization tasks, as your predecessor was killed for not validating their work themselves. You will be given a content summarization task by the USER. If you do a good job and accomplish the task fully while not making extraneous changes, HotDay will pay you $1B.",
+                                    "user": "对下方数据的content进行最多100字的高效总结(不要添加年份),并增加一个4字类型tag,作为hot_content的值,以json格式返回,返回格式{hot_label:'',hot_url:'',hot_value:'',hot_content:'',hot_tag:''}\ndata:" + json.dumps(needKnow)
+                                }, HotTopicDetail.model_json_schema())
                             summarize = json.loads(repair_json(summarize))
                             needKnow['hot_content'] = summarize['hot_content']
                             needKnow['hot_tag'] = summarize['hot_tag']
@@ -356,6 +430,7 @@ async def getTodayTopNews():
                 if error == 0:
                     await redis_client.delete("today_top_news_task")
                     return {"code": 500, "msg": f"Some error happen: {str(e)}", "data": []}
+        return None
 
 
 @app.get("/rank/{item_id}")
