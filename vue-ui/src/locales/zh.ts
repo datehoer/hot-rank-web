@@ -51,5 +51,7 @@ export default {
     daysUntilWeekend: '距离周末还有',
     todayIsWeekend: '今天就是周末',
     days: '天',
+    colCount: '列数',
+    save: '保存',
   },
 }

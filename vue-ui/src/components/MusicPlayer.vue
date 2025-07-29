@@ -1,9 +1,9 @@
 <template>
-  <div class="music-player p-5 bg-white text-black relative">
+  <div class="music-player p-5 bg-white dark:bg-gray-900 text-black dark:text-white relative">
     <!-- Loading Overlay -->
     <div
       v-if="loading"
-      class="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50"
+      class="absolute inset-0 bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 flex items-center justify-center z-50"
     >
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
     </div>
@@ -11,7 +11,7 @@
     <!-- ===== Desktop Player ===== -->
     <div v-if="currentTrack && !isMobile" class="mb-10 flex justify-center">
       <div
-        class="w-96 bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 relative"
+        class="w-96 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 relative"
       >
         <div class="vinyl-player flex flex-col items-center pb-6">
           <!-- Tone‑arm -->
@@ -34,7 +34,7 @@
           <div class="controls mt-5 flex items-center gap-3 flex-wrap justify-center">
             <button
               @click="togglePlay"
-              class="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
             >
               <component :is="isPlaying ? PauseIcon : PlayIcon" class="w-5 h-5" />
             </button>
@@ -44,9 +44,9 @@
                 v-model="volume"
                 min="0"
                 max="100"
-                class="w-28 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                class="w-28 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
               />
-              <span class="text-xs text-gray-600 min-w-[2rem]">{{ volume }}%</span>
+              <span class="text-xs text-gray-600 dark:text-gray-400 min-w-[2rem]">{{ volume }}%</span>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@
       <div
         v-for="track in tracks"
         :key="track.id"
-        class="album-container flex items-center p-3 rounded-lg bg-gray-100 cursor-pointer"
+        class="album-container flex items-center p-3 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-pointer"
         :class="{ 'ring-2 ring-blue-500': track.id === currentTrack?.id }"
         @click="selectTrack(track)"
       >
@@ -81,10 +81,10 @@
           class="w-14 h-14 rounded-md object-cover flex-shrink-0"
         />
         <div class="ml-3 flex-1 overflow-hidden">
-          <p class="track-title whitespace-nowrap overflow-hidden text-ellipsis">
+          <p class="track-title whitespace-nowrap overflow-hidden text-ellipsis dark:text-white">
             {{ track.title }}
           </p>
-          <p class="text-sm text-gray-600">{{ track.artist }}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ track.artist }}</p>
         </div>
         <component
           :is="PlayIcon"
@@ -97,14 +97,14 @@
     <!-- ===== Mobile Controls ===== -->
     <div
       v-if="isMobile && currentTrack"
-      class="mobile-controls fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center p-3 shadow-lg"
+      class="mobile-controls fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center p-3 shadow-lg dark:text-white"
     >
       <div class="flex-1 overflow-hidden mr-3 whitespace-nowrap text-ellipsis">
         {{ currentTrack.title }}
       </div>
       <button
         @click="togglePlay"
-        class="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        class="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
       >
         <component :is="isPlaying ? PauseIcon : PlayIcon" class="w-5 h-5" />
       </button>
@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { getMusic } from '@/api/hotRank'
 import { PlayIcon, PauseIcon } from '@heroicons/vue/24/solid'
 
@@ -132,7 +132,6 @@ const volume = ref(50)
 const tracks = ref<Track[]>([])
 const currentTrack = ref<Track | null>(null)
 const isMobile = ref(false)
-const columnsCount = computed(() => (isMobile.value ? 1 : 4))
 
 // using programmatic Audio instance keeps DOM clean
 const audio = new Audio()
@@ -230,7 +229,9 @@ async function togglePlay() {
 function selectTrack(track: Track) {
   if (track.id === currentTrack.value?.id) return
   currentTrack.value = track
-  isPlaying.value && togglePlay()
+  if (isPlaying.value) {
+    togglePlay()
+  }
 }
 
 function handleTrackEnd() {
@@ -245,6 +246,10 @@ function handleTrackEnd() {
 .music-player {
   /* fallback if Tailwind not loaded */
   background-color: #ffffff;
+}
+
+:root.dark .music-player {
+  background-color: #111827; /* This matches Tailwind's gray-900 */
 }
 
 /* Vinyl */
@@ -392,6 +397,14 @@ function handleTrackEnd() {
   border-radius: 4px;
 }
 
+:root.dark .slider::-webkit-slider-track {
+  background: #4b5563;
+}
+
+:root.dark .slider::-webkit-slider-thumb {
+  border-color: #374151;
+}
+
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
@@ -402,11 +415,19 @@ function handleTrackEnd() {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+:root.dark .slider::-moz-range-thumb {
+  border-color: #374151;
+}
+
 .slider::-moz-range-track {
   width: 100%;
   height: 8px;
   cursor: pointer;
   background: #e5e7eb;
   border-radius: 4px;
+}
+
+:root.dark .slider::-moz-range-track {
+  background: #4b5563;
 }
 </style>

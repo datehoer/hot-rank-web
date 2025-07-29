@@ -51,5 +51,7 @@ export default {
     daysUntilWeekend: 'Days until weekend',
     todayIsWeekend: 'Today is weekend',
     days: 'days',
+    colCount: 'Column Count',
+    save: 'Save',
   },
 }
