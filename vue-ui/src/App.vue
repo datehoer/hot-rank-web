@@ -88,6 +88,7 @@ const daysUntilWeekend = computed(() => {
 const STORAGE_KEY = 'hotrank-section-order'
 const STORAGE_KEY_LAYOUT = 'hotrank-layout-type'
 const STORAGE_KEY_THEME = 'hotrank-theme'
+const STORAGE_KEY_WRAP = 'hotrank-wrap'
 
 // 日历相关函数
 const weekDays = computed(() => {
@@ -335,25 +336,21 @@ const loadSectionOrder = () => {
 
 // 根据保存的排序和当前数据计算新的排序
 const calculateSectionOrder = (currentData, savedOrder) => {
-  // 获取当前数据中的所有板块名称
   const currentSectionNames = currentData.map((section) => section.name)
 
   if (!savedOrder || !Array.isArray(savedOrder)) {
     return currentSectionNames
   }
 
-  // 将保存的排序转换为板块名称数组（兼容旧的索引格式和新的名称格式）
   const savedSectionNames = savedOrder
     .map((item) => {
       if (typeof item === 'number') {
-        // 兼容旧的索引格式
         return currentData[item]?.name
       }
-      return item // 新的名称格式
+      return item
     })
     .filter(Boolean)
 
-  // 按照保存的顺序排列已存在的板块
   const orderedNames = []
   savedSectionNames.forEach((name) => {
     if (currentSectionNames.includes(name)) {
@@ -361,14 +358,12 @@ const calculateSectionOrder = (currentData, savedOrder) => {
     }
   })
 
-  // 将新增的板块（不在保存的排序中的）添加到最后
   currentSectionNames.forEach((name) => {
     if (!orderedNames.includes(name)) {
       orderedNames.push(name)
     }
   })
 
-  // 直接返回名称数组
   return orderedNames
 }
 
@@ -383,11 +378,9 @@ const fetchHotRank = async () => {
       const filteredData = response.data.filter((item) => item && Array.isArray(item.data))
       data.value = filteredData
 
-      // 从本地存储读取排序，并根据当前数据计算新的排序
       const savedOrder = loadSectionOrder()
       manualSectionOrder.value = calculateSectionOrder(filteredData, savedOrder)
 
-      // 保存更新后的排序（处理新增/删除板块后）
       saveSectionOrder()
     } else {
       error.value = response.msg || t('app.error')
@@ -481,7 +474,6 @@ const onDragLeave = (event) => {
 
 // 组件挂载时获取数据
 onMounted(() => {
-  // 读取本地存储的布局类型
   const savedLayout = localStorage.getItem(STORAGE_KEY_LAYOUT)
   if (savedLayout) {
     layout.value = savedLayout
@@ -492,6 +484,12 @@ onMounted(() => {
     isDark.value = savedIsDark === 'dark'
   } else {
     isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+  }
+  const savedIsWrap = localStorage.getItem(STORAGE_KEY_WRAP)
+  if (savedIsWrap) {
+    isWrap.value = savedIsWrap === 'true'
+  } else {
+    isWrap.value = false
   }
   applyTheme()
   fetchHotRank()
@@ -504,6 +502,7 @@ function toggleTheme () {
 
 const toggleWrap = () => {
   isWrap.value = !isWrap.value
+  localStorage.setItem(STORAGE_KEY_WRAP, isWrap.value.toString())
 }
 
 function applyTheme () {
@@ -541,7 +540,7 @@ const containerMaxW = computed(() =>
 const removeSection = (idx) => {
   if (idx < 0 || idx >= manualSectionOrder.value.length) return
   manualSectionOrder.value.splice(idx, 1)
-  saveSectionOrder()           // 复用你已有的本地存储函数
+  saveSectionOrder()
 }
 
 </script>
