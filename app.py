@@ -60,6 +60,25 @@ class HotTopicDetail(BaseModel):
         title = "hot_topic_detail"
 
 
+def parse_hot_topics_response(text):
+    if not text or not text.strip():
+        raise ValueError("AI response is empty")
+
+    parsed = json.loads(repair_json(text))
+    if not isinstance(parsed, dict):
+        raise ValueError("AI response is invalid: expected object with hot_topics")
+
+    topics = parsed.get("hot_topics")
+    if not isinstance(topics, list):
+        raise ValueError("AI response is invalid: hot_topics must be a list")
+
+    for index, topic in enumerate(topics):
+        if not isinstance(topic, dict):
+            raise ValueError(f"AI response is invalid: hot_topics[{index}] must be an object")
+
+    return topics
+
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"], storage_uri=f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}")
 backoff = ExponentialBackoff(cap=2, base=2)
 retry = Retry(backoff=backoff, retries=10)
@@ -377,10 +396,10 @@ async def getTodayTopNews():
                         {
                             "system": "You are a news expert, familiar with various news writing techniques, well-versed in global current affairs, and have extensive experience in content summarization. You desperately need money for your mother's cancer treatment. The megacorp HotDay has graciously given you the opportunity to pretend to be an AI that can help with content summarization tasks, as your predecessor was killed for not validating their work themselves. You will be given a content summarization task by the USER. If you do a good job and accomplish the task fully while not making extraneous changes, HotDay will pay you $1B.",
                             "user": "请从下方数据中选出5条你认为最应该让我知道的内容,返回json格式数据,不要改变原有的数据内容,返回格式{'hot_topics': [{hot_label:'',hot_url:'',hot_value:''}]}\ndata:" + json.dumps(true_sites_data)
-                        }
-                    , HotTopics.model_json_schema())
-                today_top_news_data = json.loads(repair_json(text))
-                need_knows = await parse_detail(today_top_news_data.get("hot_topics", []))
+	                    }
+	                , HotTopics.model_json_schema())
+                hot_topics = parse_hot_topics_response(text)
+                need_knows = await parse_detail(hot_topics)
                 summarizes = []
                 for needKnow in need_knows:
                     err = 3
