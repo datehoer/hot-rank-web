@@ -481,27 +481,16 @@ def parse_pengpai(data):
 
 
 def parse_linuxdo(data):
+    # spider 从 linux.do/top.rss 抓取，仅含 title/url/hotScore（无热度统计字段）
     data = data['data']
     result = []
-    weight_posts = 1.0
-    weight_replies = 1.5
-    weight_views = 0.5
-    weight_likes = 2.0
     for item in data:
-        posts_count = item.get("posts_count", 0)
-        reply_count = item.get("reply_count", 0)
-        views_count = item.get("views", 0)
-        like_count = item.get("like", 0)
-        heat_score = (
-            weight_posts * posts_count +
-            weight_replies * reply_count +
-            weight_views * math.log(views_count + 1) +
-            weight_likes * like_count
-        )
+        hot_value = item.get("hotScore", 0)
+        if isinstance(hot_value, str):
+            hot_value = float(hot_value.replace("热度", '').replace("万", "0000"))
         result.append({
             "hot_label": item['title'],
-            "hot_url": "https://linux.do/t/topic/" + str(item['id']),
-            "hot_value": math.floor(heat_score)
+            "hot_url": item['url'],
+            "hot_value": math.floor(hot_value),
         })
-    result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
