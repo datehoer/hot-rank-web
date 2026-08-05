@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getHotRank, getYellowCalendar, getTodayTopNews, refresh } from '@/api/hotRank'
-import MusicPlayer from '@/components/MusicPlayer.vue'
+import CalendarModal from '@/components/CalendarModal.vue'
+import MusicPlayerModal from '@/components/MusicPlayerModal.vue'
+import RssMenu from '@/components/RssMenu.vue'
+import SortSettingsModal from '@/components/SortSettingsModal.vue'
+import TodayNewsModal from '@/components/TodayNewsModal.vue'
 import {
   AdjustmentsHorizontalIcon,
-  XMarkIcon,
-  Bars3Icon,
   CalendarDaysIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   BellIcon,
   ChatBubbleOvalLeftEllipsisIcon,
   LanguageIcon,
@@ -614,6 +614,7 @@ const removeSection = (idx) => {
         class="px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 h-8 w-8 cursor-pointer"
         @click="toggleLang"
       />
+      <RssMenu />
       <rocket-launch-icon
         class="px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 h-8 w-8 cursor-pointer"
         @click="onRefresh"
@@ -628,313 +629,50 @@ const removeSection = (idx) => {
       </button>
     </div>
     
-    <!-- 排序设置弹窗 -->
-    <div
-      v-if="showSortModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="closeSortModal"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 font-mono max-h-[80vh] overflow-y-auto dark:text-white"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold">> {{ t('app.sort') }}</h3>
-          <button @click="closeSortModal" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-            <x-mark-icon class="h-5 w-5" />
-          </button>
-        </div>
+    <SortSettingsModal
+      :show="showSortModal"
+      :sections="sortedData"
+      :dragged-index="draggedIndex"
+      @close="closeSortModal"
+      @reset="resetSort"
+      @remove="removeSection"
+      @drag-start="onDragStart"
+      @drag-over="onDragOver"
+      @drop="onDrop"
+      @drag-end="onDragEnd"
+      @drag-enter="onDragEnter"
+      @drag-leave="onDragLeave"
+    />
 
-        <div class="space-y-4">
-          <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ t('app.sortDescription') }}</div>
+    <CalendarModal
+      :show="showCalendarModal"
+      :selected-month="selectedMonth"
+      :month-names="monthNames"
+      :week-days="weekDays"
+      :calendar-days="calendarDays"
+      :loading="yellowCalendarLoading"
+      :error="yellowCalendarError"
+      :calendar-data="yellowCalendarData"
+      :days-until-weekend="daysUntilWeekend"
+      @close="closeCalendarModal"
+      @previous-month="previousMonth"
+      @next-month="nextMonth"
+      @today="goToToday"
+      @retry="fetchYellowCalendar"
+    />
 
-          <!-- 可拖拽的板块标签 -->
-          <div class="flex flex-wrap gap-3">
-            <div
-              v-for="(section, index) in sortedData"
-              :key="section.name"
-              :draggable="true"
-              @dragstart="onDragStart($event, index)"
-              @dragover="onDragOver"
-              @drop="onDrop($event, index)"
-              @dragend="onDragEnd"
-              @dragenter="onDragEnter"
-              @dragleave="onDragLeave"
-              class="flex items-center px-2 py-1.5 border border-black dark:border-gray-400 bg-white dark:bg-gray-700 cursor-move hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 select-none text-xs"
-              :class="{
-                'opacity-50 transform scale-95': draggedIndex === index,
-                'shadow-md': draggedIndex !== index,
-              }"
-            >
-              <bars3-icon class="h-3 w-3 text-gray-400 mr-1.5 flex-shrink-0" />
-              <div class="flex items-center gap-1.5">
-                <span class="font-medium">{{ section.name }}</span>
-                <span
-                  class="text-xs text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full leading-none"
-                >
-                  {{ section.data?.length || 0 }}
-                </span>
-              </div>
-              <button
-                @click.stop="removeSection(index)"
-                class="ml-1.5 p-0.5 hover:text-red-600 focus:outline-none"
-                title="隐藏该板块"
-              >
-                <x-mark-icon class="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        </div>
+    <MusicPlayerModal :show="showMusicPlayer" @close="closeMusicPlayer" />
 
-        <!-- 操作按钮 -->
-        <div class="mt-6 flex justify-end space-x-2">
-          <button @click="resetSort" class="px-4 py-2 text-sm border hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
-            {{ t('app.reset') }}
-          </button>
-          <button
-            @click="closeSortModal"
-            class="px-4 py-2 text-sm bg-black text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600"
-          >
-            {{ t('app.confirm') }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 日历模态框 -->
-    <div
-      v-if="showCalendarModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="closeCalendarModal"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-4xl w-full mx-4 font-mono max-h-[90vh] overflow-y-auto dark:text-white"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold">> {{ t('app.calendarAndAlmanac') }}</h3>
-          <button @click="closeCalendarModal" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-            <x-mark-icon class="h-5 w-5" />
-          </button>
-        </div>
-
-        <!-- 左右分栏布局 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- 左侧：日历 -->
-          <div class="border-r border-gray-200 dark:border-gray-700 pr-6">
-            <h4 class="text-base font-bold mb-4">> {{ t('app.calendar') }}</h4>
-
-            <!-- 月份导航 -->
-            <div class="flex justify-between items-center mb-4">
-              <button @click="previousMonth" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-                <chevron-left-icon class="h-5 w-5" />
-              </button>
-
-              <h4 class="text-base font-semibold">
-                {{ selectedMonth.getFullYear() }}{{ t('app.year') }}
-                {{ monthNames[selectedMonth.getMonth()] }}
-              </h4>
-
-              <button @click="nextMonth" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-                <chevron-right-icon class="h-5 w-5" />
-              </button>
-            </div>
-
-            <!-- 日历网格 -->
-            <div class="w-full">
-              <!-- 星期标题 -->
-              <div class="grid grid-cols-7 gap-1 mb-2">
-                <div
-                  v-for="day in weekDays"
-                  :key="day"
-                  class="text-center text-xs font-semibold text-gray-600 dark:text-gray-400 py-2"
-                >
-                  {{ day }}
-                </div>
-              </div>
-
-              <!-- 日期网格 -->
-              <div class="grid grid-cols-7 gap-1">
-                <button
-                  v-for="day in calendarDays"
-                  :key="`${day.fullDate.getTime()}`"
-                  class="aspect-square flex items-center justify-center text-sm relative hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  :class="{
-                    'text-gray-400 dark:text-gray-500': !day.isCurrentMonth,
-                    'text-black dark:text-white': day.isCurrentMonth && !day.isToday,
-                    'bg-black dark:bg-gray-700 text-white font-bold': day.isToday,
-                    'hover:bg-gray-800 dark:hover:bg-gray-600': day.isToday,
-                  }"
-                >
-                  {{ day.date }}
-                  <div
-                    v-if="day.isToday"
-                    class="absolute inset-0 border-2 border-black dark:border-white rounded pointer-events-none"
-                    :class="{ 'border-white dark:border-gray-300': day.isToday }"
-                  ></div>
-                </button>
-              </div>
-            </div>
-
-            <!-- 日历操作按钮 -->
-            <div class="mt-4">
-              <button @click="goToToday" class="px-4 py-2 text-sm border hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 w-full">
-                {{ t('app.backToday') }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 右侧：黄历 -->
-          <div class="pl-0 lg:pl-6">
-            <h4 class="text-base font-bold mb-4">> {{ t('app.almanac') }}</h4>
-
-            <!-- 黄历加载状态 -->
-            <div v-if="yellowCalendarLoading" class="text-center py-8">
-              <div class="text-sm text-gray-600 dark:text-gray-400">{{ t('app.loadingAlmanac') }}</div>
-            </div>
-
-            <!-- 黄历错误状态 -->
-            <div v-else-if="yellowCalendarError" class="text-center py-8">
-              <div class="text-red-600 text-sm mb-2">{{ yellowCalendarError }}</div>
-              <button
-                @click="fetchYellowCalendar"
-                class="border px-3 py-1 text-sm hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
-              >
-                {{ t('app.retryLoad') }}
-              </button>
-            </div>
-
-            <!-- 黄历数据 -->
-            <div v-else-if="yellowCalendarData" class="space-y-4">
-              <!-- 公历农历信息 -->
-              <div class="space-y-2">
-                <div class="text-sm">
-                  <span class="font-medium">{{ t('app.gregorianCalendar') }}: </span
-                  >{{ yellowCalendarData.gregorian_calendar }}
-                </div>
-                <div class="text-sm">
-                  <span class="font-medium">{{ t('app.lunarCalendar') }}: </span
-                  >{{ yellowCalendarData.lunar_calendar }}
-                </div>
-                <div class="text-sm">
-                  <span class="font-medium">{{ t('app.daysUntilWeekend') }}: </span
-                  >{{ daysUntilWeekend === -1 || daysUntilWeekend === 5 ? t('app.todayIsWeekend') : daysUntilWeekend }} {{ t('app.days') }}
-                </div>
-              </div>
-
-              <!-- 宜做事项 -->
-              <div>
-                <h5 class="text-sm font-bold text-green-700 dark:text-green-500 mb-2">{{ t('app.goodActions') }}：</h5>
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-for="action in yellowCalendarData.good_actions"
-                    :key="action"
-                    class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded border dark:border-green-700"
-                  >
-                    {{ action }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- 忌做事项 -->
-              <div>
-                <h5 class="text-sm font-bold text-red-700 dark:text-red-500 mb-2">{{ t('app.badActions') }}：</h5>
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-for="action in yellowCalendarData.bad_actions"
-                    :key="action"
-                    class="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 rounded border dark:border-red-700"
-                  >
-                    {{ action }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 黄历暂无数据 -->
-            <div v-else class="text-center py-8">
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('app.noAlmanacData') }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 关闭按钮 -->
-        <div class="mt-6 flex justify-end">
-          <button
-            @click="closeCalendarModal"
-            class="px-4 py-2 text-sm bg-black text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600"
-          >
-            {{ t('app.close') }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 音乐播放器模态框 -->
-    <div
-      v-if="showMusicPlayer"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="closeMusicPlayer"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-4xl w-full mx-4 font-mono max-h-[90vh] overflow-y-auto dark:text-white"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold">> {{ t('app.musicPlayer') }}</h3>
-          <button @click="closeMusicPlayer" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-            <x-mark-icon class="h-5 w-5" />
-          </button>
-        </div>
-
-        <MusicPlayer />
-      </div>
-    </div>
-
-    <!-- 今日要闻弹窗 -->
-    <div v-if="showNewsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeNewsModal">
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-3xl w-full mx-4 font-mono max-h-[90vh] overflow-y-auto dark:text-white">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold">> {{ t('app.todayNews') }}</h3>
-          <button @click="closeNewsModal" class="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded">
-            <x-mark-icon class="h-5 w-5" />
-          </button>
-        </div>
-        <div v-if="newsLoading" class="text-center py-8 text-gray-600 dark:text-gray-400">{{ t('app.loading') }}</div>
-        <div v-else-if="newsError" class="text-center py-8">
-          <div class="text-red-600 text-sm mb-2">{{ newsError }}</div>
-          <button @click="openNewsModal" class="border px-3 py-1 text-sm hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">{{ t('app.retryLoad') }}</button>
-        </div>
-        <div v-else-if="todayNews.length > 0" class="space-y-6">
-          <div v-for="(news, idx) in todayNews" :key="news.hot_label" class="border-b dark:border-gray-700 pb-4">
-            <div class="flex items-center gap-2 mb-1 whitespace-nowrap overflow-hidden justify-between">
-              <a
-                :href="news.hot_url"
-                target="_blank"
-                rel="noopener"
-                class="font-bold text-base hover:underline truncate"
-                :title="news.hot_label"
-              >
-                {{ news.hot_label }}
-              </a>
-              <span
-                v-if="news.hot_tag"
-                class="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded"
-              >
-                {{ news.hot_tag }}
-              </span>
-            </div>
-            <div class="text-sm text-gray-700 dark:text-gray-300 mb-2">{{ news.hot_content }}</div>
-            <div>
-              <button @click="toggleNewsContent(idx)" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                {{ expandedNews.includes(idx) ? t('app.collapseFullText') : t('app.expandFullText') }}
-              </button>
-            </div>
-            <div v-if="expandedNews.includes(idx)" class="mt-2 whitespace-pre-line text-xs text-gray-800 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-              <div v-html="news.content"></div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">{{ t('app.noTodayNews') }}</div>
-      </div>
-    </div>
+    <TodayNewsModal
+      :show="showNewsModal"
+      :loading="newsLoading"
+      :error="newsError"
+      :news-items="todayNews"
+      :expanded-items="expandedNews"
+      @close="closeNewsModal"
+      @retry="openNewsModal"
+      @toggle="toggleNewsContent"
+    />
 
     <!-- 加载状态 -->
     <div v-if="loading" class="text-center py-8">

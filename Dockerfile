@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py /app/
+COPY pretty-feed-v3.xsl /app/pretty-feed-v3.xsl
+COPY hotrank /app/hotrank
 
 EXPOSE 7545
 
