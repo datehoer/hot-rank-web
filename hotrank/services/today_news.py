@@ -27,6 +27,27 @@ NEWS_SYSTEM_PROMPT = (
 )
 
 
+def parse_hot_topics_response(text):
+    if not text or not text.strip():
+        raise ValueError("AI response is empty")
+
+    parsed = json.loads(repair_json(text))
+    if not isinstance(parsed, dict):
+        raise ValueError("AI response is invalid: expected object with hot_topics")
+
+    topics = parsed.get("hot_topics")
+    if not isinstance(topics, list):
+        raise ValueError("AI response is invalid: hot_topics must be a list")
+
+    for index, topic in enumerate(topics):
+        if not isinstance(topic, dict):
+            raise ValueError(
+                f"AI response is invalid: hot_topics[{index}] must be an object"
+            )
+
+    return topics
+
+
 async def generate_today_top_news(pg_pool):
     rank_data = await load_rank_data(pg_pool, "hot")
     data = rank_data["data"]
@@ -60,10 +81,8 @@ async def generate_today_top_news(pg_pool):
                 },
                 HotTopics.model_json_schema(),
             )
-            today_top_news_data = json.loads(repair_json(text))
-            need_knows = await parse_detail(
-                today_top_news_data.get("hot_topics", [])
-            )
+            hot_topics = parse_hot_topics_response(text)
+            need_knows = await parse_detail(hot_topics)
             summarizes = []
             for need_know in need_knows:
                 err = 3

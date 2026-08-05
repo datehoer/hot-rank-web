@@ -12,10 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install \
+RUN pip install --no-cache-dir \
     curl_cffi \
     pyquery \
-    redis
+    redis \
+    json_repair
 
 EXPOSE 7545
 
