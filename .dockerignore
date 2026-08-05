@@ -1,0 +1,8 @@
+ui/node_modules
+ui/dist
+vue-ui/node_modules
+vue-ui/dist
+.git
+__pycache__
+*.pyc
+*.log

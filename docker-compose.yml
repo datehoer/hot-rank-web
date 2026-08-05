@@ -1,0 +1,53 @@
+services:
+  hotrank-api:
+    build:
+      context: .
+    image: hotrank:v0.1
+    container_name: hotrank
+    restart: unless-stopped
+    network_mode: host
+    command: ["uvicorn", "app:app", "--host", "127.0.0.1", "--port", "7546"]
+    volumes:
+      - ./app.py:/app/app.py:ro
+      - ./common.py:/app/common.py:ro
+      - ./parse_detail.py:/app/parse_detail.py:ro
+      - ./config.py:/app/config.py:ro
+      - ./hotrank:/app/hotrank:ro
+      - ./pretty-feed-v3.xsl:/app/pretty-feed-v3.xsl:ro
+      - ./rss_feed.xml:/app/rss_feed.xml
+      - ./rss_feed_today_top_news.xml:/app/rss_feed_today_top_news.xml
+
+  hottoday-spider:
+    build:
+      context: ../hotToday
+    image: hottoday:v0.1
+    container_name: hottoday-spider
+    restart: unless-stopped
+    network_mode: host
+    working_dir: /app
+    environment:
+      HOT_LOG_DIR: /app/logs
+    volumes:
+      - ../hotToday:/app
+    command: >
+      sh -c 'while true; do
+        python /app/task.py;
+        sleep 3600;
+      done'
+
+  hotrank-tools:
+    build:
+      context: ./tools
+      dockerfile: Dockerfile
+    image: hotrank-tools:v0.1
+    container_name: hotrank-tools
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./tools/pushSomethingTask.py:/app/pushSomethingTask.py:ro
+      - ./tools/config.py:/app/config.py:ro
+    command: >
+      sh -c 'while true; do
+        python /app/pushSomethingTask.py;
+        sleep 14400;
+      done'
