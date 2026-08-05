@@ -12,8 +12,16 @@ Collect hot-ranking data from multiple sources and present it through a web UI.
 This repository currently contains:
 
 - **Backend**: Python + FastAPI
+  - `app.py` — application entry point and middleware registration
+  - `hotrank/infrastructure.py` — PostgreSQL, Redis, rate limiting, and lifespan
+  - `hotrank/model_client.py` — model-provider request handling
+  - `hotrank/routers/` — HTTP route modules
+  - `hotrank/services/` — rank loading, news summarization, and RSS generation
+  - `hotrank/schemas.py` — request and response data models
 - **Frontend (legacy)**: `ui/` — Vue 2 + Element UI + IconPark
 - **Frontend (current/live)**: `vue-ui/` — Vue 3 + Vite + TypeScript + Tailwind CSS + Heroicons
+  - `vue-ui/src/App.vue` — page-level state and orchestration
+  - `vue-ui/src/components/` — reusable page components and modal views
 
 > As of the current online deployment, **`https://www.hotday.uk/` is serving the `vue-ui/` frontend**.  
 > The live page loads Vite-built assets such as `/assets/index-*.js` and `/assets/index-*.css`, and its DOM structure/styles match `vue-ui/src/App.vue`.
