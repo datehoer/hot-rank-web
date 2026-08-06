@@ -309,21 +309,19 @@ def parse_woshipm(data):
 
 
 def parse_xueqiu(data):
-    import pyquery
+    # spider 用 patchright 抓 /today 渲染后的热帖，存 {url, title, hotScore}
+    data = data['data']
     result = []
-    for i in data.get("items", []):
-        original = i['original_status']
-        title = original['description']
-        doc = pyquery.PyQuery(title)
-        title = doc.text()[0:60]
-        link = urljoin("https://xueqiu.com", original['target'])
-        hotScore = 0
+    for item in data:
+        title = item.get('title')
+        url = item.get('url')
+        if not title or not url:
+            continue
         result.append({
-            "hot_label": title,
-            "hot_url": link,
-            "hot_value": hotScore
+            "hot_label": title[:60],
+            "hot_url": url,
+            "hot_value": item.get("hotScore", 0),
         })
-    result.sort(key=lambda x: x["hot_value"], reverse=True)
     return result
 
 
