@@ -433,17 +433,16 @@ def parse_hupu(data):
 
 
 def parse_coolan(data):
+    # 逆向 v1 算法后 spider 存 {title, url, hotScore}
     data = data['data']
     result = []
     for item in data:
         title = item.get('title')
         if not title:
             continue
-        url = "https://www.coolapk.com" + item['turl']
-        hot_value = item['rank_score']
         result.append({
-            "hot_value": hot_value,
-            "hot_url": url,
+            "hot_value": item.get("hotScore", 0),
+            "hot_url": item['url'],
             "hot_label": title
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
