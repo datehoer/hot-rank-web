@@ -31,8 +31,10 @@ services:
       - ../hotToday:/app
     command: >
       sh -c 'while true; do
+        now=$$(date +%s);
+        next=$$(( (now / 3600 + 1) * 3600 ));
+        sleep $$(( next - now ));
         python /app/task.py;
-        sleep 3600;
       done'
 
   hotrank-tools:
