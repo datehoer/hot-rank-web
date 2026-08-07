@@ -30,3 +30,7 @@ config.py
 *.tar.lzma
 *.tar.lzma2
 
+# 运行时生成物
+rss_feed*.xml
+*.log
+
