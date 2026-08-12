@@ -1,0 +1,653 @@
+openapi: 3.1.0
+info:
+  title: HotDay Agent API
+  version: 0.1.0
+  description: |
+    P0 只读热点 Agent API 草案。消息接口通过 POST 返回 SSE；
+    SSE 事件的详细顺序以 `sse-protocol.md` 为准。
+servers:
+  - url: /
+tags:
+  - name: Agent Sessions
+  - name: Agent Runs
+  - name: Agent Feedback
+
+paths:
+  /agent/sessions:
+    post:
+      tags: [Agent Sessions]
+      operationId: createAgentSession
+      summary: 创建匿名 Agent 会话
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: 会话创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSessionResponse"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+
+  /agent/sessions/{session_id}:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    get:
+      tags: [Agent Sessions]
+      operationId: getAgentSession
+      summary: 恢复未过期的会话
+      security:
+        - AgentSessionToken: []
+      responses:
+        "200":
+          description: 会话及最近消息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetSessionResponse"
+        "401":
+          $ref: "#/components/responses/SessionUnauthorized"
+        "404":
+          $ref: "#/components/responses/SessionExpired"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+    delete:
+      tags: [Agent Sessions]
+      operationId: deleteAgentSession
+      summary: 删除会话
+      description: 幂等操作；合法令牌重复删除仍返回成功。
+      security:
+        - AgentSessionToken: []
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptySuccessResponse"
+        "401":
+          $ref: "#/components/responses/SessionUnauthorized"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+
+  /agent/sessions/{session_id}/messages:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    post:
+      tags: [Agent Sessions]
+      operationId: createAgentMessage
+      summary: 发送消息并流式生成回答
+      description: |
+        成功建立流后返回 `text/event-stream`。流建立前的校验错误使用 JSON；
+        流建立后的运行错误使用 `event: error`。
+        前端应使用 `fetch` 读取响应流，不使用原生 EventSource。
+      security:
+        - AgentSessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageRequest"
+      responses:
+        "200":
+          description: Agent SSE 流
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-cache, no-transform
+            X-Accel-Buffering:
+              schema:
+                type: string
+              example: "no"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                id: 1
+                event: meta
+                data: {"run_id":"0191ec64-6ef5-7dc1-a5ee-20c82e47a7b1","assistant_message_id":"0191ec64-a71f-7a68-97d0-794857b1f31a"}
+
+                id: 2
+                event: status
+                data: {"stage":"searching","message":"正在检索热榜"}
+
+                id: 3
+                event: delta
+                data: {"text":"今天值得关注的科技热点包括"}
+
+                id: 4
+                event: citation
+                data: {"citation":{"number":1,"source_id":"src_xxx","title":"示例标题","url":"https://example.com/news","platform":"示例平台","hot_value":"1000","rank_updated_at":"2026-08-06T09:00:00+08:00","detail_status":"fetched"}}
+
+                id: 5
+                event: done
+                data: {"message_id":"0191ec64-a71f-7a68-97d0-794857b1f31a","finish_reason":"stop","citation_count":1}
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "401":
+          $ref: "#/components/responses/SessionUnauthorized"
+        "404":
+          $ref: "#/components/responses/SessionExpired"
+        "409":
+          $ref: "#/components/responses/RunInProgress"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+
+  /agent/runs/{run_id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    post:
+      tags: [Agent Runs]
+      operationId: cancelAgentRun
+      summary: 取消正在运行的生成
+      description: 幂等操作。已经结束的运行返回当前最终状态。
+      security:
+        - AgentSessionToken: []
+      responses:
+        "200":
+          description: 已接受取消或运行已经结束
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelRunResponse"
+        "401":
+          $ref: "#/components/responses/SessionUnauthorized"
+        "404":
+          $ref: "#/components/responses/RunNotFound"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+
+  /agent/messages/{message_id}/feedback:
+    parameters:
+      - $ref: "#/components/parameters/MessageId"
+    post:
+      tags: [Agent Feedback]
+      operationId: createAgentFeedback
+      summary: 提交回答反馈
+      security:
+        - AgentSessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackRequest"
+      responses:
+        "200":
+          description: 反馈已记录
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptySuccessResponse"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "401":
+          $ref: "#/components/responses/SessionUnauthorized"
+        "404":
+          $ref: "#/components/responses/MessageNotFound"
+        "503":
+          $ref: "#/components/responses/AgentDisabled"
+
+components:
+  securitySchemes:
+    AgentSessionToken:
+      type: apiKey
+      in: header
+      name: X-Agent-Session-Token
+      description: 创建会话时返回的匿名会话令牌。
+
+  parameters:
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MessageId:
+      name: message_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    InvalidRequest:
+      description: 请求字段或业务参数无效
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 400
+            msg: 请求内容无效
+            data:
+              error:
+                code: INVALID_REQUEST
+                message: 请求内容无效
+                retryable: false
+    SessionUnauthorized:
+      description: 会话令牌无效
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 401
+            msg: 当前会话不可访问
+            data:
+              error:
+                code: SESSION_UNAUTHORIZED
+                message: 当前会话不可访问
+                retryable: false
+    SessionExpired:
+      description: 会话不存在或已过期
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 404
+            msg: 会话已过期，请开始新对话
+            data:
+              error:
+                code: SESSION_EXPIRED
+                message: 会话已过期，请开始新对话
+                retryable: false
+    RunInProgress:
+      description: 当前会话已有运行
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 409
+            msg: 当前会话仍在生成中
+            data:
+              error:
+                code: RUN_IN_PROGRESS
+                message: 当前会话仍在生成中
+                retryable: true
+    RateLimited:
+      description: 请求超过限制
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+          description: 建议重试等待秒数
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 429
+            msg: 请求过于频繁，请稍后再试
+            data:
+              error:
+                code: RATE_LIMITED
+                message: 请求过于频繁，请稍后再试
+                retryable: true
+                retry_after_seconds: 30
+    AgentDisabled:
+      description: Agent 未开启或当前不可用
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 503
+            msg: 热点助手暂时不可用
+            data:
+              error:
+                code: AGENT_DISABLED
+                message: 热点助手暂时不可用
+                retryable: true
+    RunNotFound:
+      description: 运行不存在或已过期
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 404
+            msg: 未找到该运行
+            data:
+              error:
+                code: RUN_NOT_FOUND
+                message: 未找到该运行
+                retryable: false
+    MessageNotFound:
+      description: 消息不存在或不属于当前会话
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 404
+            msg: 未找到该消息
+            data:
+              error:
+                code: MESSAGE_NOT_FOUND
+                message: 未找到该消息
+                retryable: false
+
+  schemas:
+    Locale:
+      type: string
+      enum: [zh-CN, en-US]
+      default: zh-CN
+
+    CreateSessionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        locale:
+          $ref: "#/components/schemas/Locale"
+
+    CreateSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          const: 200
+        msg:
+          type: string
+          const: success
+        data:
+          type: object
+          additionalProperties: false
+          required: [session_id, session_token, expires_at]
+          properties:
+            session_id:
+              type: string
+              format: uuid
+            session_token:
+              type: string
+              minLength: 32
+            expires_at:
+              type: string
+              format: date-time
+
+    CreateMessageRequest:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        locale:
+          $ref: "#/components/schemas/Locale"
+        context:
+          $ref: "#/components/schemas/MessageContext"
+
+    MessageContext:
+      type: object
+      additionalProperties: false
+      properties:
+        topic_ids:
+          type: array
+          maxItems: 5
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 8
+            maxLength: 128
+
+    GetSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          const: 200
+        msg:
+          type: string
+          const: success
+        data:
+          $ref: "#/components/schemas/Session"
+
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+        - session_id
+        - locale
+        - created_at
+        - updated_at
+        - expires_at
+        - messages
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        locale:
+          $ref: "#/components/schemas/Locale"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        active_run:
+          anyOf:
+            - $ref: "#/components/schemas/ActiveRun"
+            - type: "null"
+        messages:
+          type: array
+          maxItems: 40
+          items:
+            $ref: "#/components/schemas/Message"
+
+    ActiveRun:
+      type: object
+      additionalProperties: false
+      required: [run_id, state, started_at]
+      properties:
+        run_id:
+          type: string
+          format: uuid
+        state:
+          $ref: "#/components/schemas/RunState"
+        started_at:
+          type: string
+          format: date-time
+
+    RunState:
+      type: string
+      enum:
+        - accepted
+        - planning
+        - tool_running
+        - generating
+        - completed
+        - failed
+        - cancelled
+
+    Message:
+      type: object
+      additionalProperties: false
+      required: [message_id, role, content, created_at, citations]
+      properties:
+        message_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          maxLength: 12000
+        created_at:
+          type: string
+          format: date-time
+        run_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        finish_reason:
+          anyOf:
+            - type: string
+              enum: [stop, limit, cancelled, error]
+            - type: "null"
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+
+    Citation:
+      type: object
+      additionalProperties: false
+      required:
+        - number
+        - source_id
+        - title
+        - url
+        - platform
+        - detail_status
+      properties:
+        number:
+          type: integer
+          minimum: 1
+        source_id:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+        platform:
+          type: string
+        hot_value:
+          anyOf:
+            - type: string
+            - type: number
+            - type: "null"
+        rank_updated_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        detail_status:
+          type: string
+          enum: [not_requested, fetched, title_only, failed]
+
+    CancelRunResponse:
+      type: object
+      additionalProperties: false
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          const: 200
+        msg:
+          type: string
+          const: success
+        data:
+          type: object
+          additionalProperties: false
+          required: [run_id, state]
+          properties:
+            run_id:
+              type: string
+              format: uuid
+            state:
+              $ref: "#/components/schemas/RunState"
+
+    FeedbackRequest:
+      type: object
+      additionalProperties: false
+      required: [rating]
+      properties:
+        rating:
+          type: string
+          enum: [up, down]
+        reason:
+          anyOf:
+            - type: string
+              enum:
+                - inaccurate
+                - not_answered
+                - citation_irrelevant
+                - length
+                - slow
+                - other
+            - type: "null"
+
+    EmptySuccessResponse:
+      type: object
+      additionalProperties: false
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          const: 200
+        msg:
+          type: string
+          const: success
+        data:
+          type: object
+          additionalProperties: false
+
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [code, message, retryable]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          minimum: 400
+          maximum: 599
+        msg:
+          type: string
+        data:
+          type: object
+          additionalProperties: false
+          required: [error]
+          properties:
+            error:
+              $ref: "#/components/schemas/ErrorDetail"

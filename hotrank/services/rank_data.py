@@ -37,7 +37,7 @@ from common import (
     parse_zhihu_hot_list,
     parse_zongheng,
 )
-from hotrank.infrastructure import redis_client
+from hotrank.cache import redis_cache
 from hotrank.services.rss import generate_rank_rss
 
 
@@ -79,7 +79,7 @@ async def load_rank_data(pg_pool, item_id: str):
 
     cache_key = "rank"
     try:
-        cached_data = await redis_client.get(cache_key)
+        cached_data = await redis_cache.get(cache_key)
         if cached_data:
             return {
                 "code": 200,
@@ -92,13 +92,13 @@ async def load_rank_data(pg_pool, item_id: str):
     try:
         data = []
         try:
-            blog_data = await redis_client.get("myblog")
+            blog_data = await redis_cache.get("myblog")
             if blog_data:
                 data.append(json.loads(blog_data))
         except Exception as exc:
             logging.error(f"Redis get error: {exc}")
 
-        table_dict = json.loads(await redis_client.get("card_table"))
+        table_dict = json.loads(await redis_cache.get("card_table"))
         async with pg_pool.acquire() as conn:
             for item in table_dict:
                 collection_name = item["tablename"]
@@ -163,7 +163,7 @@ async def load_rank_data(pg_pool, item_id: str):
                     logging.error(traceback.format_exc())
 
         try:
-            await redis_client.setex(
+            await redis_cache.setex(
                 cache_key,
                 3600,
                 json.dumps(data, ensure_ascii=False),

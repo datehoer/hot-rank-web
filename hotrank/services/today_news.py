@@ -6,8 +6,8 @@ import aiohttp
 from json_repair import repair_json
 
 from config import news_sites
-from hotrank.infrastructure import redis_client
-from hotrank.model_client import chat_with_model
+from hotrank.cache import redis_cache
+from hotrank.model_client import collect_model_text
 from hotrank.schemas import HotTopicDetail, HotTopics
 from hotrank.services.rank_data import load_rank_data
 from hotrank.services.rss import generate_ai_rss
@@ -69,7 +69,7 @@ async def generate_today_top_news(pg_pool):
     error = 3
     while error > 0:
         try:
-            text = await chat_with_model(
+            text = await collect_model_text(
                 {
                     "system": NEWS_SYSTEM_PROMPT,
                     "user": (
@@ -100,7 +100,7 @@ async def generate_today_top_news(pg_pool):
 
                 while err > 0:
                     try:
-                        summarize = await chat_with_model(
+                        summarize = await collect_model_text(
                             {
                                 "system": NEWS_SYSTEM_PROMPT,
                                 "user": (
@@ -127,20 +127,20 @@ async def generate_today_top_news(pg_pool):
                         )
                         err -= 1
 
-            await redis_client.setex(
+            await redis_cache.setex(
                 "todayTopNews",
                 3600,
                 json.dumps(summarizes, ensure_ascii=False),
             )
             generate_ai_rss(summarizes)
-            await redis_client.delete("today_top_news_task")
+            await redis_cache.delete("today_top_news_task")
             return {"code": 200, "msg": "success", "data": summarizes}
 
         except aiohttp.ClientError as exc:
             logging.error(f"API request failed: {exc}")
             error -= 1
             if error == 0:
-                await redis_client.delete("today_top_news_task")
+                await redis_cache.delete("today_top_news_task")
                 return {
                     "code": 500,
                     "msg": f"API request failed: {str(exc)}",
@@ -150,7 +150,7 @@ async def generate_today_top_news(pg_pool):
             logging.error(f"Failed to parse API response: {exc}")
             error -= 1
             if error == 0:
-                await redis_client.delete("today_top_news_task")
+                await redis_cache.delete("today_top_news_task")
                 return {
                     "code": 500,
                     "msg": f"Failed to parse API response: {str(exc)}",
@@ -160,7 +160,7 @@ async def generate_today_top_news(pg_pool):
             logging.error(f"some error happen: {exc}")
             error -= 1
             if error == 0:
-                await redis_client.delete("today_top_news_task")
+                await redis_cache.delete("today_top_news_task")
                 return {
                     "code": 500,
                     "msg": f"Some error happen: {str(exc)}",

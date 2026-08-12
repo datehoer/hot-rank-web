@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hot Rank Agent Test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b1020;
+      color: #e8edf7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(92, 119, 255, 0.18), transparent 34rem),
+        #0b1020;
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    h1 { margin: 0; font-size: 24px; }
+    p { color: #9ba8bd; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.82fr) minmax(380px, 1.18fr);
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .card {
+      border: 1px solid #26314a;
+      border-radius: 16px;
+      background: rgba(16, 24, 44, 0.92);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+      padding: 18px;
+    }
+
+    label, legend {
+      display: block;
+      margin-bottom: 8px;
+      color: #cbd5e5;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid #33415f;
+      border-radius: 10px;
+      background: #0c1427;
+      color: #f7f9fc;
+      padding: 11px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #6f8cff;
+      box-shadow: 0 0 0 3px rgba(111, 140, 255, 0.15);
+    }
+
+    textarea {
+      min-height: 132px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .field-head strong {
+      color: #cbd5e5;
+      font-size: 13px;
+    }
+
+    fieldset {
+      border: 0;
+      margin: 0 0 16px;
+      padding: 0;
+    }
+
+    .platforms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .platforms label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      border: 1px solid #33415f;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: #0c1427;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .platforms input { width: auto; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 10px;
+      padding: 0 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #send { flex: 1; background: #6f8cff; color: #071020; }
+    #stop { background: #283550; color: #d9e2f2; }
+    #reloadSources {
+      min-height: 28px;
+      padding: 0 10px;
+      background: #283550;
+      color: #d9e2f2;
+      font-size: 12px;
+    }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    .response-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      background: #18233a;
+      color: #aebbd0;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .status[data-live="true"]::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #66e0a3;
+      box-shadow: 0 0 0 4px rgba(102, 224, 163, 0.12);
+    }
+
+    .answer {
+      min-height: 210px;
+      margin: 0;
+      border-radius: 12px;
+      background: #0c1427;
+      padding: 16px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.72;
+      color: #f0f4fb;
+    }
+
+    details { margin-top: 14px; }
+    summary { color: #9eacc1; cursor: pointer; font-size: 13px; }
+
+    .events {
+      max-height: 260px;
+      overflow: auto;
+      margin-top: 10px;
+      border-radius: 10px;
+      background: #080e1c;
+      padding: 12px;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+      color: #9fb0c8;
+    }
+
+    .error { color: #ff9f9f; }
+    .hint { margin: 10px 0 0; font-size: 12px; }
+
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Hot Rank Agent Test</h1>
+    <p>直接测试 POST + SSE 流式响应。推荐先试：我希望知道白海豚的相关信息。</p>
+
+    <section class="layout">
+      <form id="form" class="card">
+        <div class="field">
+          <label for="baseUrl">API 地址</label>
+          <input id="baseUrl" type="url" autocomplete="url">
+        </div>
+
+        <div class="field">
+          <label for="sessionId">Session ID</label>
+          <input id="sessionId" autocomplete="off">
+        </div>
+
+        <fieldset>
+          <div class="field-head">
+            <strong>Source（默认全选）</strong>
+            <button id="reloadSources" type="button">重新加载</button>
+          </div>
+          <div id="platforms" class="platforms">正在加载 Source...</div>
+          <p id="sourceHint" class="hint"></p>
+        </fieldset>
+
+        <div class="field">
+          <label for="message">消息</label>
+          <textarea id="message" required>我希望知道白海豚的相关信息</textarea>
+          <p class="hint">快捷键：⌘/Ctrl + Enter 发送</p>
+        </div>
+
+        <div class="actions">
+          <button id="send" type="submit">发送并读取流</button>
+          <button id="stop" type="button" disabled>停止</button>
+        </div>
+      </form>
+
+      <section class="card">
+        <div class="response-head">
+          <strong>Agent 回复</strong>
+          <span id="status" class="status" data-live="false">等待请求</span>
+        </div>
+        <pre id="answer" class="answer">尚未发送消息。</pre>
+
+        <details open>
+          <summary>事件日志</summary>
+          <div id="events" class="events">等待 SSE 事件...</div>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const form = document.querySelector("#form");
+    const baseUrlInput = document.querySelector("#baseUrl");
+    const sessionInput = document.querySelector("#sessionId");
+    const messageInput = document.querySelector("#message");
+    const platformsContainer = document.querySelector("#platforms");
+    const sourceHint = document.querySelector("#sourceHint");
+    const reloadSourcesButton = document.querySelector("#reloadSources");
+    const answer = document.querySelector("#answer");
+    const events = document.querySelector("#events");
+    const status = document.querySelector("#status");
+    const sendButton = document.querySelector("#send");
+    const stopButton = document.querySelector("#stop");
+
+    let controller = null;
+
+    baseUrlInput.value = window.location.origin;
+    sessionInput.value = newSessionId();
+
+    function newSessionId() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      return `test-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function setStatus(text, live = false) {
+      status.textContent = text;
+      status.dataset.live = String(live);
+    }
+
+    async function loadSources() {
+      const baseUrl = baseUrlInput.value.trim().replace(/\/$/, "");
+      platformsContainer.textContent = "正在加载 Source...";
+      sourceHint.textContent = "";
+      reloadSourcesButton.disabled = true;
+
+      try {
+        const response = await fetch(`${baseUrl}/agent/config/sources`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const config = await response.json();
+        const sources = Array.isArray(config.sources) ? config.sources : [];
+        const selected = new Set(config.default_selected || sources);
+        const labels = config.labels || {};
+        platformsContainer.textContent = "";
+
+        for (const source of sources) {
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = "platform";
+          input.value = source;
+          input.checked = selected.has(source);
+          label.append(input, document.createTextNode(` ${labels[source] || source}`));
+          platformsContainer.append(label);
+        }
+
+        if (!sources.length) {
+          platformsContainer.textContent = "当前没有允许查询的 Source。";
+        }
+        sourceHint.textContent = `Redis 配置：${config.redis_key || "agent:query:sources"}`;
+      } catch (error) {
+        platformsContainer.textContent = "Source 加载失败";
+        sourceHint.textContent = error.message;
+      } finally {
+        reloadSourcesButton.disabled = false;
+      }
+    }
+
+    function appendEvent(eventName, data) {
+      if (events.textContent === "等待 SSE 事件...") events.textContent = "";
+      const time = new Date().toLocaleTimeString();
+      events.textContent += `[${time}] ${eventName}\n${JSON.stringify(data, null, 2)}\n\n`;
+      events.scrollTop = events.scrollHeight;
+    }
+
+    function handleEvent(eventName, data) {
+      appendEvent(eventName, data);
+
+      if (eventName === "meta") {
+        setStatus(`会话 ${data.session_id}`, true);
+      } else if (eventName === "status") {
+        setStatus(data.stage === "searching" ? "正在搜索" : data.stage || "处理中", true);
+      } else if (eventName === "delta") {
+        if (answer.textContent === "等待模型输出...") answer.textContent = "";
+        answer.textContent += data.text || "";
+      } else if (eventName === "done") {
+        setStatus("已完成", false);
+      } else if (eventName === "error") {
+        setStatus("请求失败", false);
+        answer.textContent += `\n\n错误：${data.message || JSON.stringify(data)}`;
+        answer.classList.add("error");
+      }
+    }
+
+    function consumeBlock(block) {
+      let eventName = "message";
+      const dataLines = [];
+
+      for (const line of block.split(/\r?\n/)) {
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+
+      if (!dataLines.length) return;
+
+      const rawData = dataLines.join("\n");
+      try {
+        handleEvent(eventName, JSON.parse(rawData));
+      } catch (error) {
+        appendEvent("parse_error", { rawData, message: error.message });
+      }
+    }
+
+    async function consumeSse(response) {
+      if (!response.body) throw new Error("浏览器未提供可读取的响应流");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+        let boundary;
+        while ((boundary = buffer.search(/\r?\n\r?\n/)) !== -1) {
+          const block = buffer.slice(0, boundary);
+          const separator = buffer.slice(boundary).match(/^\r?\n\r?\n/)[0];
+          buffer = buffer.slice(boundary + separator.length);
+          if (block.trim()) consumeBlock(block);
+        }
+
+        if (done) break;
+      }
+
+      if (buffer.trim()) consumeBlock(buffer);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const platforms = [...document.querySelectorAll('input[name="platform"]:checked')]
+        .map((input) => input.value);
+
+      if (!platforms.length) {
+        setStatus("请选择至少一个平台");
+        return;
+      }
+
+      const baseUrl = baseUrlInput.value.trim().replace(/\/$/, "");
+      const sessionId = sessionInput.value.trim() || newSessionId();
+      const content = messageInput.value.trim();
+      sessionInput.value = sessionId;
+
+      controller = new AbortController();
+      sendButton.disabled = true;
+      stopButton.disabled = false;
+      answer.classList.remove("error");
+      answer.textContent = "等待模型输出...";
+      events.textContent = "";
+      setStatus("正在连接", true);
+
+      const payload = {
+        role: "user",
+        content,
+        platform: platforms,
+        timestamp: Math.floor(Date.now() / 1000),
+        session_id: sessionId,
+      };
+
+      appendEvent("request", payload);
+
+      try {
+        const response = await fetch(
+          `${baseUrl}/agent/sessions/${encodeURIComponent(sessionId)}/message`,
+          {
+            method: "POST",
+            headers: {
+              "Accept": "text/event-stream",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        await consumeSse(response);
+        if (status.textContent !== "已完成" && status.textContent !== "请求失败") {
+          setStatus("连接已结束", false);
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          setStatus("已停止", false);
+        } else {
+          setStatus("请求失败", false);
+          answer.textContent = `错误：${error.message}`;
+          answer.classList.add("error");
+          appendEvent("client_error", { message: error.message });
+        }
+      } finally {
+        controller = null;
+        sendButton.disabled = false;
+        stopButton.disabled = true;
+      }
+    });
+
+    stopButton.addEventListener("click", () => controller?.abort());
+    reloadSourcesButton.addEventListener("click", loadSources);
+    baseUrlInput.addEventListener("change", loadSources);
+
+    messageInput.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        form.requestSubmit();
+      }
+    });
+
+    loadSources();
+  </script>
+</body>
+</html>

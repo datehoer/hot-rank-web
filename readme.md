@@ -22,6 +22,12 @@ This repository currently contains:
 - **Frontend (current/live)**: `vue-ui/` — Vue 3 + Vite + TypeScript + Tailwind CSS + Heroicons
   - `vue-ui/src/App.vue` — page-level state and orchestration
   - `vue-ui/src/components/` — reusable page components and modal views
+- **Agent planning documents**: `docs/agent/`
+  - `docs/agent-feature-prd.md` — product requirements
+  - `docs/agent/README.md` — technical, API, security, testing, and frontend document index
+
+> The Agent documents describe a proposed read-only hotspot assistant. Agent
+> business code has not been implemented yet.
 
 > As of the current online deployment, **`https://www.hotday.uk/` is serving the `vue-ui/` frontend**.  
 > The live page loads Vite-built assets such as `/assets/index-*.js` and `/assets/index-*.css`, and its DOM structure/styles match `vue-ui/src/App.vue`.
@@ -33,6 +39,21 @@ Backend stack:
 - FastAPI
 - Redis
 - PostgreSQL
+
+Agent vector search additionally requires:
+
+- Python 3.12 with `pgvector==0.5.0`;
+- the PostgreSQL `vector` server extension enabled in the target database.
+
+Install the server package matching the PostgreSQL major version, then run:
+
+```bash
+psql -h <pg-host> -U <admin-user> -d <database> \
+  -f migrations/001_enable_pgvector.sql
+```
+
+See [the pgvector setup guide](docs/agent/pgvector-setup.md) for Docker,
+Ubuntu/Debian, verification, and deployment order.
 
 Recent backend changes already reflected in the repo:
 

@@ -1,6 +1,5 @@
 import aiohttp
 import json
-import asyncio
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 import base64
@@ -33,9 +32,13 @@ async def parse_detail(needKnowList):
 
 
 async def fetch(url):
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("Article URL is empty")
+
     timeout = aiohttp.ClientTimeout(total=360.0)
     async with aiohttp.ClientSession(timeout=timeout) as client:
-        async with client.get(url) as response:
+        async with client.get(url.strip()) as response:
+            response.raise_for_status()
             return await response.text()
 
 
@@ -43,15 +46,19 @@ async def parse_pengpai(needKnow):
     url = needKnow['hot_url']
     res = await fetch(url)
     soup = BeautifulSoup(res, 'html.parser')
-    try:
-        detail = soup.select_one("div[class^='index_cententWrap']")
-        if not detail:
-            detail = soup.select_one("div[class^='header_videoWrap'] ~ div")
+    detail = None
+    for selector in (
+        "div[class^='cententWrap']",
+        "div[class^='index_cententWrap']",
+        "div[class^='header_videoWrap'] ~ div",
+    ):
+        detail = soup.select_one(selector)
         if detail:
-            detail = str(detail)
-    except:
+            break
+    if not detail:
         return needKnow
-    detail = await remove_img_tags(detail)
+
+    detail = await remove_img_tags(str(detail))
     detail = markdownify.markdownify(detail).strip()
     needKnow['content'] = detail
     return needKnow

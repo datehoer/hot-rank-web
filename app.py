@@ -8,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from hotrank.infrastructure import lifespan, limiter
 from hotrank.routers.general import router as general_router
 from hotrank.routers.rankings import router as rankings_router
+from hotrank.routers.agent import router as agent_router
 
 
 logging.basicConfig(
@@ -28,6 +29,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(general_router)
 app.include_router(rankings_router)
+app.include_router(agent_router)
 
 
 if __name__ == "__main__":
