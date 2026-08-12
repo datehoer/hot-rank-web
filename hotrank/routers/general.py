@@ -5,7 +5,7 @@ import time
 
 from fastapi import APIRouter
 
-from hotrank.infrastructure import redis_client
+from hotrank.cache import redis_cache
 from hotrank.schemas import Feedback, SubscriberRequest, UnsubscribeRequest
 from sendEmail import send_email
 
@@ -22,12 +22,12 @@ def generate_uuid() -> str:
 @router.post("/subscribe")
 async def subscribe(subscriber: SubscriberRequest):
     email = subscriber.email
-    exist_email = await redis_client.hget("subscriberEmail", email)
+    exist_email = await redis_cache.hget("subscriberEmail", email)
     if exist_email:
         return {"code": 500, "msg": "error, maybe the email in my database", "data": []}
 
     uuid = generate_uuid()
-    await redis_client.hset("subscriberEmail", email, uuid)
+    await redis_cache.hset("subscriberEmail", email, uuid)
     send_email(
         "Subscribe",
         f"Thank you for subscribing to my website. Below is your UUID. To unsubscribe, please enter your UUID ({uuid}) and your email ({email}) in the unsubscribe form on the website and submit it. Love from: https://www.hotday.uk ",
@@ -46,11 +46,11 @@ async def subscribe(subscriber: SubscriberRequest):
 @router.post("/unsubscribe")
 async def unsubscribe(unsub: UnsubscribeRequest):
     email = unsub.email
-    uuid = await redis_client.hget("subscriberEmail", email)
+    uuid = await redis_cache.hget("subscriberEmail", email)
     if uuid:
         if uuid != unsub.uuid:
             return {"code": 500, "msg": "error, maybe the uuid is not correct", "data": []}
-        await redis_client.hdel("subscriberEmail", email)
+        await redis_cache.hdel("subscriberEmail", email)
         send_email(
             "Unsubscribe",
             f"Thank you for subscribing to my website. You have successfully unsubscribed from my website. Love from: https://www.hotday.uk ",
@@ -62,31 +62,31 @@ async def unsubscribe(unsub: UnsubscribeRequest):
 
 @router.get("/rankCopyWriting")
 async def get_copywriting():
-    data = await redis_client.srandmember("copywriting")
+    data = await redis_cache.srandmember("copywriting")
     return {"code": 200, "msg": "success", "data": data}
 
 
 @router.get("/yellowCalendar")
 async def get_yellow_calendar():
-    data = await redis_client.get("yellowCalendar")
+    data = await redis_cache.get("yellowCalendar")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
 
 
 @router.get("/music")
 async def get_music():
-    data = await redis_client.get("music")
+    data = await redis_cache.get("music")
     return {"code": 200, "msg": "success", "data": json.loads(data)}
 
 
 @router.get("/avatar")
 async def get_avatar():
-    data = await redis_client.srandmember("avatar")
+    data = await redis_cache.srandmember("avatar")
     return {"code": 200, "msg": "success", "data": data}
 
 
 @router.get("/username")
 async def get_username():
-    data = await redis_client.srandmember("username")
+    data = await redis_cache.srandmember("username")
     return {"code": 200, "msg": "success", "data": data}
 
 
@@ -98,5 +98,5 @@ async def post_feedback(feedback: Feedback):
 
 @router.get("/get_cards")
 async def get_cards():
-    data = await redis_client.get("card_table")
+    data = await redis_cache.get("card_table")
     return {"code": 200, "msg": "success", "data": json.loads(data)}

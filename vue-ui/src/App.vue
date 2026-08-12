@@ -6,6 +6,7 @@ import MusicPlayerModal from '@/components/MusicPlayerModal.vue'
 import RssMenu from '@/components/RssMenu.vue'
 import SortSettingsModal from '@/components/SortSettingsModal.vue'
 import TodayNewsModal from '@/components/TodayNewsModal.vue'
+import AgentAssistant from '@/components/AgentAssistant.vue'
 import {
   AdjustmentsHorizontalIcon,
   CalendarDaysIcon,
@@ -47,6 +48,7 @@ const showNewsModal = ref(false)
 const newsLoading = ref(false)
 const newsError = ref(null)
 const todayNews = ref([])
+const agentAssistant = ref(null)
 
 
 const showColPopover = ref(false)
@@ -543,6 +545,15 @@ const removeSection = (idx) => {
   saveSectionOrder()
 }
 
+const askAgentAboutTopic = (section, item, rank) => {
+  agentAssistant.value?.openForTopic({
+    title: item.hot_label,
+    source: section.name,
+    rank,
+    url: item.hot_url,
+  })
+}
+
 </script>
 
 <template>
@@ -708,7 +719,7 @@ const removeSection = (idx) => {
           <li
             v-for="(item, i) in section.data"
             :key="i"
-            class="flex justify-between items-center gap-4"
+            class="group flex justify-between items-center gap-3 rounded-sm px-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-800"
             :title="item.hot_label"
           >
             <div
@@ -727,6 +738,14 @@ const removeSection = (idx) => {
                 {{ item.hot_label }}
               </a>
             </div>
+            <button
+              type="button"
+              class="topic-agent-button shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+              :aria-label="`向热点助手询问：${item.hot_label}`"
+              @click="askAgentAboutTopic(section, item, i + 1)"
+            >
+              问 AI
+            </button>
             <!-- <code class="ml-2 px-1 py-0.5 text-sm">
               {{ item.hot_value }}
             </code> -->
@@ -741,5 +760,40 @@ const removeSection = (idx) => {
     </div>
 
     <div class="text-center text-gray-500 dark:text-gray-400 mt-16">-----------------------------</div>
+    <AgentAssistant ref="agentAssistant" />
   </main>
 </template>
+
+<style scoped>
+.topic-agent-button {
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: transparent;
+  padding: 3px 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  transition: opacity 120ms ease, background-color 120ms ease;
+}
+
+.topic-agent-button:hover,
+.topic-agent-button:focus-visible {
+  background: #111;
+  color: #fff;
+  outline: none;
+}
+
+:global(.dark) .topic-agent-button:hover,
+:global(.dark) .topic-agent-button:focus-visible {
+  background: #fff;
+  color: #111827;
+}
+
+@media (hover: none) {
+  .topic-agent-button {
+    opacity: 1;
+  }
+}
+
+
+</style>

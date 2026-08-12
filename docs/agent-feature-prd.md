@@ -4,7 +4,7 @@
 | --- | --- |
 | 文档版本 | v0.1 |
 | 文档状态 | 待评审 |
-| 更新时间 | 2026-08-05 |
+| 更新时间 | 2026-08-06 |
 | 产品范围 | `hot-rank-web` 当前 Vue 3 前端与 FastAPI 后端 |
 | 首版定位 | 基于站内热榜数据的只读热点研究助手 |
 
@@ -750,12 +750,15 @@ vue-ui/src/
 
 ## 20. 后续文档
 
-本 PRD 评审通过后，开发前补充：
+配套文档已经形成 Draft，统一入口为
+[`docs/agent/README.md`](agent/README.md)：
 
-- Agent 技术设计文档；
-- API OpenAPI 定义；
-- SSE 状态机说明；
-- Prompt 与工具协议；
-- SSRF 和 Prompt Injection 威胁模型；
-- Docker Compose 集成测试方案；
-- 前端交互稿与埋点表。
+- [Agent 技术设计](agent/technical-design.md)；
+- [API OpenAPI 定义](agent/openapi.yaml)；
+- [SSE 状态机与事件协议](agent/sse-protocol.md)；
+- [Prompt 与工具协议](agent/prompts-and-tools.md)；
+- [SSRF 和 Prompt Injection 威胁模型](agent/threat-model.md)；
+- [Docker Compose 集成测试方案](agent/docker-compose-test-plan.md)；
+- [前端交互与埋点](agent/frontend-ux-and-analytics.md)。
+
+上述文档在正式开发前仍需完成评审，并将关键待确认项转为明确决策。
