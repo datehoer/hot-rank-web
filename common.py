@@ -137,12 +137,18 @@ def parse_weibo_hot_search(data):
         data = data['data']
     if "cards" in data:
         data = data['cards'][0]['card_group']
+    elif isinstance(data, dict):
+        # 新版 spider 输出: {"realtime": [...]}
+        data = data.get("realtime", [])
     result = []
     for item in data:
-        hot_url = item["scheme"]
-        hot_label = item["desc"]
+        hot_label = item.get("desc") or item.get("word")
+        hot_url = item.get("scheme") or ""
+        if not hot_url.startswith("http"):
+            from urllib.parse import quote
+            hot_url = "https://s.weibo.com/weibo?q=" + quote(hot_label)
         result.append({
-            "hot_value": 0,
+            "hot_value": item.get("num") or 0,
             "hot_url": hot_url,
             "hot_label": hot_label
         })
@@ -153,11 +159,15 @@ def parse_wx_read_rank(data):
     data = data["data"]["books"]
     result = []
     for item in data:
-        hot_label = item["bookInfo"]["title"]
+        book_info = item["bookInfo"]
+        hot_label = book_info["title"]
         hot_value = int(item['readingCount'])
+        hot_url = book_info.get("deepLink") or (
+            "https://weread.qq.com/web/bookDetail/" + str(book_info["bookId"])
+        )
         result.append({
             "hot_value": hot_value,
-            "hot_url": "",
+            "hot_url": hot_url,
             "hot_label": hot_label
         })
     result.sort(key=lambda x: x["hot_value"], reverse=True)
