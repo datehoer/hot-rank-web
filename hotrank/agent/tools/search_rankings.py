@@ -1,6 +1,7 @@
 import hashlib
 import json
 import json_repair
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hotrank.cache import redis_cache
 from hotrank.agent.source_config import get_allowed_query_sources
@@ -9,12 +10,42 @@ from hotrank.model_client import collect_model_text, embedding_with_model
 from hotrank.schemas import ToolResult, ToolError, ToolMeta
 
 
+class SearchPlan(BaseModel):
+    model_config = ConfigDict(extra="ignore", strict=True)
+
+    search_query: str = Field(min_length=1, max_length=500)
+    hours: int = Field(ge=1, le=24 * 30)
+    need_hot: bool
+
+
+def build_rank_result_cache_key(
+    content: str,
+    hours: int,
+    platform: list[str],
+    need_hot: bool,
+    top_k: int,
+) -> str:
+    query_digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    result_scope = json.dumps(
+        {
+            "hours": hours,
+            "need_hot": need_hot,
+            "platform": sorted(platform),
+            "top_k": top_k,
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    scope_digest = hashlib.sha256(
+        result_scope.encode("utf-8")
+    ).hexdigest()
+    return f"rank:result:{query_digest}:{scope_digest}"
+
+
 async def get_rank_data(pg_pool, message: AgentMessage):
-    role = message.role
-    content = message.content
+    original_content = message.content
     platform = message.platform
-    timestamp = message.timestamp
-    session_id = message.session_id
 
     allowed_sources = await get_allowed_query_sources()
     invalid_sources = [
@@ -53,7 +84,7 @@ async def get_rank_data(pg_pool, message: AgentMessage):
             5. 是否代表台风、动物、公司、电影等含义，应由数据库中的候选热点标题决定。
             6. 用户没有明确时间范围时，默认查询最近 72 小时。
 
-            用户原始问题：{content}
+            用户原始问题：{original_content}
 
             请仅返回合法的 JSON 对象，不要输出 Markdown 代码块或其他文字：
             {{
@@ -65,7 +96,6 @@ async def get_rank_data(pg_pool, message: AgentMessage):
             "original_intent": "不猜测具体实体类型的用户意图"
             }}
     """
-    print(f"Prompt for embedding model: {prompt}")
     response_format = {
         "type": "json_object"
     }
@@ -73,25 +103,41 @@ async def get_rank_data(pg_pool, message: AgentMessage):
         "system": "You are a search planner. Always return a valid JSON object.",
         "user": prompt
     }
-    content = await collect_model_text(messages, response_format)
-    print(f"Content after collect_model_text: {content}")
-    content = json_repair.loads(content)
-    hours = content.get("hours", 24)
-    search_query = content.get("search_query", "")
-    need_hot = content.get("need_hot", True)
-    return await search_rank_data(pg_pool, search_query, hours, platform, need_hot)
+    model_content = await collect_model_text(messages, response_format)
+    try:
+        plan = SearchPlan.model_validate(json_repair.loads(model_content))
+    except (ValidationError, ValueError, TypeError):
+        plan = SearchPlan(
+            search_query=original_content,
+            hours=72,
+            need_hot=True,
+        )
+    return await search_rank_data(
+        pg_pool,
+        plan.search_query,
+        plan.hours,
+        platform,
+        plan.need_hot,
+    )
 
 
 
 async def search_rank_data(pg_pool, content: str, hours: int, platform: list[str], need_hot: bool, top_k: int = 8):
-    embedding_cache_key = f"emb:query:{hashlib.md5(content.encode()).hexdigest()}"
+    query_digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    embedding_cache_key = f"emb:query:{query_digest}"
     embedding = await redis_cache.get(embedding_cache_key)
     if embedding is None:
         embedding = await embedding_with_model(content)
         await redis_cache.set(embedding_cache_key, json.dumps(embedding), ex=3600)  # cache for 1 hour
     else:
         embedding = json.loads(embedding)
-    result_cache_key = f"rank:result:{embedding}"
+    result_cache_key = build_rank_result_cache_key(
+        content,
+        hours,
+        platform,
+        need_hot,
+        top_k,
+    )
     data = await redis_cache.get(result_cache_key)
     if data is None:
 

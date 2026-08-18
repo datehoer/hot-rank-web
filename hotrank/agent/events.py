@@ -20,10 +20,10 @@ async def agent_response(session_id, message, request):
             event_type = event.pop("type")
             yield encode_sse(event_type, event)
 
-    except Exception as exc:
+    except Exception:
         logging.exception("Agent stream failed")
         yield encode_sse("error", {
             "code": "AGENT_FAILED",
-            "message": str(exc).strip() or type(exc).__name__,
+            "message": "热点助手暂时无法完成请求，请稍后重试。",
             "retryable": True,
         })

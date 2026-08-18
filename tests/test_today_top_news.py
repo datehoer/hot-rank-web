@@ -58,15 +58,17 @@ class TodayTopNewsTest(unittest.IsolatedAsyncioTestCase):
             ],
         }
 
-        async def fake_chat_with_model(messages, response_format):
+        async def fake_collect_model_text(messages, response_format):
             return ""
 
         with patch.object(
             today_news, "load_rank_data", AsyncMock(return_value=fake_rank)
         ), patch.object(
-            today_news, "chat_with_model", side_effect=fake_chat_with_model
+            today_news,
+            "collect_model_text",
+            side_effect=fake_collect_model_text,
         ), patch.object(
-            today_news, "redis_client", FakeRedis()
+            today_news, "redis_cache", FakeRedis()
         ), patch.object(
             today_news.logging, "error"
         ):

@@ -1,10 +1,15 @@
 import json
+import hashlib
+
 from hotrank.cache import redis_cache
-from hotrank.schemas import ToolResult, ToolError, ToolMeta
+from hotrank.schemas import ToolResult, ToolMeta
 
 
-async def get_today_news(pg_pool, limit=10):
-    cache_key = f"today_news:{limit}"
+async def get_today_news(pg_pool, limit: int, platforms: list[str]):
+    platform_key = hashlib.sha256(
+        ",".join(sorted(platforms)).encode("utf-8")
+    ).hexdigest()[:16]
+    cache_key = f"today_news:{limit}:{platform_key}"
     today_news = await redis_cache.get(cache_key)
     if today_news is None:
         async with pg_pool.acquire() as conn:
@@ -18,9 +23,10 @@ async def get_today_news(pg_pool, limit=10):
                     last_seen
                 FROM hot_topic
                 WHERE last_seen >= EXTRACT(EPOCH FROM DATE_TRUNC('day', NOW()))::bigint
+                AND source = ANY($2)
                 ORDER BY last_seen DESC
                 LIMIT $1
-            """, limit)
+            """, limit, platforms)
             today_news = [
                 {
                     "id": row["id"],
@@ -39,6 +45,7 @@ async def get_today_news(pg_pool, limit=10):
         ok=True,
         message="Success",
         data=today_news,
+        source=platforms,
         meta=ToolMeta(
             tool_call_id="get_today_news",
             duration_ms=0,

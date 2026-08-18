@@ -8,6 +8,7 @@ from parse_detail import (
     parse_sspai
 )
 from hotrank.schemas import ToolResult, ToolError, ToolMeta
+from hotrank.agent.safe_fetcher import SafeFetchError, validate_source_url
 
 
 DETAIL_PARSERS = {
@@ -46,7 +47,7 @@ def wrap_untrusted_source_content(
 
 def detail_error(
     message: str,
-    code: int,
+    code: str | int,
     retryable: bool,
     platform: str | None = None,
 ):
@@ -67,7 +68,7 @@ def detail_error(
     )
 
 
-async def get_topic_detail(topic_id, platform, pg_pool):
+async def get_topic_detail(topic_id, platform, pg_pool, expected_url: str):
     async with pg_pool.acquire() as conn:
         record = await conn.fetchrow("""
             SELECT
@@ -88,6 +89,14 @@ async def get_topic_detail(topic_id, platform, pg_pool):
         title = record["title"]
         url = record["url"]
         source = record["source"]
+
+    if url != expected_url:
+        return detail_error(
+            message="Topic changed after it was returned by the search tool",
+            code="TOPIC_CHANGED_SINCE_SEARCH",
+            retryable=False,
+            platform=platform,
+        )
 
     parser = DETAIL_PARSERS.get(platform)
     if not parser:
@@ -117,6 +126,21 @@ async def get_topic_detail(topic_id, platform, pg_pool):
         )
 
     try:
+        validate_source_url(url, platform)
+    except SafeFetchError:
+        logging.warning(
+            "Rejected unsafe topic URL: topic_id=%s platform=%s",
+            topic_id,
+            platform,
+        )
+        return detail_error(
+            message="Topic URL did not pass source safety checks",
+            code="UNSAFE_SOURCE_URL",
+            retryable=False,
+            platform=platform,
+        )
+
+    try:
         parsed = await parser({
             "hot_label": title,
             "hot_url": url.strip(),
@@ -127,10 +151,9 @@ async def get_topic_detail(topic_id, platform, pg_pool):
             topic_id,
             platform,
         )
-        reason = str(exc).strip() or type(exc).__name__
         return detail_error(
-            message=f"Unable to parse topic detail: {reason}",
-            code=502,
+            message="Unable to safely fetch or parse topic detail",
+            code="SOURCE_FETCH_FAILED",
             retryable=True,
             platform=platform,
         )
@@ -152,6 +175,8 @@ async def get_topic_detail(topic_id, platform, pg_pool):
         ok=True,
         message="success",
         data=[{
+            "id": topic_id,
+            "source": platform,
             "hot_label": title,
             "hot_url": url,
             "hot_content": untrusted_content,
