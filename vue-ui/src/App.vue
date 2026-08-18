@@ -31,9 +31,9 @@ const md = new MarkdownIt();
 useHead({
   script: [
     {
-      src: 'https://cloud.umami.is/script.js',
+      src: 'https://umami.datehoer.com/script.js',
       defer: true,
-      'data-website-id': '24595aed-c7d3-4407-9ce1-e3d54b58bf00',
+      'data-website-id': '89135d8e-bd6e-43f7-8a2e-5e60a64db4de',
     }
   ],
   meta: [

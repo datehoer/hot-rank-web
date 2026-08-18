@@ -37,3 +37,6 @@ config.py
 rss_feed*.xml
 *.log
 
+# 测试残留
+test-results/
+
