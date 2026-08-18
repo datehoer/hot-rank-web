@@ -1,6 +1,7 @@
+import hashlib
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from hotrank.agent.source_config import (
     QUERY_SOURCES_REDIS_KEY,
@@ -9,6 +10,13 @@ from hotrank.agent.source_config import (
 )
 from hotrank.schemas import AgentMessage
 from hotrank.agent.events import agent_response
+from hotrank.infrastructure import (
+    AGENT_IP_RATE_LIMIT,
+    AGENT_SESSION_RATE_LIMIT,
+    limiter,
+)
+
+
 router = APIRouter()
 
 AGENT_TEST_PAGE = (
@@ -16,6 +24,13 @@ AGENT_TEST_PAGE = (
     / "static"
     / "agent_test.html"
 )
+
+
+def agent_session_rate_limit_key(request: Request) -> str:
+    """Return a bounded Redis key without exposing the client session ID."""
+    session_id = str(request.path_params.get("session_id") or "")
+    digest = hashlib.sha256(session_id.encode("utf-8")).hexdigest()
+    return f"agent-session:{digest}"
 
 
 @router.get("/agent/test", include_in_schema=False)
@@ -43,11 +58,37 @@ async def get_agent_sessions(request: Request):
 
 
 @router.post("/agent/sessions/{session_id}/message")
+@limiter.limit(AGENT_IP_RATE_LIMIT)
+@limiter.limit(
+    AGENT_SESSION_RATE_LIMIT,
+    key_func=agent_session_rate_limit_key,
+)
 async def post_agent_message(
     session_id: str,
     message: AgentMessage,
     request: Request,
 ):
+    if message.session_id != session_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Session ID does not match the request path.",
+        )
+
+    allowed_sources = set(await get_allowed_query_sources())
+    invalid_sources = [
+        source for source in message.platform
+        if source not in allowed_sources
+    ]
+    if invalid_sources:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "QUERY_SOURCE_NOT_ALLOWED",
+                "message": "查询来源不可用。",
+                "invalid_sources": invalid_sources,
+            },
+        )
+
     return StreamingResponse(
         agent_response(session_id, message, request),
         media_type="text/event-stream",

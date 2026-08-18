@@ -1,6 +1,6 @@
-from typing import List, Optional
-from dns import message
-from pydantic import BaseModel, EmailStr, Field
+from typing import Any, List, Literal
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class HotTopic(BaseModel):
     hot_label: str = Field(..., description="热点标题 / 标签")
@@ -43,28 +43,60 @@ class UnsubscribeRequest(BaseModel):
     uuid: str
 
 class AgentMessage(BaseModel):
-    role: str
-    content: str
-    platform: list[str] = Field(..., description="平台列表")
+    role: Literal["user"]
+    content: str = Field(min_length=1, max_length=4_000)
+    platform: list[str] = Field(
+        min_length=1,
+        max_length=100,
+        description="平台列表",
+    )
     timestamp: int = Field(..., description="时间戳")
-    session_id: str = Field(..., description="会话 ID")
+    session_id: str = Field(
+        min_length=1,
+        max_length=128,
+        description="会话 ID",
+    )
+
+    @field_validator("content")
+    @classmethod
+    def normalize_content(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("content must not be blank")
+        return normalized
+
+    @field_validator("platform")
+    @classmethod
+    def validate_unique_platforms(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("platform entries must be unique")
+        return value
 
 class ToolError(BaseModel):
-    code: int = Field(None, description="错误码")
-    message: str = Field(None, description="错误信息")
-    retryable: bool = Field(None, description="是否可重试")
+    code: str | int = Field(..., description="错误码")
+    message: str = Field(..., description="错误信息")
+    retryable: bool = Field(..., description="是否可重试")
 
 class ToolMeta(BaseModel):
-    tool_call_id: str = Field(None, description="工具名称")
-    duration_ms: int = Field(None, description="工具调用耗时，单位毫秒")
-    cached: bool = Field(None, description="是否使用缓存")
+    tool_call_id: str = Field(..., description="工具名称")
+    duration_ms: int = Field(..., description="工具调用耗时，单位毫秒")
+    cached: bool = Field(..., description="是否使用缓存")
 
 
 class ToolResult(BaseModel):
     ok: bool
-    message: str = Field(None, description="工具调用的消息")
-    data: list = Field(None, description="工具返回的数据")
-    source: list[str] = Field(None, description="工具返回的数据来源")
-    warnings: list[str] = Field([], description="工具返回的警告信息")
-    error: ToolError = Field(None, description="工具返回的错误信息")
-    meta: ToolMeta = Field(None, description="工具调用的元信息")
+    message: str | None = Field(None, description="工具调用的消息")
+    data: list[dict[str, Any]] | None = Field(
+        None,
+        description="工具返回的数据",
+    )
+    source: list[str] | None = Field(
+        None,
+        description="工具返回的数据来源",
+    )
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="工具返回的警告信息",
+    )
+    error: ToolError | None = Field(None, description="工具返回的错误信息")
+    meta: ToolMeta | None = Field(None, description="工具调用的元信息")

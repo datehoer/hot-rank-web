@@ -3,13 +3,29 @@ import logging
 from time import perf_counter
 import aiohttp
 
-from config import api_headers
 from hotrank.agent.prompts import SYSTEM_PROMPT
 from hotrank.agent.source_config import get_allowed_query_sources
 from hotrank.agent.tool_registry import tools_for_query_sources
-from hotrank.model_client import stream_model_events
+from hotrank.model_client import (
+    AGENT_API_HEADERS,
+    AGENT_API_RESPONSE_URL,
+    AGENT_MODEL,
+    stream_model_events,
+)
 from hotrank.agent.tool_executor import execute_tool
 from hotrank.agent.tool_events import describe_tool_call, summarize_tool_result
+
+
+def _citation_retry_instruction(source_ids: list[str]) -> str:
+    ids = ", ".join(source_ids)
+    return (
+        "你上一条回答没有使用任何引用标记。"
+        "请重新输出回答，并为每一个事实性结论紧跟着补上引用标记 "
+        "[[source:SOURCE_ID]]。"
+        f"本次可用的 source_id 仅限：{ids}。"
+        "不要编造其他 source_id 或 URL；"
+        "如果某个结论确实没有对应来源，请明确说明该结论缺少来源。"
+    )
 
 
 async def run_agent(message, context):
@@ -17,8 +33,16 @@ async def run_agent(message, context):
         "type": "status",
         "stage": "planning",
     }
-    allowed_sources = await get_allowed_query_sources()
-    available_tools = tools_for_query_sources(allowed_sources)
+    configured_sources = set(await get_allowed_query_sources())
+    requested_sources = set(message.platform)
+    invalid_sources = requested_sources - configured_sources
+    if invalid_sources:
+        raise ValueError("请求包含未启用的数据来源。")
+
+    context.allowed_sources = frozenset(requested_sources)
+    available_tools = tools_for_query_sources(
+        sorted(context.allowed_sources)
+    )
     input_items = [
         {
             "role": "system",
@@ -35,7 +59,7 @@ async def run_agent(message, context):
         sock_read=60,
     )
     async with aiohttp.ClientSession(
-        headers=api_headers,
+        headers=AGENT_API_HEADERS,
         timeout=timeout,
     ) as session:
         tool_call_limits = {
@@ -45,8 +69,10 @@ async def run_agent(message, context):
         }
 
         tool_call_counts = {}
+        total_tool_calls = 0
         seen_tool_calls = set()
         force_final_answer = False
+        citation_retried = False
         for round_number in range(8):
             if round_number > 0:
                 yield {
@@ -58,12 +84,15 @@ async def run_agent(message, context):
             function_calls = []
             completed_response = None
             generating_status_sent = False
+            response_text_parts = []
 
             active_tools = None if force_final_answer else available_tools
             async for event in stream_model_events(
                 input_items=input_items,
                 session=session,
                 tools=active_tools,
+                model_name=AGENT_MODEL,
+                response_url=AGENT_API_RESPONSE_URL,
             ):
                 event_type = event.get("type")
                 if event_type == "response.reasoning_summary_text.delta":
@@ -87,16 +116,15 @@ async def run_agent(message, context):
                     }
 
                 elif event_type == "response.output_text.delta":
+                    delta = event.get("delta", "")
+                    if delta:
+                        response_text_parts.append(delta)
                     if not generating_status_sent:
                         yield {
                             "type": "status",
                             "stage": "generating",
                         }
                         generating_status_sent = True
-                    yield {
-                        "type": "delta",
-                        "text": event.get("delta", ""),
-                    }
 
                 elif event_type == "response.output_item.done":
                     item = event.get("item", {})
@@ -121,6 +149,51 @@ async def run_agent(message, context):
                 raise RuntimeError("Missing completed response")
 
             if not function_calls:
+                raw_answer = "".join(response_text_parts)[:12_000]
+                answer, citations = context.citations.resolve_answer(raw_answer)
+
+                available_source_ids = context.citations.registered_source_ids()
+                missing_citations = bool(
+                    not citations and available_source_ids
+                )
+                if missing_citations and not citation_retried:
+                    citation_retried = True
+                    input_items.append(
+                        {"role": "assistant", "content": raw_answer}
+                    )
+                    input_items.append({
+                        "role": "user",
+                        "content": _citation_retry_instruction(
+                            available_source_ids
+                        ),
+                    })
+                    force_final_answer = True
+                    yield {
+                        "type": "status",
+                        "stage": "generating",
+                        "message": "正在补充引用",
+                    }
+                    continue
+
+                for offset in range(0, len(answer), 512):
+                    yield {
+                        "type": "delta",
+                        "text": answer[offset:offset + 512],
+                    }
+                for citation in citations:
+                    yield {
+                        "type": "citation",
+                        "citation": citation,
+                    }
+                if missing_citations:
+                    yield {
+                        "type": "warning",
+                        "code": "MISSING_CITATIONS",
+                        "message": (
+                            "本回答未能附上可验证的来源引用，"
+                            "请谨慎参考并查看原始榜单。"
+                        ),
+                    }
                 yield {
                     "type": "done",
                     "usage": completed_response.get("usage"),
@@ -130,12 +203,18 @@ async def run_agent(message, context):
             input_items.extend(response_output)
 
             for call in function_calls:
-                arguments = json.loads(call.get("arguments") or "{}")
+                name = str(call.get("name") or "")
+                try:
+                    arguments = json.loads(call.get("arguments") or "{}")
+                    if not isinstance(arguments, dict):
+                        arguments = {}
+                except (json.JSONDecodeError, TypeError):
+                    arguments = {}
                 call_id = call.get("call_id") or call.get("id")
-                presentation = describe_tool_call(call["name"], arguments)
+                presentation = describe_tool_call(name, arguments)
                 tool_stage = (
                     "fetching"
-                    if call["name"] == "get_topic_detail"
+                    if name == "get_topic_detail"
                     else "searching"
                 )
                 yield {
@@ -149,7 +228,7 @@ async def run_agent(message, context):
                     **presentation,
                 }
                 signature = (
-                    call["name"],
+                    name,
                     json.dumps(
                         arguments,
                         ensure_ascii=False,
@@ -157,12 +236,16 @@ async def run_agent(message, context):
                         separators=(",", ":"),
                     ),
                 )
-                limit = tool_call_limits.get(call["name"], 1)
-                count = tool_call_counts.get(call["name"], 0)
-                if signature in seen_tool_calls or count >= limit:
+                limit = tool_call_limits.get(name, 1)
+                count = tool_call_counts.get(name, 0)
+                if (
+                    signature in seen_tool_calls
+                    or count >= limit
+                    or total_tool_calls >= 4
+                ):
                     input_items.append({
                         "type": "function_call_output",
-                        "call_id": call["call_id"],
+                        "call_id": call_id,
                         "output": json.dumps({
                             "ok": False,
                             "error": {
@@ -175,7 +258,7 @@ async def run_agent(message, context):
                     yield {
                         "type": "tool_result",
                         "call_id": call_id,
-                        "tool": call["name"],
+                        "tool": name,
                         "status": "skipped",
                         "summary": "已使用已有结果，避免重复调用",
                         "result_count": 0,
@@ -187,36 +270,33 @@ async def run_agent(message, context):
                 started_at = perf_counter()
                 try:
                     result = await execute_tool(
-                        name=call["name"],
+                        name=name,
                         arguments=arguments,
                         context=context,
                     )
                 except Exception as exc:
                     logging.exception(
                         "Tool execution failed: tool=%s",
-                        call["name"],
+                        name,
                     )
-                    reason = str(exc).strip() or type(exc).__name__
                     result = {
                         "ok": False,
-                        "message": f"Tool execution failed: {reason}",
+                        "message": "工具执行失败。",
+                        "data": [],
                         "error": {
-                            "code": 500,
-                            "message": reason,
+                            "code": "INTERNAL_TOOL_ERROR",
+                            "message": "工具执行失败。",
                             "retryable": True,
                         },
                     }
-
-                if hasattr(result, "model_dump"):
-                    result = result.model_dump(mode="json")
 
                 duration_ms = round((perf_counter() - started_at) * 1000)
                 yield {
                     "type": "tool_result",
                     "call_id": call_id,
-                    "tool": call["name"],
+                    "tool": name,
                     **summarize_tool_result(
-                        call["name"],
+                        name,
                         result,
                         duration_ms,
                     ),
@@ -224,13 +304,14 @@ async def run_agent(message, context):
 
                 input_items.append({
                     "type": "function_call_output",
-                    "call_id": call["call_id"],
+                    "call_id": call_id,
                     "output": json.dumps(
                         result,
                         ensure_ascii=False,
                     ),
                 })
                 seen_tool_calls.add(signature)
-                tool_call_counts[call["name"]] = count + 1
+                tool_call_counts[name] = count + 1
+                total_tool_calls += 1
 
         raise RuntimeError("Tool call limit exceeded")

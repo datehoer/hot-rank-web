@@ -12,13 +12,16 @@ import {
   StopIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/outline'
-import MarkdownIt from 'markdown-it'
 import {
   cancelAgentRun,
   getAgentSourceConfig,
   streamAgentMessage,
   type AgentStreamEvent,
 } from '@/api/agent'
+import {
+  renderSafeMarkdown,
+  safeExternalUrl,
+} from '@/utils/safeAgentContent'
 
 interface TopicContext {
   title: string
@@ -44,6 +47,7 @@ interface ConversationTurn {
   executionItems: ExecutionItem[]
   executionExpanded: boolean
   error?: string
+  warning?: string
   incomplete?: boolean
 }
 
@@ -76,11 +80,6 @@ type AgentStage =
   | 'error'
 
 const isOpen = ref(false)
-const markdown = new MarkdownIt({
-  html: false,
-  breaks: true,
-  linkify: true,
-})
 const draft = ref('')
 const topicContext = ref<TopicContext | null>(null)
 const turns = ref<ConversationTurn[]>([])
@@ -120,6 +119,7 @@ const getSessionId = () => {
 const activeTurn = computed<ConversationTurn | null>(() =>
   turns.value.length ? turns.value[turns.value.length - 1] : null,
 )
+const safeTopicUrl = computed(() => safeExternalUrl(topicContext.value?.url))
 const isRunning = computed(() =>
   ['connecting', 'planning', 'searching', 'fetching', 'comparing', 'generating'].includes(
     stage.value,
@@ -286,7 +286,7 @@ const recordProcessStep = (nextStage: string, message?: unknown) => {
   processSteps.value.push({ stage: nextStage, label })
 }
 
-const upsertReasoning = (data: Record<string, any>) => {
+const upsertReasoning = (data: Record<string, unknown>) => {
   const turn = activeTurn.value
   if (!turn) return
 
@@ -310,7 +310,7 @@ const upsertReasoning = (data: Record<string, any>) => {
   item.status = data.status === 'completed' ? 'completed' : 'running'
 }
 
-const addToolCall = (data: Record<string, any>) => {
+const addToolCall = (data: Record<string, unknown>) => {
   const turn = activeTurn.value
   if (!turn) return
 
@@ -329,7 +329,7 @@ const addToolCall = (data: Record<string, any>) => {
   })
 }
 
-const completeToolCall = (data: Record<string, any>) => {
+const completeToolCall = (data: Record<string, unknown>) => {
   const turn = activeTurn.value
   if (!turn) return
 
@@ -394,6 +394,10 @@ const handleStreamEvent = (event: AgentStreamEvent) => {
         (item: Citation) => (item.source_id || item.url || item.title) === key,
       )
       if (!exists) activeTurn.value.citations.push(citation)
+    }
+  } else if (event.event === 'warning') {
+    if (activeTurn.value) {
+      activeTurn.value.warning = String(event.data.message || '')
     }
   } else if (event.event === 'done') {
     streamEnded.value = true
@@ -500,7 +504,9 @@ const formatTime = (date: Date) =>
     date,
   )
 
-const renderAnswer = (answer: string) => markdown.render(answer)
+const renderAnswer = (answer: string) => renderSafeMarkdown(answer)
+const visibleCitations = (turn: ConversationTurn) =>
+  turn.citations.filter((citation) => safeExternalUrl(citation.url))
 
 onMounted(() => {
   void loadSources()
@@ -547,10 +553,10 @@ defineExpose({ open, openForTopic })
       <section v-if="topicContext" class="agent-context" aria-label="当前热点">
         <span>来自：{{ topicContext.source }} #{{ topicContext.rank }}</span>
         <a
-          v-if="topicContext.url"
-          :href="topicContext.url"
+          v-if="safeTopicUrl"
+          :href="safeTopicUrl"
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer nofollow"
         >
           {{ topicContext.title }}
         </a>
@@ -637,6 +643,10 @@ defineExpose({ open, openForTopic })
             <span v-if="turn === activeTurn && stage === 'generating'" class="agent-cursor"></span>
           </div>
 
+          <p v-if="turn.warning" class="agent-warning" role="status">
+            {{ turn.warning }}
+          </p>
+
           <div
             v-if="turn === activeTurn && (stage === 'connecting' || stage === 'generating')"
             class="agent-live-status"
@@ -645,17 +655,17 @@ defineExpose({ open, openForTopic })
             <span>{{ stageLabels[stage] }}</span>
           </div>
 
-          <section v-if="turn.citations.length" class="agent-citations">
+          <section v-if="visibleCitations(turn).length" class="agent-citations">
             <div class="agent-citation-heading">
-              <strong>参考热点 {{ turn.citations.length }}</strong>
+              <strong>参考热点 {{ visibleCitations(turn).length }}</strong>
               <span></span>
             </div>
             <a
-              v-for="citation in turn.citations"
+              v-for="citation in visibleCitations(turn)"
               :key="citation.source_id || citation.url || citation.title"
-              :href="citation.url"
+              :href="safeExternalUrl(citation.url) || undefined"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow"
               class="agent-citation"
             >
               <strong>{{ citation.platform || '热点来源' }}</strong>
@@ -1337,6 +1347,14 @@ defineExpose({ open, openForTopic })
 .agent-stopped {
   margin-top: 18px;
   color: #666;
+  font-size: 12px;
+}
+
+.agent-warning {
+  margin-top: 16px;
+  border-left: 2px solid #b45309;
+  padding: 2px 0 2px 13px;
+  color: #92400e;
   font-size: 12px;
 }
 

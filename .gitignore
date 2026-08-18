@@ -22,6 +22,9 @@ pnpm-debug.log*
 *.sw?
 config.py
 
+# 浏览器测试产物（勿提交）
+.playwright-mcp/
+
 *.tar
 *.zip
 *.tar.gz

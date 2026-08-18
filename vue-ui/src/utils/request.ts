@@ -31,7 +31,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     // console.log('Response:', response.data)
-    return response.data
+    return response
   },
   (error) => {
     console.error('Response Error:', error)
@@ -40,23 +40,30 @@ request.interceptors.response.use(
 )
 
 // 封装GET请求
-export const get = <T = any>(url: string, params?: any): Promise<T> => {
-  return request.get(url, { params })
+export const get = async <T = unknown>(
+  url: string,
+  params?: Record<string, unknown>,
+): Promise<T> => {
+  const response = await request.get<T>(url, { params })
+  return response.data
 }
 
 // 封装POST请求
-export const post = <T = any>(url: string, data?: any): Promise<T> => {
-  return request.post(url, data)
+export const post = async <T = unknown>(url: string, data?: unknown): Promise<T> => {
+  const response = await request.post<T>(url, data)
+  return response.data
 }
 
 // 封装PUT请求
-export const put = <T = any>(url: string, data?: any): Promise<T> => {
-  return request.put(url, data)
+export const put = async <T = unknown>(url: string, data?: unknown): Promise<T> => {
+  const response = await request.put<T>(url, data)
+  return response.data
 }
 
 // 封装DELETE请求
-export const del = <T = any>(url: string): Promise<T> => {
-  return request.delete(url)
+export const del = async <T = unknown>(url: string): Promise<T> => {
+  const response = await request.delete<T>(url)
+  return response.data
 }
 
 export default request

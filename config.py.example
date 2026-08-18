@@ -25,6 +25,12 @@ api_headers = {
     "Content-Type": "application/json"
 }
 
+# Agent 模型可使用独立的 OpenAI Responses 兼容端点与凭据，避免影响
+# 新闻摘要、embedding 等共享 api_headers 的调用。生产值不要提交到 Git。
+AGENT_MODEL = "grok-chat-fast"
+AGENT_API_RESPONSE_URL = "https://api.example.com/v1/responses"
+AGENT_API_KEY = ""
+
 api_gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/"
 api_gemini_headers = {
     "Accept": "application/json",

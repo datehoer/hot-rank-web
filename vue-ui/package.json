@@ -17,7 +17,8 @@
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
     "@vueuse/head": "^2.0.0",
-    "axios": "^1.10.0",
+    "axios": "^1.19.0",
+    "dompurify": "^3.4.13",
     "markdown-it": "^14.1.0",
     "vue": "^3.5.17",
     "vue-i18n": "^11.1.10",

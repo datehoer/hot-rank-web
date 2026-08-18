@@ -1,4 +1,3 @@
-import aiohttp
 import json
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -6,6 +5,9 @@ import base64
 import re
 import markdownify
 from bs4 import BeautifulSoup
+from urllib.parse import urlsplit
+
+from hotrank.agent.safe_fetcher import safe_fetch_text, validate_source_url
 
 async def remove_img_tags(html_content):
     if not html_content:
@@ -31,20 +33,9 @@ async def parse_detail(needKnowList):
     return needKnowList
 
 
-async def fetch(url):
-    if not isinstance(url, str) or not url.strip():
-        raise ValueError("Article URL is empty")
-
-    timeout = aiohttp.ClientTimeout(total=360.0)
-    async with aiohttp.ClientSession(timeout=timeout) as client:
-        async with client.get(url.strip()) as response:
-            response.raise_for_status()
-            return await response.text()
-
-
-async def parse_pengpai(needKnow):
+async def parse_pengpai(needKnow, fetcher=safe_fetch_text):
     url = needKnow['hot_url']
-    res = await fetch(url)
+    res = await fetcher(url, "pengpai")
     soup = BeautifulSoup(res, 'html.parser')
     detail = None
     for selector in (
@@ -63,9 +54,9 @@ async def parse_pengpai(needKnow):
     needKnow['content'] = detail
     return needKnow
 
-async def parse_36kr(needKnow):
+async def parse_36kr(needKnow, fetcher=safe_fetch_text):
     url = needKnow['hot_url']
-    res = await fetch(url)
+    res = await fetcher(url, "36kr")
     key = "efabccee-b754-4c"
     key = key.encode('utf-8').ljust(16, b'\0')
     cipher = AES.new(key, AES.MODE_ECB)
@@ -80,9 +71,9 @@ async def parse_36kr(needKnow):
     needKnow['content'] = markdownify.markdownify(detail).strip()
     return needKnow
 
-async def parse_ithome(needKnow):
+async def parse_ithome(needKnow, fetcher=safe_fetch_text):
     url = needKnow['hot_url']
-    res = await fetch(url)
+    res = await fetcher(url, "ithome")
     soup = BeautifulSoup(res, 'html.parser')
     detail = soup.select_one(".news-content")
     if detail:
@@ -92,9 +83,9 @@ async def parse_ithome(needKnow):
         needKnow['content'] = detail
     return needKnow
 
-async def parse_sspai(needKnow):
+async def parse_sspai(needKnow, fetcher=safe_fetch_text):
     url = needKnow['hot_url']
-    res = await fetch(url)
+    res = await fetcher(url, "shaoshupai_hot")
     soup = BeautifulSoup(res, 'html.parser')
     detail = soup.select_one("div.content")
     if detail:
@@ -104,11 +95,16 @@ async def parse_sspai(needKnow):
         needKnow['content'] = detail
     return needKnow
 
-async def parse_awatmt(needKnow):
-    url = needKnow['hot_url']
-    artile_id = url.split("?")[0].split("/")[-1]
-    url = f"https://api-one-wscn.awtmt.com/apiv1/content/articles/{artile_id}?extract=0"
-    res = await fetch(url)
+async def parse_awatmt(needKnow, fetcher=safe_fetch_text):
+    url = validate_source_url(
+        needKnow['hot_url'],
+        "wallstreetcn",
+    ).url
+    article_id = urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1]
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", article_id):
+        raise ValueError("Wallstreet article ID is invalid")
+    url = f"https://api-one-wscn.awtmt.com/apiv1/content/articles/{article_id}?extract=0"
+    res = await fetcher(url, "wallstreetcn")
     res_json = json.loads(res)
     detail = res_json['data']['content']
     detail = await remove_img_tags(detail)

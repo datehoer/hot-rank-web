@@ -1,14 +1,35 @@
 import json
 import logging
+import os
 import traceback
 
 import aiohttp
+import config
 
 from config import (
     api_headers,
     api_response_url,
     base_url,
 )
+
+
+AGENT_MODEL = (
+    os.getenv("AGENT_MODEL")
+    or getattr(config, "AGENT_MODEL", None)
+    or "deepseek-v4-flash"
+)
+AGENT_API_RESPONSE_URL = (
+    os.getenv("AGENT_API_RESPONSE_URL")
+    or getattr(config, "AGENT_API_RESPONSE_URL", None)
+    or api_response_url
+)
+_agent_api_key = (
+    os.getenv("AGENT_API_KEY")
+    or getattr(config, "AGENT_API_KEY", None)
+)
+AGENT_API_HEADERS = dict(api_headers)
+if _agent_api_key:
+    AGENT_API_HEADERS["Authorization"] = f"Bearer {_agent_api_key}"
 
 
 MODEL_TIMEOUT = aiohttp.ClientTimeout(
@@ -85,12 +106,13 @@ async def stream_model_events(
     session,
     tools=None,
     response_format=None,
+    model_name="deepseek-v4-flash",
+    response_url=api_response_url,
 ):
     """Stream raw semantic events from the Responses-compatible endpoint."""
     for attempt in range(3):
         emitted = False
         terminal_received = False
-        model_name = "deepseek-v4-flash"
         req_json = {
             "model": model_name,
             "input": input_items,
@@ -112,7 +134,7 @@ async def stream_model_events(
             req_json["text"] = {"format": text_format}
 
         try:
-            async with session.post(api_response_url, json=req_json) as response:
+            async with session.post(response_url, json=req_json) as response:
                 content_type = response.headers.get("Content-Type", "")
 
                 if response.status >= 400:
