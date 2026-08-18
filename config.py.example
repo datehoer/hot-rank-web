@@ -18,6 +18,10 @@ EMAIL = {
     "user": "",
     "password": ""
 }
+# 基础 API 地址与端点（按实际部署填写）
+base_url = "https://api.example.com/v1"
+api_response_url = "https://api.example.com/v1/responses"
+api_chat_url = "https://api.example.com/v1/chat/completions"
 api_url = "https://api.openai.com/v1/chat/completions"
 api_headers = {
     "Authorization": "Bearer sk-aaaaaaaaaaa",
