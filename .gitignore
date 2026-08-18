@@ -3,6 +3,7 @@ node_modules
 **/dist
 __pycache__
 # local env files
+.env
 .env.local
 .env.*.local
 

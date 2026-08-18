@@ -47,3 +47,4 @@ watchfiles==1.0.4
 websockets==15.0
 wrapt==1.17.2
 aiohttp
+alibabacloud_green20220302==3.2.4

@@ -4,6 +4,16 @@ from time import perf_counter
 import aiohttp
 
 from hotrank.agent.prompts import SYSTEM_PROMPT
+from hotrank.agent.content_filter import (
+    BLOCKED_NOTICE,
+    BLOCKED_REPLY,
+    check_hard_block,
+    check_message,
+)
+from hotrank.agent.green_moderation import (
+    OUTPUT_BLOCKED_REPLY,
+    moderate_text,
+)
 from hotrank.agent.source_config import get_allowed_query_sources
 from hotrank.agent.tool_registry import tools_for_query_sources
 from hotrank.model_client import (
@@ -28,7 +38,45 @@ def _citation_retry_instruction(source_ids: list[str]) -> str:
     )
 
 
+def _blocked_reply_events(
+    code: str,
+    notice: str,
+    reply: str = BLOCKED_REPLY,
+):
+    """统一的拒答事件序列（不调用模型）。"""
+    yield {
+        "type": "status",
+        "stage": "planning",
+    }
+    for offset in range(0, len(reply), 512):
+        yield {
+            "type": "delta",
+            "text": reply[offset:offset + 512],
+        }
+    yield {
+        "type": "warning",
+        "code": code,
+        "message": notice,
+    }
+    yield {
+        "type": "done",
+        "usage": {},
+    }
+
+
 async def run_agent(message, context):
+    decision = check_message(message.content)
+    if decision.blocked:
+        for event in _blocked_reply_events("CONTENT_BLOCKED", decision.notice):
+            yield event
+        return
+
+    moderation = await moderate_text(message.content)
+    if moderation["blocked"]:
+        for event in _blocked_reply_events("CONTENT_BLOCKED", BLOCKED_NOTICE):
+            yield event
+        return
+
     yield {
         "type": "status",
         "stage": "planning",
@@ -175,6 +223,22 @@ async def run_agent(message, context):
                     }
                     continue
 
+                output_blocked = False
+                if check_hard_block(answer).blocked:
+                    output_blocked = True
+                else:
+                    output_moderation = await moderate_text(answer)
+                    output_blocked = output_moderation["blocked"]
+
+                if output_blocked:
+                    answer = OUTPUT_BLOCKED_REPLY
+                    citations = []
+                    yield {
+                        "type": "warning",
+                        "code": "OUTPUT_BLOCKED",
+                        "message": "回答未通过内容安全检测，已替换为安全提示。",
+                    }
+
                 for offset in range(0, len(answer), 512):
                     yield {
                         "type": "delta",
@@ -185,7 +249,7 @@ async def run_agent(message, context):
                         "type": "citation",
                         "citation": citation,
                     }
-                if missing_citations:
+                if missing_citations and not output_blocked:
                     yield {
                         "type": "warning",
                         "code": "MISSING_CITATIONS",

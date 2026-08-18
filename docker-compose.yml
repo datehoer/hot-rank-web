@@ -7,6 +7,11 @@ services:
     restart: unless-stopped
     network_mode: host
     command: ["uvicorn", "app:app", "--host", "127.0.0.1", "--port", "7546"]
+    environment:
+      ALIBABA_CLOUD_ACCESS_KEY_ID: ${ALIBABA_CLOUD_ACCESS_KEY_ID:-}
+      ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:-}
+      HOTRANK_HARD_BLOCK_TERMS: ${HOTRANK_HARD_BLOCK_TERMS:-}
+      HOTRANK_POLITICAL_KEYWORDS: ${HOTRANK_POLITICAL_KEYWORDS:-}
     volumes:
       - ./app.py:/app/app.py:ro
       - ./common.py:/app/common.py:ro
