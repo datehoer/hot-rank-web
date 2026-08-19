@@ -5,6 +5,8 @@ import {
   ArrowPathIcon,
   CheckIcon,
   ChevronDownIcon,
+  HandThumbDownIcon,
+  HandThumbUpIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   PlusIcon,
@@ -22,6 +24,7 @@ import {
   renderSafeMarkdown,
   safeExternalUrl,
 } from '@/utils/safeAgentContent'
+import { lengthBucket, trackAgentEvent } from '@/utils/agentAnalytics'
 
 interface TopicContext {
   title: string
@@ -47,8 +50,10 @@ interface ConversationTurn {
   executionItems: ExecutionItem[]
   executionExpanded: boolean
   error?: string
+  errorCode?: string
   warning?: string
   incomplete?: boolean
+  rating?: 'up' | 'down'
 }
 
 interface ProcessStep {
@@ -99,6 +104,8 @@ const sourcePickerElement = ref<HTMLElement | null>(null)
 const sourceButtonElement = ref<HTMLButtonElement | null>(null)
 const sourceSearchElement = ref<HTMLInputElement | null>(null)
 const controller = ref<AbortController | null>(null)
+let runStartedAt = 0
+let firstDeltaSent = false
 
 const SESSION_KEY = 'hotday-agent-session-id'
 
@@ -183,24 +190,34 @@ const focusInput = async () => {
   inputElement.value?.focus()
 }
 
-const open = () => {
+const open = (entrySource: 'global' | 'rank_card' = 'global') => {
   isOpen.value = true
   void loadSources()
   void focusInput()
+  trackAgentEvent('agent_panel_open', { entry_source: entrySource })
 }
 
 const close = () => {
   isOpen.value = false
   sourcePickerOpen.value = false
+  trackAgentEvent('agent_panel_close', {
+    run_active: isRunning.value,
+    conversation_turns: turns.value.length,
+  })
 }
 
 const openForTopic = (topic: TopicContext) => {
   topicContext.value = topic
   draft.value = '帮我看看这件事的最新进展'
-  open()
+  open('rank_card')
+  trackAgentEvent('agent_topic_context_add', {
+    platform: topic.source,
+    context_count: 1,
+  })
 }
 
 const newConversation = () => {
+  const previousTurns = turns.value.length
   if (isRunning.value) stopGeneration()
   turns.value = []
   topicContext.value = null
@@ -209,6 +226,9 @@ const newConversation = () => {
   processSteps.value = []
   sessionStorage.setItem(SESSION_KEY, createSessionId())
   void focusInput()
+  if (previousTurns > 0) {
+    trackAgentEvent('agent_session_clear', { conversation_turns: previousTurns })
+  }
 }
 
 const loadSources = async () => {
@@ -367,6 +387,11 @@ const handleStreamEvent = (event: AgentStreamEvent) => {
   if (event.event === 'meta') {
     setStage('planning')
     recordProcessStep('planning')
+    if (runStartedAt) {
+      trackAgentEvent('agent_run_connected', {
+        connect_ms: Math.round(performance.now() - runStartedAt),
+      })
+    }
   } else if (event.event === 'status') {
     const nextStage = String(event.data.stage || '') as AgentStage
     if (nextStage in stageLabels) {
@@ -385,6 +410,19 @@ const handleStreamEvent = (event: AgentStreamEvent) => {
   } else if (event.event === 'delta') {
     setStage('generating')
     if (activeTurn.value) activeTurn.value.answer += String(event.data.text || '')
+    if (!firstDeltaSent) {
+      firstDeltaSent = true
+      const turn = activeTurn.value
+      const toolStageSeen = turn
+        ? turn.executionItems.some((item) => item.kind === 'tool')
+        : false
+      trackAgentEvent('agent_first_delta', {
+        first_delta_ms: runStartedAt
+          ? Math.round(performance.now() - runStartedAt)
+          : 0,
+        tool_stage_seen: toolStageSeen,
+      })
+    }
     void scrollToLatest()
   } else if (event.event === 'citation') {
     const citation = (event.data.citation || event.data) as Citation
@@ -402,14 +440,30 @@ const handleStreamEvent = (event: AgentStreamEvent) => {
   } else if (event.event === 'done') {
     streamEnded.value = true
     setStage('completed')
+    const turn = activeTurn.value
+    trackAgentEvent('agent_run_complete', {
+      duration_ms: runStartedAt
+        ? Math.round(performance.now() - runStartedAt)
+        : 0,
+      citation_count: turn ? turn.citations.length : 0,
+      finish_reason: 'complete',
+      output_length_bucket: lengthBucket(turn ? turn.answer.length : 0),
+    })
   } else if (event.event === 'error') {
     streamEnded.value = true
     const message = String(event.data.message || '热点助手暂时无法回答，请重试')
+    const errorCode = String(event.data.code || 'UNKNOWN')
     if (activeTurn.value) {
       activeTurn.value.error = message
+      activeTurn.value.errorCode = errorCode
       activeTurn.value.incomplete = Boolean(activeTurn.value.answer)
     }
-    setStage(event.data.code === 'RUN_CANCELLED' ? 'stopped' : 'error')
+    trackAgentEvent('agent_run_error', {
+      error_code: errorCode,
+      retryable: Boolean(event.data.retryable),
+      partial_content: Boolean(activeTurn.value?.answer),
+    })
+    setStage(errorCode === 'RUN_CANCELLED' ? 'stopped' : 'error')
   }
 }
 
@@ -423,6 +477,13 @@ const send = async () => {
 
   const question = draft.value.trim()
   const sessionId = getSessionId()
+  runStartedAt = performance.now()
+  firstDeltaSent = false
+  trackAgentEvent('agent_message_submit', {
+    input_length_bucket: lengthBucket(question.length),
+    context_count: topicContext.value ? 1 : 0,
+    turn_index: turns.value.length + 1,
+  })
   const turn: ConversationTurn = {
     id: `${Date.now()}`,
     question,
@@ -478,6 +539,10 @@ const send = async () => {
 
 const stopGeneration = () => {
   const sessionId = getSessionId()
+  trackAgentEvent('agent_run_cancel', {
+    elapsed_ms: runStartedAt ? Math.round(performance.now() - runStartedAt) : 0,
+    stage: stage.value,
+  })
   controller.value?.abort()
   controller.value = null
   if (activeTurn.value) activeTurn.value.incomplete = Boolean(activeTurn.value.answer)
@@ -488,9 +553,50 @@ const stopGeneration = () => {
 const retry = () => {
   const previousQuestion = activeTurn.value?.question
   if (!previousQuestion) return
+  trackAgentEvent('agent_run_retry', {
+    previous_error_code: activeTurn.value?.errorCode || 'unknown',
+  })
   draft.value = previousQuestion
   void send()
 }
+
+const pickSuggestion = (suggestionId: string, text: string) => {
+  draft.value = text
+  void focusInput()
+  trackAgentEvent('agent_suggestion_click', { suggestion_id: suggestionId })
+}
+
+const trackCitationClick = (citation: Citation, index: number) => {
+  trackAgentEvent('agent_citation_click', {
+    citation_position: index + 1,
+    platform: citation.platform || 'unknown',
+  })
+}
+
+const submitFeedback = (turn: ConversationTurn, rating: 'up' | 'down') => {
+  if (turn.rating === rating) return
+  turn.rating = rating
+  trackAgentEvent('agent_feedback_submit', { rating })
+}
+
+const removeTopicContext = () => {
+  if (!topicContext.value) return
+  const platform = topicContext.value.source
+  topicContext.value = null
+  trackAgentEvent('agent_topic_context_remove', {
+    platform,
+    context_count: 0,
+  })
+}
+
+const openLauncher = () => {
+  trackAgentEvent('agent_launcher_click', { panel_was_open: false })
+  open('global')
+}
+
+const isTurnFinalized = (turn: ConversationTurn) =>
+  turn !== activeTurn.value ||
+  ['completed', 'stopped', 'error'].includes(stage.value)
 
 const handleComposerKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -512,6 +618,16 @@ onMounted(() => {
   void loadSources()
   document.addEventListener('pointerdown', handleDocumentPointerDown)
   document.addEventListener('keydown', handleDocumentKeydown)
+
+  trackAgentEvent('agent_entry_impression', { entry_source: 'global' })
+
+  const existingSession = sessionStorage.getItem(SESSION_KEY)
+  if (existingSession) {
+    trackAgentEvent('agent_session_restore', { result: 'restored' })
+  } else {
+    getSessionId()
+    trackAgentEvent('agent_session_create', { result: 'created' })
+  }
 })
 onBeforeUnmount(() => {
   controller.value?.abort()
@@ -528,7 +644,7 @@ defineExpose({ open, openForTopic })
     type="button"
     class="agent-launcher"
     aria-label="打开热点助手"
-    @click="open"
+    @click="openLauncher"
   >
     <RocketLaunchIcon aria-hidden="true" />
     <span>热点助手</span>
@@ -551,16 +667,26 @@ defineExpose({ open, openForTopic })
       </header>
 
       <section v-if="topicContext" class="agent-context" aria-label="当前热点">
-        <span>来自：{{ topicContext.source }} #{{ topicContext.rank }}</span>
-        <a
-          v-if="safeTopicUrl"
-          :href="safeTopicUrl"
-          target="_blank"
-          rel="noopener noreferrer nofollow"
+        <div class="agent-context-body">
+          <span>来自：{{ topicContext.source }} #{{ topicContext.rank }}</span>
+          <a
+            v-if="safeTopicUrl"
+            :href="safeTopicUrl"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+          >
+            {{ topicContext.title }}
+          </a>
+          <strong v-else>{{ topicContext.title }}</strong>
+        </div>
+        <button
+          type="button"
+          class="agent-context-remove"
+          aria-label="移除热点上下文"
+          @click="removeTopicContext"
         >
-          {{ topicContext.title }}
-        </a>
-        <strong v-else>{{ topicContext.title }}</strong>
+          <XMarkIcon />
+        </button>
       </section>
 
       <section ref="conversationElement" class="agent-conversation">
@@ -568,10 +694,10 @@ defineExpose({ open, openForTopic })
           <MagnifyingGlassIcon />
           <h3>从热点开始提问</h3>
           <p>我会从已收录的热点和新闻来源中检索、阅读并整理回答。</p>
-          <button type="button" @click="draft = '今天有哪些值得关注的热点？'; focusInput()">
+          <button type="button" @click="pickSuggestion('today_hot', '今天有哪些值得关注的热点？')">
             今天有哪些值得关注的热点？
           </button>
-          <button type="button" @click="draft = '对比一下今天不同平台的热门话题'; focusInput()">
+          <button type="button" @click="pickSuggestion('compare_platforms', '对比一下今天不同平台的热门话题')">
             对比不同平台的热门话题
           </button>
         </div>
@@ -643,6 +769,30 @@ defineExpose({ open, openForTopic })
             <span v-if="turn === activeTurn && stage === 'generating'" class="agent-cursor"></span>
           </div>
 
+          <div
+            v-if="turn.answer && isTurnFinalized(turn)"
+            class="agent-feedback"
+            role="group"
+            aria-label="回答反馈"
+          >
+            <button
+              type="button"
+              :aria-pressed="turn.rating === 'up'"
+              aria-label="回答有帮助"
+              @click="submitFeedback(turn, 'up')"
+            >
+              <HandThumbUpIcon />
+            </button>
+            <button
+              type="button"
+              :aria-pressed="turn.rating === 'down'"
+              aria-label="回答没有帮助"
+              @click="submitFeedback(turn, 'down')"
+            >
+              <HandThumbDownIcon />
+            </button>
+          </div>
+
           <p v-if="turn.warning" class="agent-warning" role="status">
             {{ turn.warning }}
           </p>
@@ -661,12 +811,13 @@ defineExpose({ open, openForTopic })
               <span></span>
             </div>
             <a
-              v-for="citation in visibleCitations(turn)"
+              v-for="(citation, index) in visibleCitations(turn)"
               :key="citation.source_id || citation.url || citation.title"
               :href="safeExternalUrl(citation.url) || undefined"
               target="_blank"
               rel="noopener noreferrer nofollow"
               class="agent-citation"
+              @click="trackCitationClick(citation, index)"
             >
               <strong>{{ citation.platform || '热点来源' }}</strong>
               <span>{{ citation.title || citation.url }}</span>
@@ -871,11 +1022,33 @@ defineExpose({ open, openForTopic })
 }
 
 .agent-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   margin: 0 28px 4px;
   border: 1px solid #dedede;
   border-radius: 7px;
   background: #fafafa;
   padding: 13px 15px;
+}
+
+.agent-context-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.agent-context-remove {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #888;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.agent-context-remove svg {
+  width: 16px;
+  height: 16px;
 }
 
 .agent-context span {
@@ -1258,6 +1431,36 @@ defineExpose({ open, openForTopic })
   animation: agent-blink 850ms steps(1) infinite;
 }
 
+.agent-feedback {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.agent-feedback button {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  background: #fff;
+  color: #777;
+  cursor: pointer;
+}
+
+.agent-feedback button[aria-pressed='true'] {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.agent-feedback svg {
+  width: 15px;
+  height: 15px;
+}
+
 .agent-live-status {
   display: flex;
   align-items: center;
@@ -1614,6 +1817,22 @@ defineExpose({ open, openForTopic })
 :global(.dark) .agent-composer-wrap,
 :global(.dark) .agent-empty button {
   border-color: #4b5563;
+}
+
+:global(.dark) .agent-context-remove {
+  color: #9ca3af;
+}
+
+:global(.dark) .agent-feedback button {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #9ca3af;
+}
+
+:global(.dark) .agent-feedback button[aria-pressed='true'] {
+  border-color: #f9fafb;
+  background: #f9fafb;
+  color: #111827;
 }
 
 @keyframes agent-spin {
