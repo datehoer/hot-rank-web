@@ -8,6 +8,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from starlette.responses import JSONResponse
 
 from hotrank.infrastructure import lifespan, limiter
+from hotrank.analytics import track_event
 from hotrank.routers.general import router as general_router
 from hotrank.routers.rankings import router as rankings_router
 from hotrank.routers.agent import router as agent_router
@@ -40,6 +41,11 @@ def rate_limit_exceeded_handler(
         *limit_args,
     )
     retry_after = max(int(reset_at - time.time()) + 1, 1)
+    track_event(
+        "rate_limit_hit",
+        {"path": request.url.path},
+        url=request.url.path,
+    )
     return JSONResponse(
         status_code=429,
         headers={

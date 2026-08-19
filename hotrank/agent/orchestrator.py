@@ -24,6 +24,8 @@ from hotrank.model_client import (
 )
 from hotrank.agent.tool_executor import execute_tool
 from hotrank.agent.tool_events import describe_tool_call, summarize_tool_result
+from hotrank.analytics import duration_bucket, length_bucket, track_event
+from hotrank.services.block_log import record_block
 
 
 def _citation_retry_instruction(source_ids: list[str]) -> str:
@@ -65,17 +67,69 @@ def _blocked_reply_events(
 
 
 async def run_agent(message, context):
-    decision = check_message(message.content)
+    started_at = perf_counter()
+    decision = await check_message(message.content)
     if decision.blocked:
+        track_event(
+            "agent_block",
+            {
+                "stage": "input",
+                "reason": "content_filter",
+                "input_length_bucket": length_bucket(
+                    len(message.content or ""),
+                ),
+            },
+        )
+        await record_block(
+            context.pg_pool,
+            stage="input",
+            source="content_filter",
+            reason=decision.reason,
+            content=message.content,
+            platform=message.platform,
+        )
         for event in _blocked_reply_events("CONTENT_BLOCKED", decision.notice):
             yield event
         return
 
     moderation = await moderate_text(message.content)
     if moderation["blocked"]:
+        track_event(
+            "agent_block",
+            {
+                "stage": "input",
+                "reason": "moderation",
+                "input_length_bucket": length_bucket(
+                    len(message.content or ""),
+                ),
+            },
+        )
+        await record_block(
+            context.pg_pool,
+            stage="input",
+            source="green_moderation",
+            reason="moderation",
+            suggestion=moderation["suggestion"],
+            labels=moderation.get("labels"),
+            content=message.content,
+            platform=message.platform,
+        )
         for event in _blocked_reply_events("CONTENT_BLOCKED", BLOCKED_NOTICE):
             yield event
         return
+    if moderation["suggestion"] in {"mask", "watch"}:
+        track_event(
+            "agent_moderation_suggestion",
+            {
+                "stage": "input",
+                "suggestion": moderation["suggestion"],
+                "labels": sorted({
+                    label["label"]
+                    for label in moderation.get("labels", [])
+                    if isinstance(label, dict) and label.get("label")
+                })[:8],
+            },
+        )
 
     yield {
         "type": "status",
@@ -224,15 +278,68 @@ async def run_agent(message, context):
                     continue
 
                 output_blocked = False
-                if check_hard_block(answer).blocked:
+                output_block_reason = None
+                if (await check_hard_block(answer)).blocked:
                     output_blocked = True
+                    output_block_reason = "hard_block"
                 else:
                     output_moderation = await moderate_text(answer)
                     output_blocked = output_moderation["blocked"]
+                    if output_blocked:
+                        output_block_reason = "moderation"
+                    elif output_moderation["suggestion"] in {"mask", "watch"}:
+                        track_event(
+                            "agent_moderation_suggestion",
+                            {
+                                "stage": "output",
+                                "suggestion": output_moderation["suggestion"],
+                                "labels": sorted({
+                                    label["label"]
+                                    for label in output_moderation.get("labels", [])
+                                    if isinstance(label, dict) and label.get("label")
+                                })[:8],
+                            },
+                        )
 
                 if output_blocked:
+                    blocked_content = answer
                     answer = OUTPUT_BLOCKED_REPLY
                     citations = []
+                    logging.warning(
+                        "agent output blocked: reason=%s",
+                        output_block_reason,
+                    )
+                    track_event(
+                        "agent_block",
+                        {
+                            "stage": "output",
+                            "reason": output_block_reason,
+                            "output_length_bucket": length_bucket(
+                                len(blocked_content),
+                            ),
+                        },
+                    )
+                    await record_block(
+                        context.pg_pool,
+                        stage="output",
+                        source=(
+                            "content_filter"
+                            if output_block_reason == "hard_block"
+                            else "green_moderation"
+                        ),
+                        reason=output_block_reason,
+                        suggestion=(
+                            output_moderation["suggestion"]
+                            if output_block_reason == "moderation"
+                            else None
+                        ),
+                        labels=(
+                            output_moderation.get("labels")
+                            if output_block_reason == "moderation"
+                            else None
+                        ),
+                        content=blocked_content,
+                    )
                     yield {
                         "type": "warning",
                         "code": "OUTPUT_BLOCKED",
@@ -258,6 +365,23 @@ async def run_agent(message, context):
                             "请谨慎参考并查看原始榜单。"
                         ),
                     }
+                duration_ms = round((perf_counter() - started_at) * 1000)
+                track_event(
+                    "agent_run_complete",
+                    {
+                        "duration_bucket": duration_bucket(duration_ms),
+                        "citation_count": len(citations),
+                        "tool_calls": total_tool_calls,
+                        "output_length_bucket": length_bucket(len(answer)),
+                        "finish_reason": (
+                            "output_blocked"
+                            if output_blocked
+                            else "missing_citations"
+                            if missing_citations
+                            else "complete"
+                        ),
+                    },
+                )
                 yield {
                     "type": "done",
                     "usage": completed_response.get("usage"),
@@ -307,6 +431,19 @@ async def run_agent(message, context):
                     or count >= limit
                     or total_tool_calls >= 4
                 ):
+                    track_event(
+                        "agent_tool_limit",
+                        {
+                            "tool": name,
+                            "reason": (
+                                "repeat"
+                                if signature in seen_tool_calls
+                                else "per_tool"
+                                if count >= limit
+                                else "total"
+                            ),
+                        },
+                    )
                     input_items.append({
                         "type": "function_call_output",
                         "call_id": call_id,
@@ -343,6 +480,13 @@ async def run_agent(message, context):
                         "Tool execution failed: tool=%s",
                         name,
                     )
+                    track_event(
+                        "agent_tool_error",
+                        {
+                            "tool": name,
+                            "code": "INTERNAL_TOOL_ERROR",
+                        },
+                    )
                     result = {
                         "ok": False,
                         "message": "工具执行失败。",
@@ -378,4 +522,8 @@ async def run_agent(message, context):
                 tool_call_counts[name] = count + 1
                 total_tool_calls += 1
 
+        track_event(
+            "agent_tool_limit",
+            {"tool": "rounds", "reason": "max_rounds"},
+        )
         raise RuntimeError("Tool call limit exceeded")

@@ -7,6 +7,8 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import aiohttp
 from aiohttp.abc import AbstractResolver
 
+from hotrank.analytics import track_event
+
 
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_REDIRECTS = 3
@@ -33,6 +35,19 @@ class SafeFetchError(RuntimeError):
     """A source request was rejected or failed without exposing internals."""
 
 
+def _reject(
+    reason: str,
+    message: str,
+    platform: str | None = None,
+) -> SafeFetchError:
+    """Record an SSRF-boundary rejection and raise without leaking internals."""
+    data: dict = {"reason": reason}
+    if platform:
+        data["platform"] = platform
+    track_event("agent_ssrf_block", data)
+    return SafeFetchError(message)
+
+
 @dataclass(frozen=True)
 class ValidatedURL:
     url: str
@@ -49,27 +64,47 @@ def _normalize_hostname(hostname: str) -> str:
 
 def validate_source_url(url: object, platform: str) -> ValidatedURL:
     if not isinstance(url, str) or not url.strip():
-        raise SafeFetchError("Source URL is empty.")
+        raise _reject("empty", "Source URL is empty.", platform)
 
     try:
         parsed = urlsplit(url.strip())
         scheme = parsed.scheme.lower()
         if scheme not in {"http", "https"}:
-            raise SafeFetchError("Source URL scheme is not allowed.")
+            raise _reject(
+                "scheme",
+                "Source URL scheme is not allowed.",
+                platform,
+            )
         if parsed.username is not None or parsed.password is not None:
-            raise SafeFetchError("Source URL credentials are not allowed.")
+            raise _reject(
+                "credentials",
+                "Source URL credentials are not allowed.",
+                platform,
+            )
         if not parsed.hostname:
-            raise SafeFetchError("Source URL host is missing.")
+            raise _reject(
+                "host_missing",
+                "Source URL host is missing.",
+                platform,
+            )
 
         hostname = _normalize_hostname(parsed.hostname)
         allowed_hosts = ALLOWED_SOURCE_HOSTS.get(platform, set())
         if hostname not in allowed_hosts:
-            raise SafeFetchError("Source URL host is not allowed.")
+            raise _reject(
+                "host_not_allowed",
+                "Source URL host is not allowed.",
+                platform,
+            )
 
         default_port = 80 if scheme == "http" else 443
         port = parsed.port or default_port
         if port != default_port:
-            raise SafeFetchError("Source URL port is not allowed.")
+            raise _reject(
+                "port",
+                "Source URL port is not allowed.",
+                platform,
+            )
 
         netloc = hostname
         normalized_url = urlunsplit(
@@ -79,20 +114,33 @@ def validate_source_url(url: object, platform: str) -> ValidatedURL:
     except SafeFetchError:
         raise
     except (UnicodeError, ValueError) as exc:
-        raise SafeFetchError("Source URL is invalid.") from exc
+        raise _reject(
+            "invalid",
+            "Source URL is invalid.",
+            platform,
+        ) from exc
 
 
 def validate_public_ip(value: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
     try:
         address = ipaddress.ip_address(value)
     except ValueError as exc:
-        raise SafeFetchError("Source address is invalid.") from exc
+        raise _reject(
+            "invalid_ip",
+            "Source address is invalid.",
+        ) from exc
     if not address.is_global:
-        raise SafeFetchError("Source address is not public.")
+        raise _reject(
+            "private_ip",
+            "Source address is not public.",
+        )
     # ``is_global`` does not classify multicast as private/reserved, so it
     # must be rejected explicitly to match the threat model boundary.
     if address.is_multicast:
-        raise SafeFetchError("Source address is multicast.")
+        raise _reject(
+            "multicast_ip",
+            "Source address is multicast.",
+        )
     return address
 
 
@@ -171,7 +219,10 @@ def _validate_peer(
         for address, _ in allowed_addresses
     }
     if peer_address not in expected_addresses:
-        raise SafeFetchError("Source connection peer changed after validation.")
+        raise _reject(
+            "peer_changed",
+            "Source connection peer changed after validation.",
+        )
 
 
 def validate_content_type(content_type: str) -> str:

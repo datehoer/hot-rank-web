@@ -9,6 +9,7 @@ from parse_detail import (
 )
 from hotrank.schemas import ToolResult, ToolError, ToolMeta
 from hotrank.agent.safe_fetcher import SafeFetchError, validate_source_url
+from hotrank.analytics import track_event
 
 
 DETAIL_PARSERS = {
@@ -132,6 +133,14 @@ async def get_topic_detail(topic_id, platform, pg_pool, expected_url: str):
             "Rejected unsafe topic URL: topic_id=%s platform=%s",
             topic_id,
             platform,
+        )
+        track_event(
+            "agent_block",
+            {
+                "stage": "fetch",
+                "reason": "ssrf",
+                "platform": platform,
+            },
         )
         return detail_error(
             message="Topic URL did not pass source safety checks",
