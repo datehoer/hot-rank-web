@@ -200,6 +200,9 @@ table = [
     {"name": "雪球热帖", "tablename": "xueqiu"},
     {"name": "酷安热榜", "tablename": "coolan"},
     # {"name": "Google 热搜", "tablename": "google_search"},
+    {"name": "Dezeen 设计", "tablename": "dezeen"},
+    {"name": "机核 GCORES", "tablename": "gcores"},
+    {"name": "Designboom 设计", "tablename": "designboom"},
 ]
 redis_client.delete("card_table")
 for index, item in enumerate(table):

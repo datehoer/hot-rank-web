@@ -1,3 +1,5 @@
+import os
+
 MONGODB_URI = "mongodb://127.0.0.1:27017/data?authSource=admin"
 MONGODB_DB_NAME = "data"
 # Redis 设置
@@ -24,7 +26,7 @@ api_response_url = "https://api.example.com/v1/responses"
 api_chat_url = "https://api.example.com/v1/chat/completions"
 api_url = "https://api.openai.com/v1/chat/completions"
 api_headers = {
-    "Authorization": "Bearer sk-aaaaaaaaaaa",
+    "Authorization": f"Bearer {os.environ['NEWAPI_KEY']}",
     "Accept": "application/json",
     "Content-Type": "application/json"
 }

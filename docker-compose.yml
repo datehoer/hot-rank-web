@@ -8,6 +8,7 @@ services:
     network_mode: host
     command: ["uvicorn", "app:app", "--host", "127.0.0.1", "--port", "7546"]
     environment:
+      NEWAPI_KEY: ${NEWAPI_KEY}
       ALIBABA_CLOUD_ACCESS_KEY_ID: ${ALIBABA_CLOUD_ACCESS_KEY_ID:-}
       ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:-}
       HOTRANK_HARD_BLOCK_TERMS: ${HOTRANK_HARD_BLOCK_TERMS:-}
@@ -30,6 +31,8 @@ services:
     restart: unless-stopped
     network_mode: host
     working_dir: /app
+    env_file:
+      - ../hotToday/.env
     environment:
       HOT_LOG_DIR: /app/logs
     volumes:
