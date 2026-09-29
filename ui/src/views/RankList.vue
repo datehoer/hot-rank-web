@@ -213,7 +213,6 @@ import UserPanel from "@/components/UserPanel.vue";
 import { getRankList, getAiSummarizes } from "@/api/rank.js";
 import moment from "moment";
 import { Robot } from "@icon-park/vue";
-import { set } from 'vue';
 export default {
   name: "App",
   components: {
@@ -674,10 +673,12 @@ body {
 }
 
 .news-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
   flex: 1;
+  min-width: 0;
 }
 
 .news-tag {
@@ -686,6 +687,13 @@ body {
   padding: 2px 8px;
   border-radius: 3px;
   font-size: 12px;
+  width: 96px;
+  max-width: 96px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  text-overflow: ellipsis;
 }
 
 .news-title {
@@ -694,6 +702,11 @@ body {
   font-weight: 500;
   color: var(--text-color);
   line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .news-content {
@@ -882,6 +895,7 @@ body {
 
   .news-title-group {
     width: 100%;
+    grid-template-columns: 72px minmax(0, 1fr);
   }
 
   .news-title {
@@ -897,6 +911,8 @@ body {
   .news-tag {
     font-size: 11px;
     padding: 1px 6px;
+    width: 72px;
+    max-width: 72px;
   }
 }
 
