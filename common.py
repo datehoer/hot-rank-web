@@ -180,16 +180,23 @@ def parse_zhihu_hot_list(data):
         data = data['data']
     result = []
     for item in data:
+        # 2026-10 起 web 接口把标题、链接、热度挪进 *_area 字段，老接口仍是 title/url/detail_text
+        target = item.get("target") or {}
+        hot_label = (target.get("title_area") or {}).get("text") or target.get("title")
+        hot_url = (target.get("link") or {}).get("url") or ""
+        heat_text = (target.get("metrics_area") or {}).get("text") or item.get("detail_text") or ""
+        if not hot_label:
+            continue
+        if not hot_url:
+            if target.get("id"):
+                hot_url = "https://www.zhihu.com/question/" + str(target["id"])
+            else:
+                continue
         hot_value = 0
         try:
-            hot_value = float(item["detail_text"].split(" ")[0])*10000
-        except:
+            hot_value = float(heat_text.split(" ")[0])*10000
+        except (ValueError, IndexError):
             pass
-        if item['target']['type'] == "question":
-            hot_url = "https://www.zhihu.com/question/" + str(item['target']['id'])
-        else:
-            continue
-        hot_label = item['target']['title']
         result.append({
             "hot_value": hot_value,
             "hot_url": hot_url,
