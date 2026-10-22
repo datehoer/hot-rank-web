@@ -26,7 +26,7 @@ services:
   hottoday-spider:
     build:
       context: ../hotToday
-    image: hottoday:v0.1
+    image: hottoday:chrome156-node-waf2
     container_name: hottoday-spider
     restart: unless-stopped
     network_mode: host
