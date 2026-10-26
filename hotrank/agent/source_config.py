@@ -3,6 +3,7 @@ import logging
 
 from hotrank.agent.tool_registry import SUPPORTED_SEARCH_PLATFORMS
 from hotrank.cache import redis_cache
+from hotrank.source_catalog import LOCAL_SOURCE_CARDS
 
 
 QUERY_SOURCES_REDIS_KEY = "agent:query:sources"
@@ -84,6 +85,7 @@ SOURCE_LABELS = {
     "zhanku": "站酷",
     "zongheng": "纵横中文网",
 }
+SOURCE_LABELS.update({card["tablename"]: card["name"] for card in LOCAL_SOURCE_CARDS})
 
 
 def parse_allowed_query_sources(raw_value: str | None) -> list[str]:

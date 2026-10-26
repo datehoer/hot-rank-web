@@ -1,3 +1,6 @@
+from hotrank.source_catalog import LOCAL_SOURCE_CARDS
+
+
 SUPPORTED_SEARCH_PLATFORMS = [
     "36kr",
     "3dm",
@@ -75,6 +78,7 @@ SUPPORTED_SEARCH_PLATFORMS = [
     "zhanku",
     "zongheng",
 ]
+SUPPORTED_SEARCH_PLATFORMS += [card["tablename"] for card in LOCAL_SOURCE_CARDS]
 
 SUPPORTED_DETAIL_PLATFORMS = [
     "wallstreetcn",

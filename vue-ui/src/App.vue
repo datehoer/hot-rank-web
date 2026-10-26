@@ -719,13 +719,13 @@ const askAgentAboutTopic = (section, item, rank) => {
           <li
             v-for="(item, i) in section.data"
             :key="i"
-            class="group flex justify-between items-center gap-3 rounded-sm px-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-800"
+            class="group flex justify-between items-center gap-3 rounded-sm px-1 hover:bg-gray-50 dark:hover:bg-gray-800"
             :title="item.hot_label"
           >
             <div
               :class="[
-                'max-w-[95%]',
-                isWrap ? 'whitespace-normal' : 'truncate'
+                'min-w-0 flex-1',
+                isWrap ? 'whitespace-normal break-words' : 'truncate'
               ]"
             >
               <span class="font-mono text-sm inline-block w-10 text-left">#{{ i + 1 }}</span>
