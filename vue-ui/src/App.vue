@@ -349,7 +349,9 @@ const calculateSectionOrder = (currentData, savedOrder) => {
       if (typeof item === 'number') {
         return currentData[item]?.name
       }
-      return item
+      if (typeof item !== 'string') return item
+      const name = item.replace(/（(?:加拿大|德国|韩国|澳大利亚|新西兰)[^（）]*）$/, '')
+      return currentSectionNames.includes(name) ? name : item
     })
     .filter(Boolean)
 

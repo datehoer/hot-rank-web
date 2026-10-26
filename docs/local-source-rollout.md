@@ -12,8 +12,10 @@ docker exec hotrank python -m hotrank.source_catalog
 docker exec hotrank python -m hotrank.source_catalog --apply
 ```
 
-The command appends missing cards by `tablename`, preserving current names,
-metadata and order. An explicit agent allowlist is extended with the new sources;
+The command appends missing cards by `tablename` and migrates the generated
+country/type label suffixes to plain site names, preserving custom names,
+metadata and order. Saved browser ordering also recognizes the previous labels.
+An explicit agent allowlist is extended with the new sources;
 an absent allowlist continues to use the application defaults. A watched Redis
 transaction prevents concurrent catalog edits from being overwritten. Existing
 registry TTLs are preserved. Applying a change saves the previous registry values

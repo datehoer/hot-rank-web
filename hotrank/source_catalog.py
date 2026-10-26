@@ -11,34 +11,34 @@ import re
 from uuid import uuid4
 
 LOCAL_SOURCE_CARDS = [
-    {"name": "CBC（加拿大新闻）", "tablename":"cbc"},
-    {"name": "Global News（加拿大最新）", "tablename":"globalnews"},
-    {"name": "CTV News（加拿大最新）", "tablename":"ctv"},
-    {"name": "National Post（加拿大最新）", "tablename":"nationalpost"},
-    {"name": "Radio-Canada（加拿大法语要闻）", "tablename":"radiocanada"},
-    {"name": "SPIEGEL（德国头条）", "tablename":"spiegel"},
-    {"name": "ZEIT（德国最新）", "tablename":"zeit"},
-    {"name": "heise（德国科技最新）", "tablename":"heise"},
-    {"name": "Süddeutsche（德国要闻）", "tablename":"sueddeutsche"},
-    {"name": "mydealz（德国社区优惠）", "tablename":"mydealz"},
-    {"name": "Naver（韩国各媒体热读）", "tablename":"naver_news"},
-    {"name": "NEWSIS（韩国热读）", "tablename":"newsis"},
-    {"name": "Bizwatch（韩国财经热读）", "tablename":"bizwatch"},
-    {"name": "DC Inside（韩国实时精选）", "tablename":"dcinside"},
-    {"name": "Nate Pann（韩国热帖）", "tablename":"nate_pann"},
-    {"name": "ABC（澳大利亚头条）", "tablename":"abc_au"},
-    {"name": "SBS（澳大利亚头条）", "tablename":"sbs_au"},
-    {"name": "OzBargain（澳大利亚社区优惠）", "tablename":"ozbargain"},
-    {"name": "Stuff（新西兰最新）", "tablename":"stuff"},
-    {"name": "NZ Herald（新西兰新闻）", "tablename":"nzherald"},
-    {"name": "1News（新西兰头条）", "tablename":"tvnz"},
-    {"name": "Cheapies（新西兰社区优惠）", "tablename":"cheapies"},
-    {"name": "Geekzone（新西兰最新讨论）", "tablename":"geekzone"},
+    {"name": "CBC", "tablename":"cbc"},
+    {"name": "Global News", "tablename":"globalnews"},
+    {"name": "CTV News", "tablename":"ctv"},
+    {"name": "National Post", "tablename":"nationalpost"},
+    {"name": "Radio-Canada", "tablename":"radiocanada"},
+    {"name": "SPIEGEL", "tablename":"spiegel"},
+    {"name": "ZEIT", "tablename":"zeit"},
+    {"name": "heise", "tablename":"heise"},
+    {"name": "Süddeutsche", "tablename":"sueddeutsche"},
+    {"name": "mydealz", "tablename":"mydealz"},
+    {"name": "Naver", "tablename":"naver_news"},
+    {"name": "NEWSIS", "tablename":"newsis"},
+    {"name": "Bizwatch", "tablename":"bizwatch"},
+    {"name": "DC Inside", "tablename":"dcinside"},
+    {"name": "Nate Pann", "tablename":"nate_pann"},
+    {"name": "ABC", "tablename":"abc_au"},
+    {"name": "SBS", "tablename":"sbs_au"},
+    {"name": "OzBargain", "tablename":"ozbargain"},
+    {"name": "Stuff", "tablename":"stuff"},
+    {"name": "NZ Herald", "tablename":"nzherald"},
+    {"name": "1News", "tablename":"tvnz"},
+    {"name": "Cheapies", "tablename":"cheapies"},
+    {"name": "Geekzone", "tablename":"geekzone"},
 ]
 
 
 def merge_source_cards(existing, additions=LOCAL_SOURCE_CARDS):
-    """Append missing sources while preserving current names, metadata and order."""
+    """Append sources and remove generated label suffixes, retaining custom names."""
     for cards in (existing, additions):
         if not isinstance(cards, list):
             raise ValueError("Source cards must be a list")
@@ -49,6 +49,13 @@ def merge_source_cards(existing, additions=LOCAL_SOURCE_CARDS):
                     or not re.fullmatch(r"[a-z0-9_]+", card["tablename"])):
                 raise ValueError("Invalid source card")
     merged = [dict(card) for card in existing]
+    names = {card["tablename"]: card["name"] for card in additions}
+    for card in merged:
+        name = names.get(card["tablename"])
+        if name and re.fullmatch(
+            re.escape(name) + r"（(?:加拿大|德国|韩国|澳大利亚|新西兰)[^（）]*）", card["name"]
+        ):
+            card["name"] = name
     seen = {card["tablename"] for card in existing}
     for card in additions:
         if card["tablename"] not in seen:
@@ -84,7 +91,9 @@ def sync_catalog(client, *, apply=False):
                 merged_query = merge_query_sources(query)
                 changed = merged != cards or merged_query != query
                 result = {"cards_before": len(cards), "cards_after": len(merged),
-                          "added": len(merged) - len(cards), "changed": changed, "applied": False}
+                          "added": len(merged) - len(cards),
+                          "renamed": sum(old["name"] != new["name"] for old, new in zip(cards, merged)),
+                          "changed": changed, "applied": False}
                 if not apply or not changed:
                     return result
                 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")

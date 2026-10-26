@@ -19,12 +19,14 @@ from hotrank.agent.tool_registry import SUPPORTED_SEARCH_PLATFORMS
 class SourceCatalogTest(unittest.TestCase):
     def test_merge_preserves_existing_order_names_and_metadata(self):
         existing = [{"name": "My custom CBC", "tablename": "cbc", "custom": True},
-                    {"name": "Existing community", "tablename": "v2ex"}]
+                    {"name": "Existing community", "tablename": "v2ex"},
+                    {"name": "NEWSIS（韩国热读）", "tablename": "newsis", "custom": True}]
         result = merge_source_cards(existing)
-        self.assertEqual(result[:2], existing)
+        self.assertEqual(result[:2], existing[:2])
+        self.assertEqual(result[2], {"name": "NEWSIS", "tablename": "newsis", "custom": True})
         self.assertEqual(len(result), 24)
         self.assertEqual(merge_source_cards(result), result)
-        self.assertEqual(len(existing), 2)
+        self.assertEqual(existing[2]["name"], "NEWSIS（韩国热读）")
 
     def test_invalid_catalog_is_rejected_without_silently_replacing_it(self):
         for value in [None, {}, [{"name": "Example", "tablename": 'bad";sql'}],
